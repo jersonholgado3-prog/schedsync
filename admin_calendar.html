@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1280">
+    <title>SchedSync - Manage Calendar</title>
+    <link rel="stylesheet" href="header-styles.css">
+    <link rel="stylesheet" href="homepage.css">
+    <style>
+        .admin-calendar-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #1e293b;
+            border-radius: 20px;
+            border: 3px solid #005BAB;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: #94a3b8;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            background: #0f172a;
+            border: 2px solid #334155;
+            color: white;
+        }
+
+        .save-event-btn {
+            width: 100%;
+            padding: 15px;
+            background: #005BAB;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 900;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .event-list-admin {
+            margin-top: 30px;
+        }
+
+        .event-admin-item {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #334155;
+        }
+
+        .delete-event {
+            color: #f87171;
+            cursor: pointer;
+            font-weight: 900;
+        }
+    </style>
+</head>
+
+<body class="dark-mode professional-mode">
+    <header class="header">
+        <div class="logo-container" onclick="window.location.href='homepage.html'"><img src="images/BANNER.png"
+                class="logo-img"></div>
+    </header>
+
+    <div class="admin-calendar-container">
+        <h2 style="margin-top:0; color: #FFD200;">🗓️ MANAGE ACADEMIC CALENDAR</h2>
+        <div class="form-group">
+            <label>Event Title</label>
+            <input type="text" id="eventTitle" placeholder="e.g. Midterm Exam Week">
+        </div>
+        <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="eventDate">
+        </div>
+        <div class="form-group">
+            <label>Time Block (Optional)</label>
+            <input type="text" id="eventTime" placeholder="e.g. 07:30 AM - 09:00 AM">
+        </div>
+        <button class="save-event-btn" id="saveEvent">ADD TO CALENDAR ➕</button>
+
+        <div class="event-list-admin" id="eventListAdmin">
+            <div style="text-align:center; padding: 20px; color: #64748b;">Loading global events...</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db, auth } from "./js/config/firebase-config.js";
+        import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        import { logAction } from "./js/utils/audit-logger.js";
+
+        document.getElementById('saveEvent').onclick = async () => {
+            const title = document.getElementById('eventTitle').value;
+            const date = document.getElementById('eventDate').value;
+            const time = document.getElementById('eventTime').value;
+
+            if (!title || !date) return alert("Title and Date are required!");
+
+            await addDoc(collection(db, "academic_calendar"), {
+                subject: title,
+                date: date,
+                timeBlock: time,
+                room: "Campus-wide"
+            });
+
+            logAction("ADD_CALENDAR_EVENT", `Added global event: ${title} for ${date}`);
+            document.getElementById('eventTitle').value = "";
+            alert("Event added!");
+        };
+
+        const q = query(collection(db, "academic_calendar"), orderBy("date", "asc"));
+        onSnapshot(q, (snap) => {
+            const list = document.getElementById('eventListAdmin');
+            list.innerHTML = "";
+            snap.forEach(dSnapshot => {
+                const ev = dSnapshot.data();
+                const item = document.createElement('div');
+                item.className = 'event-admin-item';
+                item.innerHTML = `
+                    <div>
+                        <div style="font-weight:900;">${ev.subject}</div>
+                        <div style="font-size:12px; color:#94a3b8;">${ev.date} | ${ev.timeBlock || 'Whole Day'}</div>
+                    </div>
+                    <div class="delete-event" onclick="deleteEv('${dSnapshot.id}', '${ev.subject}')">DELETE ✕</div>
+                `;
+                list.appendChild(item);
+            });
+        });
+
+        window.deleteEv = async (id, title) => {
+            if (confirm(`Delete ${title}?`)) {
+                await deleteDoc(doc(db, "academic_calendar", id));
+                logAction("DELETE_CALENDAR_EVENT", `Removed global event: ${title}`);
+            }
+        };
+    </script>
+</body>
+
+</html>

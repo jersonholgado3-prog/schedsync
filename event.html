@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1280" />
+  <title>Events - SchedSync</title>
+  <script type="module" src="ui-effects.js"></script>
+  <link rel="stylesheet" href="header-styles.css" />
+  <script>
+    (function () {
+      // 1. Theme Lock 🌙
+      const theme = localStorage.getItem("theme");
+      if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+        document.documentElement.classList.add("dark");
+      }
+
+      // 2. UI Mode Lock 👔
+      const uiMode = localStorage.getItem("uiMode");
+      const userRole = localStorage.getItem("userRole");
+      const mode = uiMode || ((userRole === 'teacher' || userRole === 'admin') ? 'professional' : 'student');
+      if (mode === 'professional') {
+        document.documentElement.classList.add("professional-mode");
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="eventpopup.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class'
+    }
+  </script>
+  <link rel="stylesheet" href="event_styles.css" />
+</head>
+
+<body>
+  <div id="dg-toast-container"></div>
+  <!-- ================= CREATE EVENT MODAL ================= -->
+  <div id="createEventModal" style="display: none;">
+    <div id="react-modal-content" style="width: 100%;"></div>
+  </div>
+
+
+
+  <div class="container">
+    <aside class="sidebar">
+      <div class="sidebar-header" onclick="window.location.href='homepage.html'">
+        <img src="images/LOGO.png" alt="Logo">
+      </div>
+      <nav class="sidebar-menu">
+        <a href="homepage.html" class="sidebar-link">
+          <img src="images/home.png" alt="Home">
+          <span>Home</span>
+        </a>
+        <a href="newschedule.html" class="sidebar-link">
+          <img src="images/ADD_SCHED.png" alt="New Schedule">
+          <span>New Schedule</span>
+        </a>
+        <a href="myschedule.html" class="sidebar-link">
+          <img src="images/SCHED.png" alt="My Schedule">
+          <span>My Schedule</span>
+        </a>
+        <a href="facultypage.html" class="sidebar-link">
+          <img src="images/FACULTY.png" alt="Faculty">
+          <span>Faculty</span>
+        </a>
+        <a href="campuspage.html" class="sidebar-link">
+          <img src="images/CAMPUS_ONE.png" alt="Campus">
+          <span>Campus</span>
+        </a>
+        <a href="event.html" class="sidebar-link active">
+          <img src="images/EVENT_MODE.png" alt="Events">
+          <span>Events</span>
+        </a>
+      </nav>
+    </aside>
+
+    <div class="main-content-wrapper">
+      <!-- HEADER -->
+      <header class="header">
+        <div class="left-header">
+          <div class="hamburger-btn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </div>
+          <div class="logo-container" onclick="window.location.href='homepage.html'">
+            <img src="images/BANNER.png" class="logo-img" alt="SchedSync Logo"
+              style="max-height: 100%; width: 100%; object-fit: contain;">
+          </div>
+          <div class="search-wrapper">
+            <img src="images/SEARCH.png" class="search-icon" alt="Search">
+            <input type="text" class="search-button" placeholder="Search events" aria-label="Search">
+          </div>
+        </div>
+
+        <div class="page-title">Events</div>
+
+        <div class="user-section">
+
+          <div class="notification-icon-wrapper" onclick="window.openGameNotifications()">
+            <img src="images/BELL.png" alt="Notifications">
+          </div>
+          <div class="user-profile-btn" id="userProfile">
+            <span class="burger-icon">☰</span>
+            <div class="user-name">User</div>
+            <div class="user-avatar" id="headerAvatar">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                stroke="currentColor" style="width: 32px; height: 32px;">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M15.75 6.75a3.75 3.75 0 1 1 -7.5 0 3.75 3.75 0 0 1 7.5 0zM4.5 20.25a8.25 8.25 0 0 1 15 0" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="main-layout">
+        <div class="content-area p-8">
+          <div class="event-list-header">
+            <div class="col-from">From</div>
+            <div class="col-title">Event Title</div>
+            <div class="col-content">Content</div>
+            <div class="col-date">Date Posted</div>
+          </div>
+
+          <div id="eventsContainer"></div>
+
+          <div class="bottom-controls">
+            <button class="load-more-btn">Load More</button>
+
+            <div class="create-event-group" id="openCreateEvent">
+              <div class="create-event-plus-circle"><span>+</span></div>
+              <span>Create new Event</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- React Scripts -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script type="module" src="role-restriction.js"></script>
+  <script type="module" src="event.js"></script>
+  <script type="module" src="eventmodal.js"></script>
+
+  <!-- Modal Control Script -->
+  <script type="module">
+    const modal = document.getElementById('createEventModal');
+    const openBtn = document.getElementById('openCreateEvent');
+    const closeBtn = modal.querySelector('.close-btn');
+
+    openBtn.addEventListener('click', () => {
+      console.log("Create Event button clicked");
+      if (typeof window.renderEventModal === 'function') {
+        modal.style.display = 'flex';
+        window.renderEventModal();
+      } else {
+        console.error("renderEventModal is not defined. Script might not be loaded yet.");
+        if (window.showToast) {
+          window.showToast("The event system is still loading. Please try again in a moment.", "info");
+        } else {
+          alert("The event system is still loading. Please try again in a moment or refresh the page.");
+        }
+      }
+    });
+
+    closeBtn.addEventListener('click', () => {
+      modal.style.display = 'none';
+      if (ReactDOM && ReactDOM.unmountComponentAtNode) {
+        ReactDOM.unmountComponentAtNode(document.getElementById('react-modal-content'));
+      } else if (document.getElementById('react-modal-content')._reactRootContainer) {
+        // React 18 uses root.unmount() which is handled inside eventmodal.js usually, 
+        // but we can just hide it. The unmount logic is inside the modal component's close handler mostly.
+      }
+    });
+
+    window.addEventListener('click', e => {
+      if (e.target === modal) {
+        modal.style.display = 'none';
+        if (ReactDOM && ReactDOM.unmountComponentAtNode) {
+          ReactDOM.unmountComponentAtNode(document.getElementById('react-modal-content'));
+        }
+      }
+    });
+
+    import { initUserProfile } from "./userprofile.js";
+    document.addEventListener("DOMContentLoaded", () => {
+      initUserProfile("#userProfile");
+    });
+
+  </script>
+  <div class="mobile-overlay"></div>
+  <script type="module" src="realtime-notifications.js"></script>
+  <script type="module" src="ui-effects.js"></script>
+</body>
+
+</html>

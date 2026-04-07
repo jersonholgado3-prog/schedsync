@@ -1,0 +1,195 @@
+/* Reset and Base Styles */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    /* Background matches the light green/beige tone in the image */
+    background: #f4f6f8;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* Using min-height instead of fixed height for better mobile behavior */
+    min-height: 100vh;
+    margin: 0;
+    flex-direction: column;
+    /* Allows the heading to be above the card */
+}
+
+/* Heading Style */
+.page-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: black;
+    margin-bottom: 1.5rem;
+    /* Space between title and box */
+    /* Matches the look of the "Reset Password" text outside the box */
+}
+
+.forgot-container {
+    background: #fff;
+    padding: 3rem 2.5rem;
+    border-radius: 30px;
+    border: black 3px solid;
+    width: 440px;
+    box-shadow: 8px 8px 0px black;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.forgot-container:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 10px 10px 0px black;
+}
+
+/* Heading inside the container (if preferred, currently outside) */
+.forgot-container h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: black;
+    margin-bottom: 1.5rem;
+}
+
+/* Label styling */
+label {
+    display: block;
+    text-align: left;
+    margin-bottom: 0.5rem;
+    color: black;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+/* Input Styling to match the rounded/bordered look */
+input[type="email"] {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.5rem;
+    border: 3px solid black;
+    border-radius: 20px;
+    font-size: 1rem;
+    outline: none;
+    transition: all 0.2s;
+    box-shadow: 3px 3px 0px black;
+}
+
+/* Button Styling to match the rounded/colored look */
+button {
+    width: 100%;
+    padding: 0.75rem;
+    background: #B0C6F8;
+    color: black;
+    border: 3px solid black;
+    border-radius: 30px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 0.5rem;
+    box-shadow: 4px 4px 0px black;
+}
+
+button:hover {
+    background: #38bdf8;
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px black;
+}
+
+/* Back Link Styling */
+.back-link {
+    display: block;
+    text-align: center;
+    margin-top: 1.5rem;
+    color: black;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: color 0.2s;
+}
+
+.back-link:hover {
+    color: #0078d4;
+}
+
+/* Universal Mobile Enhancements 📱✨ */
+@media (max-width: 768px) {
+    .container {
+        padding: 1.5rem !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .login-container,
+    .signup-form-container,
+    .info-container,
+    .welcome-card {
+        padding: 2rem 1.25rem !important;
+        margin-top: 1.5rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        border-radius: 24px !important;
+        box-shadow: 6px 6px 0px black !important;
+    }
+
+    h1,
+    h2,
+    .form-title {
+        font-size: 1.75rem !important;
+        text-align: center !important;
+    }
+
+    .form-subtitle,
+    .subtitle {
+        font-size: 0.95rem !important;
+        margin-bottom: 1.5rem !important;
+    }
+
+    .form-group,
+    form {
+        max-width: 100% !important;
+    }
+
+    .form-label,
+    label {
+        font-size: 1.1rem !important;
+        margin-left: 0.5rem !important;
+    }
+
+    .form-input,
+    input {
+        height: 55px !important;
+        border-radius: 15px !important;
+    }
+
+    .signup-button,
+    button[type="submit"],
+    .action-btn {
+        width: 100% !important;
+        padding: 0.875rem 1.5rem !important;
+        font-size: 1.25rem !important;
+        border-radius: 20px !important;
+    }
+
+    .header {
+        position: relative !important;
+        top: 0 !important;
+        left: 0 !important;
+        margin-bottom: 1rem !important;
+        width: 100% !important;
+        justify-content: center !important;
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    .logo-section,
+    .header-logo {
+        transform: scale(0.9);
+    }
+
+    /* Sync-1 specific */
+    .sync-container {
+        flex-direction: column !important;
+        padding: 1rem !important;
+    }
+}

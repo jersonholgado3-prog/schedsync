@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<script>
+  (function () {
+    // 1. Theme Lock 🌙
+    // 1. Theme Lock 🌙 - DISABLED FOR AUTH PAGES
+    // const theme = localStorage.getItem("theme");
+    // if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+    //   document.documentElement.classList.add("dark");
+    // }
+
+    // 2. UI Mode Lock 👔
+    const uiMode = localStorage.getItem("uiMode");
+    const userRole = localStorage.getItem("userRole");
+    const mode = uiMode || ((userRole === 'teacher' || userRole === 'admin') ? 'professional' : 'student');
+    if (mode === 'professional') {
+      document.documentElement.classList.add("professional-mode");
+    }
+  })();
+</script>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1280" />
+  <title>Welcome to SchedSync</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="sync-1_styles.css" />
+</head>
+
+<body class="landing-page">
+  <div id="atmospheric-bg">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+  </div>
+  <header>
+    <img src="images/LOGO.png" alt="SchedSync Logo" class="header-logo">
+    <span class="brand-name">SchedSync</span>
+  </header>
+
+  <section class="hero-container">
+    <div class="hero-text">
+      <h1>Welcome to SchedSync</h1>
+      <p>
+        SchedSync is a web-based scheduling management system designed to streamline class, teacher, room,
+        and event scheduling within the institution. It helps administrators create conflict-free timetables while
+        allowing teachers and students to access real-time schedule updates anytime, anywhere.
+      </p>
+    </div>
+
+    <div class="login-card">
+      <div class="card-header">
+        <img src="images/LOGO.png" alt="Logo" style="height: 25px;">
+        <span>SchedSync</span>
+      </div>
+      <div class="card-body">
+        <h2>Login now</h2>
+
+        <div id="notification" class="notification"></div>
+
+        <form id="loginForm" autocomplete="off">
+          <div class="form-group">
+            <label for="username">Email or Username</label>
+            <input type="text" id="username" class="form-input" placeholder="Enter your credentials" autocomplete="off"
+              required>
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <div class="password-wrapper">
+              <input type="password" id="password" class="form-input" placeholder="••••••••" required>
+              <div class="password-toggle" id="togglePassword">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                  class="eye-icon">
+                  <path
+                    d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" id="studentLoginBtn" class="btn btn-login">Log In</button>
+        </form>
+
+        <button type="button" id="adminLoginBtn" class="btn btn-admin">Admin Login</button>
+
+        <p class="signup-text">
+          Don't have an account? <a href="signup.html" class="signup-link">Sign Up</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="features-section">
+    <div class="feature-card">
+      <div class="feature-icon">
+        <img src="images/MAP.png" alt="Icon">
+      </div>
+      <h3>Efficient Resource Management</h3>
+      <p>Manage teachers, classrooms, and time slots in one centralized system. Assign subjects and rooms efficiently
+        with better visibility of availability.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">
+        <img src="images/PROFILE.png" alt="Icon">
+      </div>
+      <h3>Real-Time Student Access</h3>
+      <p>Students can view updated schedules instantly once published—ensuring they stay informed about class times,
+        room assignments, and changes.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">
+        <img src="images/BELL.png" alt="Icon">
+      </div>
+      <h3>Conflict Detection & Resolution</h3>
+      <p>SchedSync identifies scheduling conflicts before finalizing timetables, reducing errors and improving
+        operational efficiency.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">
+        <img src="images/ADD_SCHED.png" alt="Icon">
+      </div>
+      <h3>Organized Administrative Control</h3>
+      <p>Administrators have full control over creating, editing, and publishing schedules while maintaining a
+        structured and secure system.</p>
+    </div>
+  </section>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import {
+      getAuth,
+      signInWithEmailAndPassword
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+    // ✅ Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyBrtJocBlfkPciYO7f8-7FwREE1tSF3VXU",
+      authDomain: "schedsync-e60d0.firebaseapp.com",
+      projectId: "schedsync-e60d0",
+      storageBucket: "schedsync-e60d0.firebasestorage.app",
+      messagingSenderId: "334140247575",
+      appId: "1:334140247575:web:930b0c12e024e4defc5652",
+      measurementId: "G-S59GL1W5Y2"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const notif = document.getElementById('notification');
+    const showNotification = (message, type = 'success') => {
+      if (!notif) return;
+      notif.textContent = message;
+      notif.className = `notification ${type}`;
+      notif.style.display = 'block';
+    };
+
+
+    const loginForm = document.getElementById('loginForm');
+    const adminLoginBtn = document.getElementById('adminLoginBtn');
+
+    // Handle Admin Login button click
+    if (adminLoginBtn && loginForm) {
+      adminLoginBtn.addEventListener('click', () => {
+        // Just trigger the form submit ⚓
+        loginForm.dispatchEvent(new Event('submit'));
+      });
+    }
+
+    if (loginForm) {
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const userInput = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+
+        if (!userInput || !password) {
+          showNotification('Please fill in both fields.', 'error');
+          return;
+        }
+
+        let email = userInput;
+
+        if (!userInput.includes('@')) {
+          try {
+            const q = query(collection(db, "users"), where("username", "==", userInput));
+            const querySnapshot = await getDocs(q);
+
+            if (querySnapshot.empty) {
+              showNotification('No user found with that username.', 'error');
+              return;
+            }
+            email = querySnapshot.docs[0].data().email;
+          } catch (error) {
+            showNotification('Could not verify username.', 'error');
+            return;
+          }
+        }
+
+        try {
+          const userCredential = await signInWithEmailAndPassword(auth, email, password);
+          const user = userCredential.user;
+
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          let targetUrl = 'homepage.html';
+
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            localStorage.setItem('userRole', userData.role || 'student');
+            if (userData.section) localStorage.setItem('userSection', userData.section);
+
+            // If it's a teacher and they haven't finished setup, go to teacherlogin ⚓
+            if (userData.role === 'teacher' && !userData.isProfileComplete) {
+              targetUrl = 'teacherlogin.html';
+            }
+          } else {
+            localStorage.setItem('userRole', 'student');
+          }
+
+          showNotification('✅ Login successful! Redirecting...', 'success');
+          setTimeout(() => {
+            window.location.href = targetUrl;
+          }, 1500);
+
+        } catch (error) {
+          let msg = 'Login failed. Please check your credentials.';
+          if (error.code === 'auth/wrong-password') msg = 'Incorrect password.';
+          if (error.code === 'auth/user-not-found') msg = 'No account found.';
+          showNotification(msg, 'error');
+        }
+      });
+    }
+
+    // Auto-redirect if already logged in and visiting this page ⚓
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        // If we want to force them to login, we can sign them out ⚓
+        // But let's only do it if they haven't just logged in successfully
+        if (!sessionStorage.getItem('justLoggedIn')) {
+          // We'll leave it for now but the user says it's auto-logging.
+          // Actually, let's just SIGN OUT to be sure 🕊️⚓
+          // await auth.signOut(); 
+        }
+      }
+    });
+
+    // FORCE SIGN OUT ON LOAD to prevent "auto-log" 🕊️⚓
+    // This ensures that hitting the landing page always requires a fresh login.
+    const forceFreshLogin = async () => {
+      try {
+        await auth.signOut();
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('userSection');
+        console.log("Logged out for fresh session ⚓");
+      } catch (e) {
+        console.error("Sign out error:", e);
+      }
+    };
+    forceFreshLogin();
+  </script>
+  <script type="module" src="ui-effects.js"></script>
+</body>
+
+</html>

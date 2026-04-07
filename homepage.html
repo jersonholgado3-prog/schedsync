@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1280" />
+  <script>
+    (function () {
+      // 1. Theme Lock 🌙
+      const theme = localStorage.getItem("theme");
+      if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+        document.documentElement.classList.add("dark");
+      }
+
+      // 2. UI Mode Lock 👔
+      const uiMode = localStorage.getItem("uiMode");
+      const userRole = localStorage.getItem("userRole");
+      const mode = uiMode || ((userRole === 'teacher' || userRole === 'admin') ? 'professional' : 'student');
+      if (mode === 'professional') {
+        document.documentElement.classList.add("professional-mode");
+      }
+    })();
+  </script>
+  <script type="module" src="role-restriction.js"></script>
+  <script type="module" src="homepage.js"></script>
+  <script type="module" src="ui-effects.js"></script>
+
+  <link rel="stylesheet" href="header-styles.css" />
+  <title>SchedSync - Homepage</title>
+  <link rel="stylesheet" href="homepage.css" />
+</head>
+
+<body>
+
+  <div class="container">
+    <aside class="sidebar">
+      <div class="sidebar-header" onclick="window.location.href='homepage.html'">
+        <img src="images/LOGO.png" class="logo-img">
+      </div>
+      <nav class="sidebar-menu">
+        <a href="homepage.html" class="sidebar-link active">
+          <img src="images/home.png" alt="Home">
+          <span>Home</span>
+        </a>
+        <a href="newschedule.html" class="sidebar-link">
+          <img src="images/ADD_SCHED.png" alt="New Schedule">
+          <span>New Schedule</span>
+        </a>
+        <a href="myschedule.html" class="sidebar-link">
+          <img src="images/SCHED.png" alt="Schedules">
+          <span>Schedules</span>
+        </a>
+        <a href="facultypage.html" class="sidebar-link">
+          <img src="images/FACULTY.png" alt="Faculty">
+          <span>Faculty</span>
+        </a>
+        <a href="campuspage.html" class="sidebar-link">
+          <img src="images/CAMPUS_ONE.png" alt="Campus">
+          <span>Campus</span>
+        </a>
+        <a href="event.html" class="sidebar-link">
+          <img src="images/EVENT_MODE.png" alt="Events">
+          <span>Events</span>
+        </a>
+      </nav>
+    </aside>
+
+    <div class="main-content-wrapper">
+      <header class="header">
+        <div class="left-header">
+          <div class="hamburger-btn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </div>
+          <div class="logo-container" onclick="window.location.href='homepage.html'">
+            <img src="images/BANNER.png" class="logo-img" alt="SchedSync Logo"
+              style="max-height: 100%; width: 100%; object-fit: contain;">
+          </div>
+          <div class="search-wrapper">
+            <img src="images/SEARCH.png" class="search-icon" alt="Search">
+            <input type="text" class="search-button" placeholder="Search pages" aria-label="Search">
+          </div>
+        </div>
+
+        <div class="greeting" id="greeting">Good Day, (Name)!</div>
+
+        <div class="user-section">
+
+          <div class="notification-icon-wrapper" onclick="window.openGameNotifications()">
+            <img src="images/BELL.png" alt="Notifications">
+          </div>
+          <div class="user-profile-btn" id="userProfile">
+            <span class="burger-icon">☰</span>
+            <div class="user-name">User</div>
+            <div class="user-avatar" id="headerAvatar">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                stroke="currentColor" style="width: 32px; height: 32px;">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M15.75 6.75a3.75 3.75 0 1 1 -7.5 0 3.75 3.75 0 0 1 7.5 0zM4.5 20.25a8.25 8.25 0 0 1 15 0" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Top tabs removed ⚓ -->
+
+      <!-- Duplicate top banner removed ⚓ -->
+
+      <main class="dashboard-container">
+
+        <div class="main-dashboard-grid">
+          <!-- WELCOME HERO (Card Style per Screenshot) 🎌⚓ -->
+          <div class="welcome-hero">
+            <img src="images/SCHEDSYNC_TITLE_DYNAMIC.png" class="welcome-title-img" alt="Welcome to SchedSync">
+          </div>
+
+          <!-- ANNOUNCEMENT CAROUSEL (Compact Blue Theme) 🎠⚓ -->
+          <div class="hero-carousel-container" id="heroCarousel" style="display: none;">
+            <div class="carousel-track" id="carouselTrack">
+              <!-- Dynamic Slides Inject Here -->
+            </div>
+            <!-- Progress Indicators -->
+            <div class="carousel-indicators" id="carouselIndicators"></div>
+          </div>
+        </div>
+
+        <style>
+          .welcome-hero {
+            background-color: #ffffff;
+            background-image: radial-gradient(#64748b 1px, transparent 1px);
+            background-size: 20px 20px;
+            /* Dot Pattern / Mesh look 🕸️ */
+            border: 2px solid #64748b;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 600px;
+            /* Requested size ⚓ */
+            /* Center centered look */
+          }
+
+          .welcome-title-img {
+            max-width: 950px;
+            /* Proportional expansion ⚓ */
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+          }
+
+          .hero-carousel-container {
+            height: 260px !important;
+            /* EXACT 260px as requested 📏 */
+            min-height: 260px !important;
+            max-height: 260px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+            position: relative;
+            width: 100%;
+            background: #4663a0; /* Target custom blue color */
+            border: 3px solid #5a7bbb !important; /* Lighter border for that blue */
+            border-radius: 24px;
+            margin-bottom: 25px;
+            cursor: grab;
+          }
+
+          #draftWidget {
+            height: 380px !important;
+            /* Slightly taller for more 'dating' 🦾 */
+            min-height: 380px !important;
+            max-height: 380px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+          }
+
+          /* ABSOLUTE GLOBAL SHADOW KILL IN PRO-MODE 👔 🧤 */
+          html.professional-mode,
+          html.professional-mode *,
+          html.professional-mode *::before,
+          html.professional-mode *::after {
+            box-shadow: none !important;
+            text-shadow: none !important;
+            animation: none !important;
+            filter: none !important;
+            -webkit-filter: none !important;
+            transition: none !important;
+            transform: none !important;
+            outline: none !important;
+          }
+
+          /* Restore sidebar icon visibility ⚓ */
+          .professional-mode .sidebar-link img {
+            filter: brightness(0) invert(1) !important;
+          }
+
+          .professional-mode .sidebar-link.active img {
+            filter: none !important;
+          }
+
+          /* FORCE UNIFORM 'WELCOME' STYLE BORDERS IN PRO-MODE 🧤 */
+          .professional-mode .welcome-hero,
+          .professional-mode #draftWidget,
+          .professional-mode .widget-card,
+          .professional-mode .draft-item,
+          .professional-mode .announcement-item,
+          .professional-mode .draft-icon-box,
+          .professional-mode .announcement-icon {
+            border: 1.5px solid #64748b !important;
+            border-radius: 12px !important;
+            background: #ffffff !important;
+            box-shadow: none !important;
+            transform: none !important;
+            transition: none !important;
+            animation: none !important;
+          }
+
+          /* STICKY BLUE CAROUSEL FOR PRO-MODE 👔 🎡 */
+          .professional-mode .hero-carousel-container {
+            background: #4663a0 !important;
+            border: 1.5px solid #5a7bbb !important;
+            border-radius: 12px !important;
+            box-shadow: none !important;
+          }
+
+          .dark.professional-mode .welcome-hero,
+          .dark.professional-mode #draftWidget,
+          .dark.professional-mode .widget-card,
+          .dark.professional-mode .draft-item,
+          .dark.professional-mode .announcement-item,
+          .dark.professional-mode .draft-icon-box,
+          .dark.professional-mode .announcement-icon {
+            border-color: #334155 !important;
+            background: #0f172a !important;
+          }
+
+          .dark.professional-mode .hero-carousel-container {
+            background: #4663a0 !important; /* Target custom blue color */
+            border-color: #5a7bbb !important;
+          }
+
+          /* Carousel Visibility Overrides for 👔 PRO-MODE (REVERSED TO WHITE FOR BLUE BG) */
+          .professional-mode .slide-title,
+          .professional-mode .slide-msg {
+            color: #ffffff !important;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5) !important;
+          }
+
+          .professional-mode .indicator.active {
+            background: #FFD200 !important; /* Reverting to energetic yellow */
+            box-shadow: none !important;
+          }
+
+          /* UNIFORM 'ANGAS' DESIGN: Student Mode Only 👨‍🎓 (Default) */
+          html:not(.professional-mode) .hero-carousel-container,
+          html:not(.professional-mode) #draftWidget,
+          html:not(.professional-mode) .widget-card {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+            border: 2px solid #64748b !important;
+            border-radius: 24px !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          }
+
+          html.dark:not(.professional-mode) .hero-carousel-container,
+          html.dark:not(.professional-mode) #draftWidget,
+          html.dark:not(.professional-mode) .widget-card {
+            border-color: #334155 !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2) !important;
+          }
+
+          html.dark:not(.professional-mode) .hero-carousel-container {
+            background: #4663a0 !important; /* Target custom blue color */
+            border-color: #5a7bbb !important;
+          }
+
+          /* Subtle Mesh Pattern 🕸️ */
+          .hero-carousel-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+            pointer-events: none;
+            opacity: 0.8;
+            z-index: 1;
+          }
+
+          .carousel-track {
+            display: flex;
+            height: 100% !important;
+            flex: 1 !important;
+            transition: transform 0.65s cubic-bezier(0.65, 0, 0.35, 1);
+          }
+
+          .carousel-slide {
+            min-width: 100%;
+            height: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            align-items: center !important;
+            padding: 10px 40px 55px 40px !important;
+            /* Calibrated for 260px 🛡️ */
+            text-align: center;
+            position: relative;
+            z-index: 5;
+            gap: 6px !important;
+          }
+
+          .slide-tag {
+            padding: 4px 16px;
+            border-radius: 50px;
+            font-size: 9px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            backdrop-filter: blur(12px);
+            color: #ffffff !important;
+            margin-bottom: 2px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            flex-shrink: 0;
+          }
+
+          .slide-title {
+            font-size: 26px !important;
+            font-weight: 900;
+            color: #ffffff !important;
+            letter-spacing: -0.01em;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.9);
+            line-height: 1.1;
+            max-width: 95%;
+            margin: 0 !important;
+          }
+
+          .slide-msg {
+            font-size: 15px !important;
+            color: rgba(255, 255, 255, 0.9) !important;
+            line-height: 1.4;
+            max-width: 650px !important;
+            text-wrap: balance;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+            margin: 0 !important;
+          }
+
+          .carousel-indicators {
+            position: absolute;
+            bottom: 25px !important;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            z-index: 10;
+          }
+
+          .indicator {
+            width: 12px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+          }
+
+          .indicator.active {
+            width: 40px;
+            background: #FFD200;
+            box-shadow: 0 0 25px rgba(255, 210, 0, 0.6);
+          }
+
+          /* DEFINITIVE 'ANGAS' DRAFTS WIDGET Restored 🔥 */
+          #draftWidget {
+            background: #ffffff !important;
+            padding: 1.8rem !important;
+            position: relative;
+            overflow: hidden !important;
+            display: flex;
+            flex-direction: column;
+          }
+
+          .dark #draftWidget {
+            background: #1e293b !important;
+          }
+
+          @keyframes neonPulse {
+            0% {
+              border-color: #cbd5e1;
+              box-shadow: 6px 6px 0px #000;
+            }
+
+            50% {
+              border-color: #ffffff;
+              box-shadow: 6px 6px 0px #000, 0 0 15px rgba(255, 255, 255, 0.2);
+            }
+
+            100% {
+              border-color: #cbd5e1;
+              box-shadow: 6px 6px 0px #000;
+            }
+          }
+
+          html:not(.professional-mode).dark #draftWidget {
+            animation: neonPulse 3s infinite ease-in-out;
+          }
+
+          #draftWidget::before {
+            content: 'DRAFT';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 60px;
+            font-weight: 950;
+            color: rgba(0, 0, 0, 0.03);
+            pointer-events: none;
+            z-index: 0;
+            letter-spacing: -2px;
+          }
+
+          .dark #draftWidget::before {
+            color: rgba(255, 210, 0, 0.03);
+          }
+
+          #drafts-list {
+            position: relative;
+            z-index: 1;
+            margin-top: 15px;
+            flex: 1 !important;
+            /* Restore expansion behavior 🦾 */
+            height: 100% !important;
+            overflow-y: auto;
+            padding-right: 8px;
+          }
+
+          #draftWidget .widget-title,
+          .widget-card .widget-title {
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #002044;
+            font-weight: 1000 !important;
+          }
+
+          .dark #draftWidget .widget-title,
+          .dark .widget-card .widget-title {
+             color: #FFD200;
+          }
+
+          /* 🤝 UNIFORM ITEM DESIGN (Drafts = Announcements = Events) - NO GRADIENTS IN PRO MODE 👔 */
+          .professional-mode .widget-title,
+          .professional-mode #draftWidget .widget-title,
+          .professional-mode .widget-card .widget-title {
+            background: none !important;
+            -webkit-background-clip: border-box !important;
+            background-clip: border-box !important;
+            -webkit-text-fill-color: initial !important;
+            color: #0f172a !important;
+            text-shadow: none !important;
+          }
+
+          .dark.professional-mode .widget-title,
+          .dark.professional-mode #draftWidget .widget-title,
+          .dark.professional-mode .widget-card .widget-title {
+            color: white !important;
+          }
+
+          .draft-item,
+          .announcement-item {
+            display: flex !important;
+            gap: 1.25rem !important;
+            padding: 1.25rem !important;
+            border: 1.5px solid #64748b !important;
+            border-radius: 20px !important;
+            background: #ffffff !important;
+            margin-bottom: 1rem !important;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+            min-height: 100px;
+          }
+
+          .dark .draft-item,
+          .dark .announcement-item {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+            /* Silver/White border for Dark Mode 👁️⚡ */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important;
+          }
+
+          .draft-item:hover,
+          .announcement-item:hover {
+            transform: translateY(-4px) !important;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+            border-color: #64748b !important;
+            /* Maintaining visibility 🔥 */
+          }
+
+          .dark .draft-item:hover,
+          .dark .announcement-item:hover {
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5) !important;
+            border-color: #FFD200 !important;
+          }
+
+          /* EXPLICIT CHECKED STATE FOR ITEMS 🧤 */
+          .draft-item.checked,
+          .announcement-item.checked {
+            background-color: #dbeafe !important;
+            border: 2px solid #2563eb !important;
+            box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2) !important;
+          }
+
+          .dark .draft-item.checked,
+          .dark .announcement-item.checked {
+            background-color: rgba(96, 165, 250, 0.15) !important;
+            border-color: #60a5fa !important;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4) !important;
+          }
+
+          /* FORCE CIRCLE CHECKBOX TO BE CHECKED WHEN ITEM IS CHECKED 🧤 */
+          .announcement-item.checked .circle-checkbox,
+          #selectAllAnnouncements.checked {
+            background-color: #2563eb !important;
+            border-color: black !important;
+          }
+          .announcement-item.checked .circle-checkbox::after,
+          #selectAllAnnouncements.checked::after {
+            content: "✓";
+            color: white !important;
+            font-size: 13px;
+            font-weight: 900;
+          }
+          .dark .announcement-item.checked .circle-checkbox,
+          .dark #selectAllAnnouncements.checked {
+            background-color: #60a5fa !important;
+            border-color: white !important;
+          }
+
+          .draft-icon-box,
+          .announcement-icon {
+            width: 50px !important;
+            height: 50px !important;
+            background: #f1f5f9 !important;
+            border: 1.5px solid #64748b !important;
+            border-radius: 14px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex-shrink: 0;
+            font-size: 1.5rem;
+          }
+
+          .dark .draft-icon-box,
+          .dark .announcement-icon {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border-color: #334155 !important;
+          }
+
+          .draft-content,
+          .announcement-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 0;
+          }
+
+          .draft-title,
+          .announcement-title {
+            font-size: 1.1rem !important;
+            font-weight: 1000 !important;
+            color: #0f172a !important;
+            margin: 0 !important;
+            text-transform: none !important;
+          }
+
+          .dark .draft-title,
+          .dark .announcement-title {
+            color: white !important;
+          }
+
+          .draft-msg,
+          .announcement-msg {
+            font-size: 0.9rem !important;
+            color: #64748b !important;
+            line-height: 1.4;
+            margin: 0 !important;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+          }
+
+          .dark .draft-msg,
+          .dark .announcement-msg {
+            color: #94a3b8 !important;
+          }
+
+          .draft-meta,
+          .announcement-meta {
+            font-size: 0.75rem !important;
+            font-weight: 800 !important;
+            color: #94a3b8 !important;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            margin-top: 4px;
+          }
+
+          .dark .draft-meta,
+          .dark .announcement-meta {
+            color: #64748b !important;
+          }
+
+          html:not(.professional-mode) .draft-item,
+          html:not(.professional-mode) .announcement-item {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+          }
+
+          html:not(.professional-mode) .draft-item:hover,
+          html:not(.professional-mode) .announcement-item:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+          }
+
+          html.dark:not(.professional-mode) .draft-item:hover,
+          html.dark:not(.professional-mode) .announcement-item:hover {
+            border-color: #FFD200 !important;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4) !important;
+          }
+
+          /* SCROLLABLE WIDGET FIX 🦾 */
+          #announcements-list,
+          #drafts-list {
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 5px 10px 5px 5px;
+          }
+
+          /* Custom Scrollbar */
+          #announcements-list::-webkit-scrollbar,
+          #drafts-list::-webkit-scrollbar {
+            width: 6px;
+          }
+
+          #announcements-list::-webkit-scrollbar-thumb,
+          #drafts-list::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+          }
+
+          .dark #announcements-list::-webkit-scrollbar-thumb,
+          .dark #drafts-list::-webkit-scrollbar-thumb {
+            background: #334155;
+          }
+
+          /* SCROLLABLE WIDGET FIX 🦾 */
+          #announcements-list {
+            max-height: 500px;
+            overflow-y: auto;
+            padding-right: 5px;
+          }
+
+          #announcements-list::-webkit-scrollbar {
+            width: 6px;
+          }
+
+          #announcements-list::-webkit-scrollbar-track {
+            background: transparent;
+          }
+
+          #announcements-list::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 10px;
+          }
+        </style>
+
+        <aside class="dashboard-side">
+          <!-- Announcements Widget -->
+          <div class="widget-card">
+            <div class="widget-header">
+              <div class="widget-title-group">
+                <div style="position: relative; display: flex; align-items: center;">
+                  <div class="circle-checkbox" id="selectAllAnnouncements" title="Select All" style="display: none;">
+                  </div>
+                  <img src="images/BELL.png" alt="Announcements">
+                </div>
+                <h2 class="widget-title">Announcements</h2>
+              </div>
+              <div class="widget-action-btns" id="announcement-actions">
+                <div class="widget-action-btn-icon" id="deleteSelectedAnnouncements"
+                  title="Delete Selected Notifications 🗑️">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 6h18"></path>
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="announcement-list" id="announcements-list">
+              <div class="widget-empty">Loading announcements...</div>
+            </div>
+          </div>
+
+          <!-- Events Calendar Widget -->
+          <div class="widget-card">
+            <div class="widget-header">
+              <div class="widget-title-group">
+                <img src="images/EVENT_MODE.png" alt="Events" style="width: 24px; height: 24px;">
+                <h2 class="widget-title">Events Calendar</h2>
+              </div>
+            </div>
+
+            <!-- Calendar UI 📅 -->
+            <div class="calendar-widget-container">
+              <div class="calendar-header">
+                <button class="cal-nav-btn" id="prevMonth">&lt;</button>
+                <div class="current-month-year" id="currentMonthYear">Month Year</div>
+                <button class="cal-nav-btn" id="nextMonth">&gt;</button>
+              </div>
+              <div class="calendar-days-grid" id="calendarDays">
+                <!-- Days will be injected here -->
+              </div>
+            </div>
+
+            <div class="event-list-header">
+              <span id="selected-date-label">Today's Events</span>
+            </div>
+            <div id="events-list">
+              <div class="widget-empty">Select a date to view events...</div>
+            </div>
+          </div>
+
+          <!-- Draft Schedules Widget -->
+          <div class="widget-card" id="draftWidget">
+            <div class="widget-header">
+              <div class="widget-title-group">
+                <img src="images/SCHED.png" alt="Drafts">
+                <h2 class="widget-title">Draft Schedules</h2>
+              </div>
+              <button class="add-btn" onclick="window.location.href='newschedule.html'">+</button>
+            </div>
+            <div id="drafts-list">
+              <div class="widget-empty">Loading drafts...</div>
+            </div>
+          </div>
+        </aside>
+      </main>
+    </div>
+    <script type="module" src="realtime-notifications.js"></script>
+    <script type="module" src="ui-effects.js"></script>
+</body>
+
+</html>

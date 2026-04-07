@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1280" />
+  <title>Faculty Members - SchedSync</title>
+  <script type="module" src="ui-effects.js"></script>
+  <link rel="stylesheet" href="header-styles.css" />
+  <script>
+    (function () {
+      // 1. Theme Lock 🌙
+      const theme = localStorage.getItem("theme");
+      if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+        document.documentElement.classList.add("dark");
+      }
+
+      // 2. UI Mode Lock 👔
+      const uiMode = localStorage.getItem("uiMode");
+      const userRole = localStorage.getItem("userRole");
+      const mode = uiMode || ((userRole === 'teacher' || userRole === 'admin') ? 'professional' : 'student');
+      if (mode === 'professional') {
+        document.documentElement.classList.add("professional-mode");
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="facultypage_styles.css" />
+</head>
+
+<body>
+  <div class="container">
+    <aside class="sidebar">
+      <div class="sidebar-header" onclick="window.location.href='homepage.html'">
+        <img src="images/LOGO.png" alt="Logo">
+      </div>
+      <nav class="sidebar-menu">
+        <a href="homepage.html" class="sidebar-link">
+          <img src="images/home.png" alt="Home">
+          <span>Home</span>
+        </a>
+        <a href="newschedule.html" class="sidebar-link">
+          <img src="images/ADD_SCHED.png" alt="New Schedule">
+          <span>New Schedule</span>
+        </a>
+        <a href="myschedule.html" class="sidebar-link">
+          <img src="images/SCHED.png" alt="My Schedule">
+          <span>My Schedule</span>
+        </a>
+        <a href="facultypage.html" class="sidebar-link active">
+          <img src="images/FACULTY.png" alt="Faculty">
+          <span>Faculty</span>
+        </a>
+        <a href="campuspage.html" class="sidebar-link">
+          <img src="images/CAMPUS_ONE.png" alt="Campus">
+          <span>Campus</span>
+        </a>
+        <a href="event.html" class="sidebar-link">
+          <img src="images/EVENT_MODE.png" alt="Events">
+          <span>Events</span>
+        </a>
+      </nav>
+    </aside>
+
+    <div class="main-content-wrapper">
+      <header class="header">
+        <div class="left-header">
+          <div class="hamburger-btn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </div>
+          <div class="logo-container" onclick="window.location.href='homepage.html'">
+            <img src="images/BANNER.png" class="logo-img" alt="SchedSync Logo"
+              style="max-height: 100%; width: 100%; object-fit: contain;">
+          </div>
+          <div class="search-wrapper">
+            <img src="images/SEARCH.png" class="search-icon" alt="Search">
+            <input type="text" class="search-button" placeholder="Search faculty" aria-label="Search">
+          </div>
+        </div>
+
+        <div class="page-title">Faculty Members</div>
+
+        <div class="user-section">
+
+          <div class="notification-icon-wrapper" onclick="window.openGameNotifications()">
+            <img src="images/BELL.png" alt="Notifications">
+          </div>
+          <div class="user-profile-btn" id="userProfile">
+            <span class="burger-icon">☰</span>
+            <div class="user-name">User</div>
+            <div class="user-avatar" id="headerAvatar">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                stroke="currentColor" style="width: 32px; height: 32px;">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M15.75 6.75a3.75 3.75 0 1 1 -7.5 0 3.75 3.75 0 0 1 7.5 0zM4.5 20.25a8.25 8.25 0 0 1 15 0" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="main-layout">
+        <div class="content-section">
+          <div class="faculty-grid" id="facultyGrid">
+            <!-- JS will populate this -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Added Script Block -->
+  <script type="module" src="role-restriction.js"></script>
+  <script type="module" src="./facultypage.js"></script>
+
+  <script type="module" src="realtime-notifications.js"></script>
+  <script type="module" src="ui-effects.js"></script>
+</body>
+
+</html>

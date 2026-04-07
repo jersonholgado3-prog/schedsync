@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background Circle (Light Blue) -->
+  <circle cx="256" cy="256" r="256" fill="#bae6fd"/>
+  
+  <!-- Bubbles (Subtle White) -->
+  <circle cx="100" cy="150" r="20" fill="white" opacity="0.3"/>
+  <circle cx="70" cy="200" r="15" fill="white" opacity="0.3"/>
+  <circle cx="400" cy="100" r="25" fill="white" opacity="0.3"/>
+  <circle cx="430" cy="350" r="15" fill="white" opacity="0.3"/>
+  
+  <!-- Shark Body (Blue-Grey) -->
+  <path d="M120 350 
+           C 100 400, 150 450, 256 450 
+           C 362 450, 412 400, 392 350
+           L 392 250
+           C 392 150, 350 100, 256 80
+           C 162 100, 120 150, 120 250 Z" fill="#64748b"/>
+           
+  <!-- Dorsal Fin (Top) -->
+  <path d="M256 80 L 280 20 L 300 90 Z" fill="#64748b"/>
+
+  <!-- Side Fins -->
+  <path d="M120 300 L 50 380 L 140 360 Z" fill="#64748b"/>
+  <path d="M392 300 L 462 380 L 372 360 Z" fill="#64748b"/>
+
+  <!-- Belly (Lighter) -->
+  <path d="M140 350 
+           C 140 420, 372 420, 372 350
+           C 372 280, 140 280, 140 350 Z" fill="#94a3b8" opacity="0.5"/>
+
+  <!-- Mouth (Dark Red) -->
+  <path d="M170 340 
+           Q 256 400, 342 340 
+           Q 256 280, 170 340 Z" fill="#7f1d1d"/>
+
+  <!-- Teeth (White, Sharp) -->
+  <path d="M175 335 L 185 315 L 195 335
+           M195 335 L 205 315 L 215 335
+           M215 338 L 225 315 L 235 338
+           M235 340 L 246 315 L 257 340
+           M257 340 L 268 315 L 279 340
+           M279 338 L 289 315 L 299 338
+           M299 335 L 309 315 L 319 335
+           M319 335 L 329 315 L 337 335" fill="white"/>
+
+  <!-- Eyes (Yellow with Black Pupil) -->
+  <circle cx="180" cy="250" r="18" fill="#facc15"/>
+  <circle cx="180" cy="250" r="6" fill="black"/>
+  
+  <circle cx="332" cy="250" r="18" fill="#facc15"/>
+  <circle cx="332" cy="250" r="6" fill="black"/>
+  
+  <!-- Highlights/Shine -->
+  <circle cx="280" cy="80" r="5" fill="white" opacity="0.4"/>
+</svg>

@@ -1,0 +1,386 @@
+/* --- SHARED DASHBOARD HEADER STYLES ⚓⚓⚓ --- */
+
+/* Root and Base */
+:root {
+    --bg-main: #f8fafc;
+    --bg-card: #ffffff;
+    --text-main: #0f172a;
+    --border-main: #000000;
+}
+
+.dark {
+    --bg-main: #0f172a;
+    --bg-card: #1e293b;
+    --text-main: #f1f5f9;
+    --border-main: #334155;
+}
+
+body,
+.header,
+.sidebar,
+.card-container {
+    font-family: 'Poppins', sans-serif !important;
+}
+
+.header {
+    display: grid !important;
+    grid-template-columns: auto 1fr auto !important;
+    align-items: center !important;
+    min-height: 90px !important;
+    height: auto !important;
+    /* Allow growing if needed ⚓ */
+    gap: 1rem !important;
+    position: relative !important;
+    z-index: 1000 !important;
+    background-color: var(--bg-card) !important;
+    border: 3px solid var(--border-main) !important;
+    border-radius: 20px !important;
+    box-shadow: 6px 6px 0px black !important;
+    margin: 1.5rem !important;
+    padding: 0.75rem 1.5rem !important;
+    width: calc(100% - 3rem) !important;
+}
+
+/* 👔 ABSOLUTE PROFESSIONAL MODE FLATNESS (Universal Header Override) 👔 */
+.professional-mode .header,
+.professional-mode .logo-container,
+.professional-mode .notification-icon-wrapper,
+.professional-mode .user-profile,
+.professional-mode .user-profile-btn,
+.professional-mode .search-wrapper,
+.professional-mode .hamburger-btn {
+    box-shadow: none !important;
+    transform: none !important;
+    transition: none !important;
+    filter: none !important;
+    animation: none !important;
+    border-width: 1.5px !important;
+    /* Slightly thinner as requested 🧤 */
+}
+
+.hamburger-btn,
+.burger-icon {
+    display: none !important;
+}
+
+/* Dark Mode Backgrounds */
+.dark .header,
+.dark .user-profile,
+.dark .user-profile-btn,
+.dark .search-wrapper,
+.dark .notification-icon-wrapper,
+.dark .logo-container {
+    background-color: var(--bg-card) !important;
+    border-color: var(--border-main) !important;
+    color: var(--text-main) !important;
+    box-shadow: 4px 4px 0px #000 !important;
+}
+
+.dark .user-name {
+    color: var(--text-main) !important;
+}
+
+.user-profile-btn {
+    position: relative !important;
+    z-index: 10002 !important;
+}
+
+/* Icons & SVGs */
+.dark .notification-icon,
+.dark .notification-icon-wrapper img,
+.dark .search-icon,
+.dark .burger-icon,
+.dark .hamburger-btn svg,
+.dark .user-avatar svg,
+.dark .user-profile svg,
+.dark .user-profile-btn svg {
+    filter: invert(1) brightness(1.5) !important;
+}
+
+.sidebar-link img {
+    filter: brightness(0) invert(1) !important;
+}
+
+.sidebar-link.active img {
+    filter: none !important;
+}
+
+/* Logo Section */
+.left-header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 2.5rem !important;
+    /* Increased from 1.5rem to give more room ⚓ */
+    justify-self: start !important;
+}
+
+.logo-container {
+    width: fit-content !important;
+    min-width: 150px !important;
+    max-width: 250px !important;
+    height: 65px !important;
+    border: 3px solid black !important;
+    border-radius: 15px !important;
+    background-color: white !important;
+    box-shadow: 4px 4px 0px black !important;
+    padding: 10px !important;
+    /* Increased from 5px for breathing room ⚓ */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 12px !important;
+    /* Added gap to separate logo icon and text ⚓ */
+    flex-shrink: 0 !important;
+    cursor: pointer;
+}
+
+.dark .logo-img {
+    filter: none !important;
+    opacity: 0.9;
+}
+
+/* Center Section (Greeting/Title) */
+.page-title,
+.greeting {
+    justify-self: center !important;
+    text-align: center !important;
+    font-weight: 800 !important;
+    font-size: 1.8rem !important;
+    color: black !important;
+    white-space: nowrap !important;
+    margin: 0 !important;
+    padding: 0 1rem !important;
+}
+
+.dark .page-title,
+.dark .greeting,
+.dark .user-name {
+    color: #f1f5f9 !important;
+}
+
+.user-section {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    /* Reduced default gap ⚓ */
+    justify-self: end !important;
+    max-width: fit-content !important;
+}
+
+.notification-icon-wrapper {
+    width: 48px !important;
+    height: 48px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 3px solid black !important;
+    border-radius: 12px !important;
+    background-color: white !important;
+    box-shadow: 4px 4px 0px black !important;
+    cursor: pointer !important;
+    position: relative;
+}
+
+.notification-icon-wrapper img {
+    width: 28px !important;
+    height: 28px !important;
+}
+
+.user-profile,
+.user-profile-btn {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    padding: 0.5rem 1rem !important;
+    border: 3px solid black !important;
+    border-radius: 50px !important;
+    background-color: white !important;
+    box-shadow: 4px 4px 0px black !important;
+    cursor: pointer !important;
+    overflow: hidden !important;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.user-profile:hover,
+.user-profile-btn:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px black;
+}
+
+/* ABSOLUTE FLATNESS FOR PROFESSIONAL MODE 👔 */
+.professional-mode .notification-icon-wrapper,
+.professional-mode .user-profile,
+.professional-mode .user-profile-btn,
+.professional-mode .user-profile:hover,
+.professional-mode .user-profile-btn:hover {
+    box-shadow: none !important;
+    transform: none !important;
+    transition: none !important;
+}
+
+.user-name {
+    font-weight: 700 !important;
+    font-size: 1rem !important;
+    text-transform: uppercase !important;
+}
+
+.user-avatar {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    border-radius: 50% !important;
+    border: 2px solid black !important;
+    overflow: hidden !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background-color: #e2e8f0 !important;
+    flex-shrink: 0 !important;
+}
+
+.dark .user-avatar {
+    border-color: #334155 !important;
+}
+
+.user-avatar img,
+.user-avatar svg {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+}
+
+/* Search Wrapper */
+.search-wrapper {
+    display: flex !important;
+    align-items: center !important;
+    background-color: white !important;
+    border: 3px solid black !important;
+    border-radius: 12px !important;
+    width: 48px !important;
+    height: 48px !important;
+    padding: 0 10px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    overflow: hidden !important;
+    cursor: pointer !important;
+    box-shadow: 4px 4px 0px black !important;
+    flex-shrink: 0 !important;
+}
+
+.search-icon {
+    width: 24px !important;
+    height: 24px !important;
+    flex-shrink: 0 !important;
+}
+
+.search-button {
+    border: none !important;
+    background: transparent !important;
+    outline: none !important;
+    width: 0 !important;
+    opacity: 0 !important;
+    transition: all 0.3s !important;
+    font-weight: 600 !important;
+    color: black !important;
+    margin-left: 0 !important;
+}
+
+.search-wrapper:focus-within,
+.search-wrapper.expanded {
+    width: 250px !important;
+}
+
+.search-wrapper:focus-within .search-button,
+.search-wrapper.expanded .search-button {
+    width: 100% !important;
+    opacity: 1 !important;
+    margin-left: 10px !important;
+}
+
+.dark .search-button {
+    color: white !important;
+}
+
+/* Mobile Responsive Hooks */
+@media (max-width: 768px) {
+    .header {
+        height: auto !important;
+        min-height: 70px !important;
+        margin: 0.5rem !important;
+        padding: 0.5rem 0.75rem !important;
+        /* Reduced padding ⚓ */
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        gap: 0.25rem !important;
+        /* Tight gap ⚓ */
+        width: calc(100% - 1rem) !important;
+        /* Account for smaller margin ⚓ */
+        box-sizing: border-box !important;
+    }
+
+    .hamburger-btn,
+    .burger-icon {
+        display: flex !important;
+    }
+
+    .page-title,
+    .greeting {
+        display: none !important;
+    }
+
+    .logo-container {
+        width: auto !important;
+        min-width: 100px !important;
+        /* Smaller min-width ⚓ */
+        max-width: 130px !important;
+        /* Restrain logo width on mobile ⚓ */
+        height: 40px !important;
+        padding: 4px !important;
+        box-shadow: 2px 2px 0px black !important;
+    }
+
+    .user-profile,
+    .user-profile-btn {
+        width: auto !important;
+        height: 45px !important;
+        padding: 0 0.75rem !important;
+        border-radius: 50px !important;
+        gap: 0.5rem !important;
+    }
+
+    .user-name {
+        display: none !important;
+    }
+
+    .notification-icon-wrapper,
+    .search-wrapper {
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 10px !important;
+        box-shadow: 3px 3px 0px black !important;
+    }
+
+    /* Small mobile tweaks 📱⚓ */
+    @media (max-width: 400px) {
+        .logo-container {
+            min-width: 100px !important;
+        }
+
+        .header {
+            padding: 0.5rem !important;
+        }
+
+        .user-section {
+            gap: 0.5rem !important;
+        }
+    }
+
+    .search-wrapper.expanded {
+        position: fixed !important;
+        top: 10px;
+        left: 10px;
+        width: calc(100vw - 20px) !important;
+        height: 60px !important;
+        z-index: 3000;
+    }
+}

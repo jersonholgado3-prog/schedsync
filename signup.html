@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta name="viewport" content="width=1280" />
+
+  <title>SchedSync - Sign Up</title>
+  <link rel="stylesheet" href="toast.css">
+  <script src="toast.js"></script>
+  <script>
+    (function () {
+      // 1. Theme Lock 🌙 - DISABLED FOR AUTH PAGES
+      // const theme = localStorage.getItem("theme");
+      // if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+      //   document.documentElement.classList.add("dark");
+      // }
+
+      // 2. UI Mode Lock 👔
+      const uiMode = localStorage.getItem("uiMode");
+      const userRole = localStorage.getItem("userRole");
+      const mode = uiMode || ((userRole === 'teacher' || userRole === 'admin') ? 'professional' : 'student');
+      if (mode === 'professional') {
+        document.documentElement.classList.add("professional-mode");
+      }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="signup.css" />
+
+</head>
+
+<body>
+  <div id="atmospheric-bg">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+  </div>
+  <header>
+    <img src="images/LOGO.png" alt="SchedSync Logo" class="header-logo">
+    <span class="brand-name">SchedSync</span>
+  </header>
+
+  <div class="container">
+    <main class="signup-form-container">
+      <h1 class="form-title">
+        Create an Account
+        <span class="form-subtitle">to Continue to SchedSync</span>
+      </h1>
+
+
+      <form id="signupForm" style="width: 100%; max-width: 545px;">
+
+        <div class="role-selection-group">
+          <div class="role-option">
+            <input type="radio" id="roleStudent" name="role" value="student" class="role-radio" required checked>
+            <label for="roleStudent" class="role-label">Student</label>
+          </div>
+          <div class="role-option">
+            <input type="radio" id="roleTeacher" name="role" value="teacher" class="role-radio">
+            <label for="roleTeacher" class="role-label">Teacher</label>
+          </div>
+          <div class="role-option">
+            <input type="radio" id="roleAdmin" name="role" value="admin" class="role-radio">
+            <label for="roleAdmin" class="role-label">Admin</label>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; width: 100%;">
+          <div class="form-group">
+            <label for="firstName" class="form-label">First Name</label>
+            <input type="text" id="firstName" name="firstName" class="form-input" required autocomplete="given-name">
+          </div>
+
+          <div class="form-group">
+            <label for="lastName" class="form-label">Last Name</label>
+            <input type="text" id="lastName" name="lastName" class="form-input" required autocomplete="family-name">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="idNumber" class="form-label">Student Number</label>
+          <input type="text" id="idNumber" name="idNumber" class="form-input" required pattern="[0-9]+"
+            title="Please enter numbers only">
+        </div>
+
+        <div class="form-group" id="sectionGroup">
+          <label for="section" class="form-label">Section</label>
+          <input type="text" id="section" name="section" class="form-input" required placeholder="e.g. BSIT-4A">
+        </div>
+
+        <div class="form-group">
+          <label for="email" class="form-label">Email (Auto-generated)</label>
+          <input type="email" id="email" name="email" class="form-input" required readonly>
+          <div id="email-error" class="error-message"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="username" class="form-label">Username</label>
+          <input type="text" id="username" name="username" class="form-input" required minlength="3" maxlength="20"
+            autocomplete="username">
+          <div id="username-error" class="error-message"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="password" class="form-label">Password</label>
+          <div class="password-input-wrapper">
+            <input type="password" id="password" name="password" class="form-input" required minlength="8"
+              autocomplete="new-password">
+            <div class="password-toggle">
+              <svg xmlns="http://www.w3.org/2000/svg" class="eye-off" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path>
+                <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1 -1.67 2.68"></path>
+                <path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path>
+                <line x1="2" y1="2" x2="22" y2="22"></line>
+              </svg>
+              <svg xmlns="http://www.w3.org/2000/svg" class="eye-on" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </div>
+          </div>
+          <div id="password-error" class="error-message"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="confirmPassword" class="form-label">Confirm Password</label>
+          <div class="password-input-wrapper">
+            <input type="password" id="confirmPassword" name="confirmPassword" class="form-input" required
+              autocomplete="new-password">
+            <div class="password-toggle">
+              <svg xmlns="http://www.w3.org/2000/svg" class="eye-off" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path>
+                <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1 -1.67 2.68"></path>
+                <path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path>
+                <line x1="2" y1="2" x2="22" y2="22"></line>
+              </svg>
+              <svg xmlns="http://www.w3.org/2000/svg" class="eye-on" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </div>
+          </div>
+          <div id="confirm-password-error" class="error-message"></div>
+        </div>
+
+
+        <button type="submit" class="signup-button">Sign Up</button>
+
+
+        <div id="form-success" class="success-message" role="alert">
+          Account created successfully! Redirecting...
+        </div>
+
+      </form>
+
+    </main>
+
+  </div>
+
+
+  <script type="module" src="signup.js"></script>
+  <script type="module" src="realtime-notifications.js"></script>
+  <script type="module" src="ui-effects.js"></script>
+</body>
+
+</html>

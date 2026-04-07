@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1280" />
+  <title>New Schedule - SchedSync</title>
+  <script type="module" src="ui-effects.js"></script>
+  <script>
+    (function () {
+      // 1. Theme Lock 🌙
+      const theme = localStorage.getItem("theme");
+      if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+        document.documentElement.classList.add("dark");
+      }
+
+      // 2. UI Mode Lock 👔
+      const uiMode = localStorage.getItem("uiMode");
+      const userRole = localStorage.getItem("userRole");
+      const mode = uiMode || ((userRole === 'teacher' || userRole === 'admin') ? 'professional' : 'student');
+      if (mode === 'professional') {
+        document.documentElement.classList.add("professional-mode");
+      }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="header-styles.css" />
+  <link rel="stylesheet" href="newschedule_styles.css" />
+</head>
+
+<body>
+  <div class="container">
+    <aside class="sidebar">
+      <div class="sidebar-header" onclick="window.location.href='homepage.html'">
+        <img src="images/LOGO.png" alt="Logo">
+      </div>
+      <nav class="sidebar-menu">
+        <a href="homepage.html" class="sidebar-link">
+          <img src="images/home.png" alt="Home">
+          <span>Home</span>
+        </a>
+        <a href="newschedule.html" class="sidebar-link active">
+          <img src="images/ADD_SCHED.png" alt="New Schedule">
+          <span>New Schedule</span>
+        </a>
+        <a href="myschedule.html" class="sidebar-link">
+          <img src="images/SCHED.png" alt="My Schedule">
+          <span>My Schedule</span>
+        </a>
+        <a href="facultypage.html" class="sidebar-link">
+          <img src="images/FACULTY.png" alt="Faculty">
+          <span>Faculty</span>
+        </a>
+        <a href="campuspage.html" class="sidebar-link">
+          <img src="images/CAMPUS_ONE.png" alt="Campus">
+          <span>Campus</span>
+        </a>
+        <a href="event.html" class="sidebar-link">
+          <img src="images/EVENT_MODE.png" alt="Events">
+          <span>Events</span>
+        </a>
+      </nav>
+    </aside>
+
+    <div class="main-content-wrapper">
+      <!-- HEADER -->
+      <header class="header">
+        <div class="left-header">
+          <div class="hamburger-btn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </div>
+          <div class="logo-container" onclick="window.location.href='homepage.html'">
+            <img src="images/BANNER.png" class="logo-img" alt="SchedSync Logo"
+              style="max-height: 100%; width: 100%; object-fit: contain;">
+          </div>
+          <div class="search-wrapper">
+            <img src="images/SEARCH.png" class="search-icon" alt="Search">
+            <input type="text" class="search-button" placeholder="Search pages" aria-label="Search">
+          </div>
+        </div>
+
+        <div class="page-title">New Schedule</div>
+
+        <div class="user-section">
+
+          <div class="notification-icon-wrapper" onclick="window.openGameNotifications()">
+            <img src="images/BELL.png" alt="Notifications">
+          </div>
+          <div class="user-profile-btn" id="userProfile">
+            <span class="burger-icon">☰</span>
+            <div class="user-name">User</div>
+            <div class="user-avatar" id="headerAvatar">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                stroke="currentColor" style="width: 32px; height: 32px;">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M15.75 6.75a3.75 3.75 0 1 1 -7.5 0 3.75 3.75 0 0 1 7.5 0zM4.5 20.25a8.25 8.25 0 0 1 15 0" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="main-layout">
+        <main class="main-content">
+          <div class="left-column">
+            <div class="card-container">
+              <div class="card-title">Schedule Information</div>
+
+              <!-- Row 1: Category -->
+              <div class="form-row">
+                <div class="form-column" style="flex: 1;">
+                  <div class="form-label">Schedule Type</div>
+                  <div class="schedule-type-toggle" id="scheduleTypeToggle" data-type="regular">
+                    <div class="toggle-slider"></div>
+                    <button class="type-btn active" data-type="regular">Regular</button>
+                    <button class="type-btn" data-type="exam">Exam</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Row 2: Identification & Time -->
+              <div class="form-row" style="margin-top: 1rem;">
+                <div class="form-column" style="flex: 2;">
+                  <div class="form-label">Schedule Name</div>
+                  <div class="form-input">
+                    <input type="text" id="scheduleNameInput" placeholder="Enter schedule name">
+                  </div>
+                </div>
+                <div class="form-column">
+                  <div class="form-label">Start Time</div>
+                  <div class="form-input">
+                    <input id="startTimeInput" type="text" placeholder="--:-- --" readonly style="cursor: pointer;">
+                  </div>
+                </div>
+                <div class="form-column">
+                  <div class="form-label">End Time</div>
+                  <div class="form-input">
+                    <input id="endTimeInput" type="text" placeholder="--:-- --" readonly style="cursor: pointer;">
+                  </div>
+                </div>
+              </div>
+
+              <div class="schedule-config-title" style="margin-top: 2rem;">Quick Select Days</div>
+              <div class="days-row"
+                style="margin-top: 10px; margin-bottom: 0px; padding: 10px; gap: 8px; justify-content: center;">
+                <button class="day-item quick-select-btn" data-days="mon-fri">Mon - Fri</button>
+                <button class="day-item quick-select-btn" data-days="mon-sat">Mon - Sat</button>
+                <button class="day-item quick-select-btn" data-days="mwf">MWF</button>
+                <button class="day-item quick-select-btn" data-days="tths">TThS</button>
+              </div>
+
+              <div class="schedule-config-title" style="margin-top: 2rem;">Select Days Individually</div>
+              <div class="days-row">
+                <div class="day-item">Monday</div>
+                <div class="day-item">Tuesday</div>
+                <div class="day-item">Wednesday</div>
+              </div>
+              <div class="days-row-2">
+                <div class="day-item">Thursday</div>
+                <div class="day-item">Friday</div>
+                <div class="day-item">Saturday</div>
+                <div class="day-item">Sunday</div>
+              </div>
+
+              <div id="selectedDaysContainer" class="selected-days-container"></div>
+
+              <div style="margin-top: 3rem; display: flex; gap: 1rem; justify-content: center;">
+                <button class="save-button" style="width: 100%; max-width: 300px;">SAVE SCHEDULE</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="right-column">
+            <div class="card-container">
+              <div class="card-title">Sections Management</div>
+              <div class="sections-controls">
+                <button id="selectAllBtn" class="control-btn select-all-btn">Select All</button>
+                <button id="deleteAllBtn" class="control-btn remove-all-btn">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                    viewBox="0 0 16 16">
+                    <path
+                      d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z" />
+                    <path fill-rule="evenodd"
+                      d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z" />
+                  </svg>
+                  Delete All
+                </button>
+              </div>
+
+              <div id="sectionsList" class="sections-list">
+                <!-- Sections populated by JS -->
+              </div>
+
+              <div id="sectionInputContainer" class="section-input-container">
+                <input type="text" id="newSectionInput" class="section-input" placeholder="Enter section name...">
+              </div>
+
+              <div class="add-section" id="addSectionTrigger">
+                <span class="plus-icon">＋</span> Add Section
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <!-- Material Design Clock Picker Modal -->
+  <div id="timePickerOverlay" class="time-picker-overlay">
+    <div class="time-picker-modal">
+      <div class="time-picker-header">
+        <div class="header-label">Select time</div>
+        <div class="time-display-container">
+          <input type="text" id="hourBlock" class="time-box active" value="07" maxlength="2">
+          <div class="time-colon">:</div>
+          <input type="text" id="minuteBlock" class="time-box" value="00" maxlength="2">
+          <div class="period-selector">
+            <div id="periodAM" class="period-option active">AM</div>
+            <div id="periodPM" class="period-option">PM</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="dialContainer" class="clock-dial-container">
+        <div class="dial-center"></div>
+        <div id="dialHand" class="dial-hand">
+          <div id="handIndicator" class="dial-hand-indicator">7</div>
+        </div>
+      </div>
+
+      <div class="time-picker-footer">
+        <button id="timePickerCancel" class="footer-btn">Cancel</button>
+        <button id="timePickerOK" class="footer-btn">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Confirm Modal -->
+  <div id="confirmOverlay" class="confirm-overlay">
+    <div class="confirm-modal">
+      <div class="confirm-title">Are you sure?</div>
+      <div id="confirmMessage" class="confirm-message">This action cannot be undone.</div>
+      <div class="confirm-actions">
+        <button id="confirmBtnCancel" class="confirm-btn confirm-btn-cancel">Cancel</button>
+        <button id="confirmBtnYes" class="confirm-btn confirm-btn-yes">Yes, Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="mobile-overlay"></div>
+  <script type="module" src="./newschedule.js"></script>
+  <script type="module" src="ui-effects.js"></script>
+</body>
+
+</html>

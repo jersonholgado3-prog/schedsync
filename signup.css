@@ -1,0 +1,372 @@
+:root {
+    --primary-blue: #003B95;
+    --secondary-blue: #002044;
+    --accent-gold: #FFD200;
+    --light-gray: #f3f4f6;
+    --text-main: #1f2937;
+    --glass-bg: rgba(255, 255, 255, 0.8);
+    --glass-border: rgba(255, 255, 255, 0.3);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background-color: #f0f2f5;
+    color: var(--text-main);
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+
+/* --- Atmospheric Background 🌊⚓ --- */
+#atmospheric-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    background: linear-gradient(135deg, #f0f2f5 0%, #e0e7ff 100%);
+}
+
+.blob {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(0, 59, 149, 0.08) 0%, rgba(255, 255, 255, 0) 70%);
+    filter: blur(60px);
+    border-radius: 50%;
+    animation: moveBlob 20s infinite ease-in-out;
+}
+
+.blob-1 {
+    top: -100px;
+    left: -100px;
+}
+
+.blob-2 {
+    bottom: -100px;
+    right: -100px;
+    background: radial-gradient(circle, rgba(255, 210, 0, 0.05) 0%, rgba(255, 255, 255, 0) 70%);
+}
+
+@keyframes moveBlob {
+
+    0%,
+    100% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    33% {
+        transform: translate(30px, -50px) scale(1.1);
+    }
+
+    66% {
+        transform: translate(-20px, 20px) scale(0.9);
+    }
+}
+
+/* Header */
+header {
+    background-color: var(--secondary-blue);
+    padding: 1rem 8%;
+    display: flex;
+    align-items: center;
+    gap: 2.5rem;
+    color: white;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.header-logo {
+    height: 55px;
+    width: auto;
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+}
+
+.brand-name {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-left: 10px;
+    background: linear-gradient(to right, #ffffff, #e0e7ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    padding: 4rem 1.25rem 8rem;
+    min-height: calc(100vh - 80px);
+    align-items: center;
+}
+
+.signup-form-container {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 3rem 4rem 4.5rem;
+    max-width: 100%;
+    width: 745px;
+    border-radius: 40px;
+    border: 3px solid var(--secondary-blue);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+    animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    z-index: 100;
+    cursor: default;
+}
+
+.form-title {
+    font-size: 2.5rem;
+    font-weight: 900;
+    text-align: center;
+    margin-bottom: 2.5rem;
+    color: var(--secondary-blue);
+    letter-spacing: -1.5px;
+    line-height: 1.1;
+}
+
+.form-subtitle {
+    font-weight: 600;
+    font-size: 1.4rem;
+    color: #4b5563;
+    display: block;
+    margin-top: 0.5rem;
+}
+
+.role-selection-group {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    width: 100%;
+    margin-bottom: 3rem;
+}
+
+.role-option {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+
+.role-radio {
+    appearance: none;
+    background-color: #fff;
+    margin: 0;
+    width: 1.6rem;
+    height: 1.6rem;
+    border: 3px solid var(--secondary-blue);
+    border-radius: 50%;
+    display: grid;
+    place-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.role-radio::before {
+    content: "";
+    width: 0.8rem;
+    height: 0.8rem;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: transform 120ms ease-in-out;
+    background-color: var(--primary-blue);
+}
+
+.role-radio:checked {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 4px rgba(0, 59, 149, 0.1);
+}
+
+.role-radio:checked::before {
+    transform: scale(1);
+}
+
+.role-label {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--secondary-blue);
+    cursor: pointer;
+}
+
+.form-group {
+    width: 100%;
+    margin-bottom: 1.8rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.6rem;
+    margin-left: 0.5rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--secondary-blue);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-input {
+    width: 100%;
+    height: 62px;
+    background-color: white;
+    border: 3px solid var(--secondary-blue);
+    border-radius: 18px;
+    padding: 0 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    outline: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: text;
+    caret-color: black;
+}
+
+.form-input:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 6px rgba(0, 59, 149, 0.15);
+    transform: translateY(-2px);
+}
+
+.form-input[readonly] {
+    background-color: #e5e7eb;
+    cursor: not-allowed;
+    border-style: dashed;
+}
+
+.signup-button {
+    width: 100%;
+    padding: 1.2rem;
+    margin-top: 2rem;
+    background: linear-gradient(135deg, var(--primary-blue) 0%, #002e73 100%);
+    color: white;
+    border: 3px solid black;
+    border-radius: 20px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 10px 20px -5px rgba(0, 59, 149, 0.4);
+}
+
+.signup-button:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 15px 30px -5px rgba(0, 59, 149, 0.5);
+}
+
+/* Password Toggle Styles */
+.password-input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: var(--secondary-blue);
+    transition: all 0.2s;
+    z-index: 10;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+}
+
+.password-toggle:hover {
+    color: var(--primary-blue);
+    transform: scale(1.1);
+}
+
+.password-toggle svg {
+    width: 1.6rem;
+    height: 1.6rem;
+}
+
+.password-toggle .eye-off {
+    display: block;
+}
+
+.password-toggle .eye-on {
+    display: none;
+}
+
+.password-toggle.visible .eye-off {
+    display: none;
+}
+
+.password-toggle.visible .eye-on {
+    display: block;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .signup-form-container {
+        padding: 2.5rem 1.5rem;
+        border-radius: 30px;
+    }
+
+    .form-title {
+        font-size: 2rem;
+    }
+
+    .role-selection-group {
+        gap: 1rem;
+    }
+
+    .role-label {
+        font-size: 1rem;
+    }
+
+    header {
+        padding: 1rem 5%;
+        justify-content: center;
+    }
+
+    .brand-name {
+        font-size: 1.5rem;
+    }
+}
+
+.error-message {
+    color: #dc2626;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    margin-left: 0.5rem;
+    display: none;
+}
+
+.success-message {
+    color: #16a34a;
+    font-size: 0.95rem;
+    margin-top: 0.25rem;
+    margin-left: 0.5rem;
+    font-weight: 600;
+    display: none;
+}

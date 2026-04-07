@@ -1,0 +1,6 @@
+{
+  "command": "npx \"$builder.io/dev-tools@latest\" launch",
+  "serverUrl": "httpa://localhost3000",
+  "authenticateProxy": false,
+  "commitMode": "commits"
+}

@@ -1,0 +1,233 @@
+@keyframes maangas-pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(16, 185, 129, 0.4);
+    }
+
+    50% {
+        transform: scale(1.5);
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.8);
+    }
+
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(16, 185, 129, 0);
+    }
+}
+
+@keyframes maangas-bounce {
+    0% {
+        transform: scale(1);
+    }
+
+    40% {
+        transform: scale(1.2);
+        background: #dcfce7;
+    }
+
+    60% {
+        transform: scale(0.9);
+    }
+
+    80% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        transform: scale(1);
+        background: transparent;
+    }
+}
+
+@keyframes glass-shatter {
+    0% {
+        transform: scale(1);
+        filter: contrast(1);
+    }
+
+    20% {
+        transform: scale(1.02) rotate(1deg);
+        filter: contrast(1.2) brightness(1.2);
+    }
+
+    100% {
+        transform: scale(0.9) rotate(-1deg);
+        opacity: 0;
+    }
+}
+
+@keyframes shard-fly {
+    0% {
+        transform: translate(0, 0) rotate(0deg);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translate(var(--dx), var(--dy)) rotate(var(--rot));
+        opacity: 0;
+    }
+}
+
+.shattering {
+    animation: glass-shatter 0.3s ease-in forwards;
+    pointer-events: none;
+}
+
+.glass-shard {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    z-index: 10000;
+    animation: shard-fly 0.6s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+}
+
+.dark .glass-shard {
+    background: rgba(30, 41, 59, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.maangas-button-active {
+    animation: maangas-pulse 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.maangas-cell-hit {
+    animation: maangas-bounce 0.5s ease;
+}
+
+.flying-clone {
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.6);
+    border: 2px solid white;
+    backdrop-filter: blur(4px);
+}
+
+.paste-projectile {
+    filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.8));
+}
+
+/* Drag and Drop Styles */
+.dragging-source {
+    opacity: 0.4;
+    transform: scale(0.95);
+    border: 2px dashed #000;
+    background: #e5e5e5 !important;
+}
+
+.drag-over-target {
+    background: #bef264 !important;
+    /* Lime green */
+    transform: scale(1.05);
+    border: 3px solid #000;
+    box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.2);
+}
+
+td[draggable="true"] {
+    cursor: grab;
+}
+
+td[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+.download-btn-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2) !important;
+    filter: brightness(1.1);
+}
+
+.download-btn-hover:active {
+    transform: translateY(2px);
+}
+
+/* --- MAANGAS HEADER BUTTONS (Download & Request) 🚀⚓ --- */
+.download-all-header-btn {
+    display: flex;
+    /* NO !important Let JS control visibility 🛡️ */
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 0.8rem 1.5rem !important;
+    /* Maangas Green Gradient ✨ */
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    color: white !important;
+    border: 3px solid black !important;
+    border-radius: 50px !important;
+    /* Fully Rounded 🏀 */
+    font-weight: 800 !important;
+    font-size: 0.85rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    cursor: pointer !important;
+    box-shadow: 4px 4px 0px black !important;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    position: relative;
+    overflow: hidden;
+    white-space: nowrap !important;
+}
+
+.download-all-header-btn span {
+    position: relative;
+    z-index: 2;
+}
+
+/* Maangas Shine Effect ✨ */
+.download-all-header-btn::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.2) 45%,
+            rgba(255, 255, 255, 0.4) 50%,
+            rgba(255, 255, 255, 0.2) 55%,
+            transparent 100%);
+    transform: rotate(45deg);
+    transition: all 0.6s ease;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0;
+}
+
+.download-all-header-btn:hover {
+    transform: translate(-3px, -3px) !important;
+    box-shadow: 7px 7px 0px black !important;
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+    color: white !important;
+}
+
+.download-all-header-btn:hover::after {
+    left: 100%;
+    opacity: 1;
+}
+
+.download-all-header-btn:active {
+    transform: translate(1px, 1px) !important;
+    box-shadow: 2px 2px 0px black !important;
+}
+
+/* Dark Mode Maangas 🌑 */
+.dark .download-all-header-btn {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+    border-color: #000 !important;
+}
+
+.dark .download-all-header-btn:hover {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%) !important;
+}
+
+/* Mobile Tweak 📏 */
+@media (max-width: 768px) {
+    .download-all-header-btn {
+        padding: 0.6rem 1rem !important;
+        font-size: 0.7rem !important;
+        border-width: 2px !important;
+        box-shadow: 2px 2px 0px black !important;
+    }
+
+    .download-all-header-btn:hover {
+        transform: translate(-1px, -1px) !important;
+        box-shadow: 3px 3px 0px black !important;
+    }
+}

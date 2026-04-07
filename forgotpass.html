@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Forgot Password</title>
+  <meta name="viewport" content="width=1280" />
+  <script>
+    (function () {
+      // 1. Theme Lock 🌙
+      const theme = localStorage.getItem("theme");
+      if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+        document.documentElement.classList.add("dark");
+      }
+
+      // 2. UI Mode Lock 👔
+      const uiMode = localStorage.getItem("uiMode");
+      const userRole = localStorage.getItem("userRole");
+      const mode = uiMode || ((userRole === 'teacher' || userRole === 'admin') ? 'professional' : 'student');
+      if (mode === 'professional') {
+        document.documentElement.classList.add("professional-mode");
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="forgotpass_styles.css" />
+  <script type="module" src="login.js" defer></script>
+</head>
+
+<body>
+  <h2 class="page-title">Reset Password</h2>
+  <div class="forgot-container">
+    <div id="notification" class="notification"></div>
+    <form id="forgotPasswordForm">
+      <label for="email">Enter your Email</label>
+      <input type="email" id="email" required>
+      <button type="submit">Send Reset Link</button>
+    </form>
+    <a href="login.html" class="back-link">Back to Log In</a>
+  </div>
+  <script type="module" src="ui-effects.js"></script>
+</body>
+
+</html>

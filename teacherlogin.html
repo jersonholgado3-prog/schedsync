@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1280" />
+    <title>SchedSync - Teacher Information</title>
+    <link rel="stylesheet" href="toast.css">
+    <script src="toast.js"></script>
+    <script>
+        (function () {
+            // 1. Theme Lock 🌙
+            const theme = localStorage.getItem("theme");
+            if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+                document.documentElement.classList.add("dark");
+            }
+
+            // 2. UI Mode Lock 👔
+            const uiMode = localStorage.getItem("uiMode");
+            const userRole = localStorage.getItem("userRole");
+            const mode = uiMode || ((userRole === 'teacher' || userRole === 'admin') ? 'professional' : 'student');
+            if (mode === 'professional') {
+                document.documentElement.classList.add("professional-mode");
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="teacherlogin_styles.css" />
+</head>
+
+<body>
+    <div class="container">
+        <!-- Optional Header Logo -->
+        <header class="header">
+            <!-- <img src="images/LOGO.png" class="logo-circle"> -->
+            <!-- Uncomment if you have the logo file -->
+        </header>
+
+        <main class="info-container">
+            <h2>Teacher Setup</h2>
+            <p class="subtitle">Let's personalize your experience.</p>
+
+            <form id="teacherSetupForm">
+
+                <!-- Employment Status -->
+                <div class="form-group">
+                    <label>Employment Status</label>
+                    <div class="status-options">
+                        <div class="status-option">
+                            <input type="radio" id="statusFullTime" name="employmentStatus" value="Full-Time"
+                                class="status-radio" required>
+                            <label for="statusFullTime" class="status-label">Full-Time</label>
+                        </div>
+                        <div class="status-option">
+                            <input type="radio" id="statusPartTime" name="employmentStatus" value="Part-Time"
+                                class="status-radio">
+                            <label for="statusPartTime" class="status-label">Part-Time</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Specialization -->
+                <div class="form-group">
+                    <label for="specialization">Specialization / Forte</label>
+                    <!-- Hidden Native Select (for logic compatibility) -->
+                    <select id="specialization" name="specialization" class="specialization-select"
+                        style="display: none;">
+                        <option value="" disabled selected>Select from list...</option>
+                        <option value="MATH">Mathematics</option>
+                        <option value="ENGLISH">English / Communication</option>
+                        <option value="PHILOSOPHY">Philosophy / Social Science</option>
+                        <option value="SCIENCE">Science</option>
+                        <option value="FILIPINO">Filipino / Araling Panlipunan</option>
+                        <option value="PE">PE & Health</option>
+                        <option value="ICT">ICT</option>
+                        <option value="ABM">ABM</option>
+                        <option value="STEM">STEM Specialized</option>
+                        <option value="HUMSS">HUMSS Specialized</option>
+                        <option value="RESEARCH">Research</option>
+                        <option value="IMMERSION">Immersion</option>
+                    </select>
+
+                    <!-- Custom Lively Dropdown -->
+                    <div class="custom-select-wrapper" id="customForteSelect">
+                        <div class="custom-select-trigger">
+                            <span>Select your Forte...</span>
+                            <div class="arrow"></div>
+                        </div>
+                        <div class="custom-options">
+                            <span class="custom-option" data-value="MATH">Mathematics</span>
+                            <span class="custom-option" data-value="ENGLISH">English / Communication</span>
+                            <span class="custom-option" data-value="PHILOSOPHY">Philosophy / Social Science</span>
+                            <span class="custom-option" data-value="SCIENCE">Science</span>
+                            <span class="custom-option" data-value="FILIPINO">Filipino / Araling Panlipunan</span>
+                            <span class="custom-option" data-value="PE">PE & Health</span>
+                            <span class="custom-option" data-value="ICT">ICT</span>
+                            <span class="custom-option" data-value="ABM">ABM</span>
+                            <span class="custom-option" data-value="STEM">STEM Specialized</span>
+                            <span class="custom-option" data-value="HUMSS">HUMSS Specialized</span>
+                            <span class="custom-option" data-value="RESEARCH">Research</span>
+                            <span class="custom-option" data-value="IMMERSION">Immersion</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Subject Selection -->
+                <div class="form-group">
+                    <label>Select Subjects</label>
+
+                    <!-- Scrollable Area -->
+                    <div id="subjectScrollContainer" class="scrollable-subjects">
+                        <div id="subjectGrid" class="subject-grid">
+                            <p class="placeholder-text">Please select a specialization above.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Selected Chips Area -->
+                <div class="form-group">
+                    <label>Your Selections</label>
+                    <div class="selected-section">
+                        <!-- <span class="selected-label">Subjects added will appear here:</span> -->
+                        <div id="selectedSubjectsContainer" style="display:contents;">
+                            <!-- Dynamic Chips -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="form-error" class="error-message" style="display: none; color: #ef4444;"></div>
+
+                <button type="submit" class="save-button">Save Profile</button>
+            </form>
+        </main>
+    </div>
+
+    <script type="module" src="teacherlogin.js"></script>
+    <script type="module" src="realtime-notifications.js"></script>
+    <script type="module" src="ui-effects.js"></script>
+</body>
+
+</html>

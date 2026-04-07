@@ -1,0 +1,280 @@
+/* Modal overlay */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+/* Show modal */
+.modal-overlay.show {
+    display: flex;
+}
+* 
+
+
+{
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes modalFadeOut {
+    from { opacity: 1; transform: scale(1); }
+    to   { opacity: 0; transform: scale(0.95); }
+}
+
+/* Add animation to the modal box */
+.modal-overlay.show .message-form {
+    animation: modalFadeIn 0.3s ease-out forwards;
+}
+
+/* Optional: animate closing using JS by adding a class */
+.modal-overlay.closing .message-form {
+    animation: modalFadeOut 0.25s ease-in forwards;
+}
+
+/* ===== MESSAGE FORM ===== */
+.message-form {
+    border: 2px solid black;
+    background-color: #d4d4d8;
+    border-radius: 30px;
+    width: 100%;
+    max-width: 1004px;
+    padding: 40px 56px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    transform-origin: center; /* ensures scale animation looks smooth */
+    opacity: 0; /* initial state before animation */
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #f5f5f5;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    width: 100%;
+    min-height: 100vh;
+}
+
+.message-form {
+    border: 2px solid black;
+    background-color: #d4d4d8;
+    border-radius: 30px;
+    width: 100%;
+    max-width: 1004px;
+    padding: 40px 56px;
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.title {
+    font-size: 24px;
+    font-weight: 600;
+    color: black;
+}
+
+.close-btn {
+    font-size: 36px;
+    font-weight: bold;
+    color: black;
+    cursor: pointer;
+    border: none;
+    background: none;
+    line-height: 1;
+}
+
+.form-content {
+    flex: 1;
+}
+
+.field-group {
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+}
+
+.field-group.message-field {
+    align-items: flex-start;
+    flex-direction: column;
+}
+
+.field-label {
+    font-size: 18px;
+    font-weight: 500;
+    color: black;
+    margin-right: 16px;
+    min-width: 60px;
+}
+
+.field-label.message-label {
+    margin-bottom: 8px;
+    margin-right: 0;
+}
+
+.dropdown-arrow {
+    font-size: 18px;
+    font-weight: 600;
+    color: black;
+    margin-left: 8px;
+}
+
+.input-field {
+    border: 2px solid black;
+    height: 52px;
+    border-radius: 30px;
+    background: white;
+    padding: 0 20px;
+    font-size: 16px;
+    outline: none;
+    flex: 1;
+}
+
+.textarea-field {
+    border: 2px solid black;
+    height: 275px;
+    border-radius: 30px;
+    background: white;
+    padding: 20px;
+    font-size: 16px;
+    outline: none;
+    resize: none;
+    font-family: inherit;
+    width: 100%;
+}
+
+.send-section {
+    text-align: right;
+    margin-top: 24px;
+}
+
+.send-button {
+    background: #e5e5e5;
+    border: 2px solid black;
+    border-radius: 30px;
+    height: 40px;
+    width: 106px;
+    font-size: 18px;
+    font-weight: 600;
+    color: black;
+    cursor: pointer;
+    outline: none;
+}
+
+.send-button:hover {
+    background: #d5d5d5;
+}
+
+.create-notification-btn {
+    width: 75px;
+    height: 75px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.create-notification-btn:hover {
+    transform: scale(1.05);
+}
+
+.create-notification-btn:active {
+    transform: scale(0.95);
+}
+
+
+/* Tablet styles */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+
+    .message-form {
+        max-width: 800px;
+        padding: 32px;
+    }
+
+    .title {
+        font-size: 24px;
+    }
+
+    .close-btn {
+        font-size: 30px;
+    }
+
+    .field-group {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .field-label {
+        margin-bottom: 8px;
+        margin-right: 0;
+    }
+
+    .input-field {
+        width: 100%;
+    }
+
+    .textarea-field {
+        height: 250px;
+    }
+}
+
+/* Mobile styles */
+@media (max-width: 640px) {
+    .container {
+        padding: 10px;
+    }
+
+    .message-form {
+        border-radius: 24px;
+        padding: 20px;
+    }
+
+    .header {
+        margin-bottom: 20px;
+    }
+
+    .title {
+        font-size: 20px;
+    }
+
+    .close-btn {
+        font-size: 30px;
+    }
+
+    .field-group {
+        margin-bottom: 20px;
+    }
+
+    .input-field {
+        width: 100%;
+    }
+
+    .textarea-field {
+        height: 200px;
+    }
+
+    .send-section {
+        margin-top: 20px;
+    }
+}

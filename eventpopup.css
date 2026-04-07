@@ -1,0 +1,117 @@
+/* Modal Overlay */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+/* Show modal when .show class is added */
+.modal-overlay.show {
+    display: flex;
+}
+
+/* Modal Box */
+.modal-box {
+    background-color: #f9f9f9;
+    padding: 30px;
+    border: 2px solid black;
+    border-radius: 30px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Modal Header */
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.modal-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: black;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: black;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-btn:hover {
+    color: #888;
+}
+
+/* Form Styling */
+#eventForm {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.field-label {
+    font-weight: bold;
+    color: black;
+    font-size: 14px;
+}
+
+.input-field,
+.select-field {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.input-field:focus,
+.select-field:focus {
+    outline: none;
+    border-color: #000;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Save Button */
+.save-button {
+    padding: 12px 20px;
+    background-color: #B0C6F8;
+    border: 2px solid black;
+    border-radius: 20px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-top: 10px;
+}
+
+.save-button:hover {
+    background-color: #9ab6f0;
+}
+
+.save-button:active {
+    background-color: #8aa6e8;
+}
