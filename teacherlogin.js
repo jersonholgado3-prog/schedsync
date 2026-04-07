@@ -118,7 +118,7 @@ onAuthStateChanged(auth, async (user) => {
         }
     } else {
         // Redirect to landing if not authenticated
-        window.location.href = "sync-1.html";
+        window.location.href = "index.html";
     }
 });
 

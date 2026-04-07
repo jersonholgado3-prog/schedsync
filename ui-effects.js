@@ -19,7 +19,7 @@ export const setUIMode = (mode) => {
     } else {
         // Redraw only if not on auth page
         const path = window.location.pathname;
-        const isAuthPage = path.includes('login.html') || path.includes('signup.html') || path.includes('forgotpass.html') || path.includes('teacherlogin.html') || path.includes('sync-1.html');
+        const isAuthPage = path.includes('login.html') || path.includes('signup.html') || path.includes('forgotpass.html') || path.includes('teacherlogin.html') || path.includes('index.html');
         if (!isAuthPage) {
             injectSecretShark();
             injectTurtles();
@@ -1142,7 +1142,7 @@ const isAuthPage = path.includes('login.html') ||
     path.includes('signup.html') ||
     path.includes('forgotpass.html') ||
     path.includes('teacherlogin.html') ||
-    path.includes('sync-1.html') ||
+    path.includes('index.html') ||
     path.endsWith('/');
 
 const uiMode = getUIMode();

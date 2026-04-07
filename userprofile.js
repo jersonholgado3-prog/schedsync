@@ -110,7 +110,7 @@ export function initUserProfile(profileSelector = "#userProfile") {
       if (confirmed) {
         try {
           await signOut(auth);
-          window.location.href = "sync-1.html";
+          window.location.href = "index.html";
         } catch (error) {
           console.error("Logout Error:", error);
           showToast("Failed to logout. Please try again.", "error");

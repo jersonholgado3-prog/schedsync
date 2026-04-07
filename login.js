@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Redirect back to landing after 3 seconds
         setTimeout(() => {
-          window.location.href = 'sync-1.html';
+          window.location.href = 'index.html';
         }, 3000);
 
       } catch (error) {

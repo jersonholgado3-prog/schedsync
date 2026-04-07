@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.error("Error loading profile:", error);
             }
         } else {
-            window.location.href = "sync-1.html";
+            window.location.href = "index.html";
         }
     });
 });
