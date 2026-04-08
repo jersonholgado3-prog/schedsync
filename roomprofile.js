@@ -137,36 +137,71 @@ async function fetchRoomSchedule(roomName) {
         const now = new Date();
         const todayStr = now.toISOString().split('T')[0];
 
+        // 1. Fetch all Published Schedules + Events
+        const schedules = [];
+        const eventDocSnap = await getDoc(doc(db, "schedules", "DEFAULT_SECTION"));
+        const eventClasses = eventDocSnap.exists() ? (eventDocSnap.data().classes || []) : [];
+
         snap.forEach(doc => {
-            const sched = doc.data();
-            
-            // Skip EVENT and HOST pseudo-sections 🛡️⚓
-            if (sched.section === "EVENTS" || sched.section === "EVENT_HOST" || doc.id === "DEFAULT_SECTION") return;
+            if (doc.id === "DEFAULT_SECTION") return;
+            schedules.push({ ...doc.data(), id: doc.id });
+        });
 
-            const isOverride = !!(sched.targetDate || sched.originalId);
+        // 2. Identify Relocated Classes for today
+        const todaysEvents = eventClasses.filter(c => c.date === todayStr);
+        const relocated = [];
+        todaysEvents.forEach(ev => {
+            if (ev.displacements) {
+                ev.displacements.forEach(d => {
+                    if (d.date === todayStr) relocated.push(d);
+                });
+            }
+        });
 
-            // Skip overrides that are not for today 🛡️
-            if (sched.targetDate && sched.targetDate !== todayStr) return;
-
+        // 3. Process Regular Schedules
+        schedules.forEach(sched => {
             const classes = sched.classes || [];
-
             classes.forEach(c => {
                 const target = currentRoomName.toLowerCase().trim();
                 const current = (c.room || "").toLowerCase().trim();
-
-                // Normalize names for match
                 const cleanCurrent = current.replace(/room|rm|\s/gi, "");
                 const cleanTarget = target.replace(/room|rm|\s/gi, "");
 
                 if (cleanCurrent === cleanTarget) {
-                    currentRoomClasses.push({
-                        ...c,
-                        section: sched.section || "Unknown Section",
-                        isOverride: isOverride,
-                        targetDate: sched.targetDate
-                    });
+                    // Check if class is relocated away today
+                    const isRelocatedAway = relocated.some(r => 
+                        r.scheduleId === sched.id && 
+                        r.classData.timeBlock === c.timeBlock && 
+                        r.classData.day === c.day
+                    );
+
+                    if (!isRelocatedAway) {
+                        currentRoomClasses.push({ ...c, section: sched.section || "Unknown Section" });
+                    }
                 }
             });
+        });
+
+        // 4. Add Classes Relocated TO this room today
+        relocated.forEach(r => {
+            if (r.to.toLowerCase().trim().replace(/room|rm|\s/gi, "") === currentRoomName.toLowerCase().trim().replace(/room|rm|\s/gi, "")) {
+                currentRoomClasses.push({
+                    ...r.classData,
+                    subject: `${r.subject} (Relocated)`,
+                    section: r.section
+                });
+            }
+        });
+
+        // 5. Add Events for today
+        todaysEvents.forEach(ev => {
+            if (ev.rooms.includes(currentRoomName)) {
+                currentRoomClasses.push({
+                    ...ev,
+                    subject: ev.subject,
+                    section: "EVENT"
+                });
+            }
         });
 
         console.log("Found classes for room:", currentRoomClasses.length);

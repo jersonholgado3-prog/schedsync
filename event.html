@@ -153,50 +153,37 @@
   <script type="module" src="eventmodal.js"></script>
 
   <!-- Modal Control Script -->
-  <script type="module">
-    const modal = document.getElementById('createEventModal');
-    const openBtn = document.getElementById('openCreateEvent');
-    const closeBtn = modal.querySelector('.close-btn');
-
-    openBtn.addEventListener('click', () => {
-      console.log("Create Event button clicked");
+  <script>
+    // Define globally so event scripts can attach to it without module scope issues
+    window.openCreateEvent = () => {
+      const modal = document.getElementById('createEventModal');
+      console.log("Create Event button triggered");
       if (typeof window.renderEventModal === 'function') {
         modal.style.display = 'flex';
         window.renderEventModal();
       } else {
-        console.error("renderEventModal is not defined. Script might not be loaded yet.");
-        if (window.showToast) {
-          window.showToast("The event system is still loading. Please try again in a moment.", "info");
-        } else {
-          alert("The event system is still loading. Please try again in a moment or refresh the page.");
-        }
+        console.error("renderEventModal not defined yet.");
+        alert("The event system is still initializing. Please wait one moment.");
       }
-    });
+    };
+  </script>
 
-    closeBtn.addEventListener('click', () => {
-      modal.style.display = 'none';
-      if (ReactDOM && ReactDOM.unmountComponentAtNode) {
-        ReactDOM.unmountComponentAtNode(document.getElementById('react-modal-content'));
-      } else if (document.getElementById('react-modal-content')._reactRootContainer) {
-        // React 18 uses root.unmount() which is handled inside eventmodal.js usually, 
-        // but we can just hide it. The unmount logic is inside the modal component's close handler mostly.
-      }
-    });
-
-    window.addEventListener('click', e => {
-      if (e.target === modal) {
-        modal.style.display = 'none';
-        if (ReactDOM && ReactDOM.unmountComponentAtNode) {
-          ReactDOM.unmountComponentAtNode(document.getElementById('react-modal-content'));
-        }
-      }
-    });
-
+  <script type="module">
     import { initUserProfile } from "./userprofile.js";
     document.addEventListener("DOMContentLoaded", () => {
       initUserProfile("#userProfile");
-    });
+      
+      const modal = document.getElementById('createEventModal');
+      const openBtn = document.getElementById('openCreateEvent');
+      
+      openBtn.addEventListener('click', window.openCreateEvent);
 
+      window.addEventListener('click', e => {
+        if (e.target === modal) {
+          modal.style.display = 'none';
+        }
+      });
+    });
   </script>
   <div class="mobile-overlay"></div>
   <script type="module" src="realtime-notifications.js"></script>

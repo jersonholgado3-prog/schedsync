@@ -42,6 +42,16 @@ body,
 }
 
 /* 👔 ABSOLUTE PROFESSIONAL MODE FLATNESS (Universal Header Override) 👔 */
+.professional-mode,
+.professional-mode * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    transform: none !important;
+    transition: none !important;
+    filter: none !important;
+    animation: none !important;
+}
+
 .professional-mode .header,
 .professional-mode .logo-container,
 .professional-mode .notification-icon-wrapper,
@@ -49,11 +59,6 @@ body,
 .professional-mode .user-profile-btn,
 .professional-mode .search-wrapper,
 .professional-mode .hamburger-btn {
-    box-shadow: none !important;
-    transform: none !important;
-    transition: none !important;
-    filter: none !important;
-    animation: none !important;
     border-width: 1.5px !important;
     /* Slightly thinner as requested 🧤 */
 }

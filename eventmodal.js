@@ -10,9 +10,33 @@ import { showToast, showConfirm } from "./js/utils/ui-utils.js";
 
 console.log("Loading EventModal script...");
 
-// showToast is now handled globally by realtime-notifications.js
+// ✅ PRE-INITIALIZE MODAL CONTAINER
+const modalContainer = document.createElement('div');
+modalContainer.id = 'react-modal-root';
+document.body.appendChild(modalContainer);
 
-/* ───────── HELPERS FROM UTILS_SCHEDULE ───────── */
+const eventModalRoot = createRoot(modalContainer);
+
+// ✅ EXPORT RENDER FUNCTION (Attached to window for non-module access)
+window.renderEventModal = function (eventData = null) {
+  console.log("renderEventModal executing inside eventmodal.js!");
+
+  const modalEl = document.getElementById('createEventModal');
+  if (modalEl) modalEl.style.display = 'flex';
+
+  eventModalRoot.render(h(EventModal, {
+    key: eventData ? eventData.createdAt : Date.now(),
+    initialData: eventData,
+    onClose: () => {
+      if (modalEl) modalEl.style.display = 'none';
+      eventModalRoot.render(null);
+    }
+  }));
+};
+
+window.renderEventModal.isReady = true;
+console.log("renderEventModal exposed to window via assignment!");
+
 const toMinutes = t => {
   if (!t) return 0;
   const [h, m] = t.split(":").map(Number);
@@ -141,6 +165,7 @@ async function checkRoomConflicts(db, roomName, day, timeBlock) {
     let conflicts = [];
 
     for (const doc of snap.docs) {
+      if (doc.id === "DEFAULT_SECTION") continue; // ✅ SKIP EVENTS
       const data = doc.data();
       if (!data.classes) continue;
 
@@ -785,6 +810,45 @@ function EventModal({ onClose, initialData }) {
     }
   };
 
+  const [manualSelection, setManualSelection] = useState({});
+
+  const handleManualMoveConfirm = async () => {
+    const manualDisplacements = conflicts.map((conf, index) => {
+        const targetRoom = manualSelection[index];
+        if (!targetRoom) return null;
+
+        return {
+            from: conf.room,
+            to: targetRoom,
+            date: conf.conflictDate,
+            time: conf.timeBlock,
+            subject: conf.subject,
+            teacher: conf.teacher,
+            section: conf.sectionName || conf.scheduleId,
+            scheduleId: conf.scheduleId,
+            classData: conf
+        };
+    }).filter(Boolean);
+
+    if (manualDisplacements.length < conflicts.length) {
+        showToast("Please select a room for all conflicting classes", "error");
+        return;
+    }
+
+    setIsProcessing(true);
+    await saveEvent("published", manualDisplacements);
+    setIsProcessing(false);
+  };
+
+  const handleManualMove = async () => {
+    // Populate available rooms for manual selection
+    const day = getDayName(conflicts[0].conflictDate);
+    const time = conflicts[0].timeBlock;
+    const rooms = await findVacantRooms(db, day, time);
+    setVacantRooms(rooms);
+    setStep('manual-conflict');
+  };
+
   const handleDisplaceAll = async () => {
     // Check if any block
     if (displacements.some(d => d.isBlocked)) {
@@ -957,12 +1021,19 @@ function EventModal({ onClose, initialData }) {
           h('div', { className: 'dg-form', style: { marginTop: '1.5rem' } },
             h('button', {
               className: 'dg-btn',
-              style: { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' },
+              style: { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '10px' },
               onClick: handleDisplaceAll,
               disabled: isProcessing || displacements.some(d => d.isBlocked)
             }, h('span', { style: { fontSize: '1.2rem' } }, '🚀'), 'Execute Smart Move & Publish'),
+            
+            h('button', {
+              className: 'dg-btn',
+              style: { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', backgroundColor: 'var(--dg-card-bg)', color: 'var(--dg-text-bright)' },
+              onClick: handleManualMove,
+              disabled: isProcessing
+            }, h('span', { style: { fontSize: '1.2rem' } }, '✍️'), 'Manual Move (Skip Automapping)'),
 
-            h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' } },
+            h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '10px' } },
               h('button', {
                 className: 'dg-btn',
                 style: { backgroundColor: 'transparent', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#f87171', boxShadow: 'none' },
@@ -1125,20 +1196,3 @@ function EventModal({ onClose, initialData }) {
 
 const container = document.getElementById('react-modal-content');
 const root = createRoot(container);
-
-console.log("Exposing renderEventModal to window...");
-window.renderEventModal = function (eventData = null) {
-  console.log("renderEventModal called! Resetting state...");
-
-  const modalEl = document.getElementById('createEventModal');
-  if (modalEl) modalEl.style.display = 'flex';
-
-  root.render(h(EventModal, {
-    key: eventData ? eventData.createdAt : Date.now(),
-    initialData: eventData,
-    onClose: () => {
-      if (modalEl) modalEl.style.display = 'none';
-      root.render(null);
-    }
-  }));
-};
