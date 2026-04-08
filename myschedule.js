@@ -197,8 +197,11 @@ function renderSection(status, schedules, type = null) {
       if (type && s.scheduleType !== type) return false;
       if (!type && s.scheduleType === 'exam' && status === 'published') return false;
 
-      // Filter by status
-      if (s.status === 'draft' && s.userId !== currentUser.uid && currentUserRole !== 'admin') return false;
+      // ✅ RESTRICT DRAFT VISIBILITY: Only show your OWN drafts.
+      // Published schedules are visible to all teachers/admins.
+      if (s.status === 'draft' && s.userId !== currentUser.uid) return false;
+      
+      // Filter by the target section status (published vs draft)
       if (s.status !== status) return false;
 
       // --- targetDate Precedence & Auto-Cleanup ---
@@ -464,6 +467,7 @@ function addSectionToGroup(scheduleName) {
         author: currentUser.displayName || currentUser.email || "Unknown",
         section: cleanName,
         scheduleName: scheduleName,
+        scheduleType: sibling.scheduleType || "regular", // ✅ INHERIT TYPE (Regular or Exam)
         startTime: sibling.startTime,
         endTime: sibling.endTime,
         selectedDays: days,
@@ -473,6 +477,25 @@ function addSectionToGroup(scheduleName) {
         createdAt: Date.now()
       });
 
+      // ✅ SYNC WITH SECTIONS COLLECTION
+      try {
+        const sectionsQuery = query(
+          collection(db, "sections"),
+          where("userId", "==", currentUser.uid),
+          where("name", "==", cleanName)
+        );
+        const sectionsSnap = await getDocs(sectionsQuery);
+        if (sectionsSnap.empty) {
+          await addDoc(collection(db, "sections"), {
+            name: cleanName,
+            userId: currentUser.uid
+          });
+          console.log(`SchedSync: Section "${cleanName}" synced to global sections list.`);
+        }
+      } catch (syncErr) {
+        console.error("SchedSync: Section sync failed", syncErr);
+      }
+
       // Optimistic UI Update
       schedules.push({
         id: docRef.id,
@@ -480,6 +503,7 @@ function addSectionToGroup(scheduleName) {
         author: currentUser.displayName || currentUser.email || "Unknown",
         section: cleanName,
         scheduleName: scheduleName,
+        scheduleType: sibling.scheduleType || "regular", // ✅ INHERIT TYPE
         startTime: sibling.startTime,
         endTime: sibling.endTime,
         selectedDays: days,

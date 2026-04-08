@@ -99,7 +99,7 @@
     }
 
     .sidebar-link.active img {
-      filter: none;
+      filter: brightness(0) saturate(100%) invert(8%) sepia(35%) saturate(4681%) hue-rotate(193deg) brightness(97%) contrast(106%) !important;
     }
 
     .main-content-wrapper {
@@ -464,4 +464,4 @@
         padding-bottom: 0 !important;
       }
     }
-  </style>
+

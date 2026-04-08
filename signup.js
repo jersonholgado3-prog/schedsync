@@ -29,6 +29,8 @@ roleRadios.forEach(radio => {
 document.addEventListener('DOMContentLoaded', () => {
   handleRoleChange();
   generateEmail();
+
+  // Password toggle logic is handled globally by ui-effects.js ⚓
 });
 
 // Also run immediately since modules are deferred anyway

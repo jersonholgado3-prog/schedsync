@@ -181,19 +181,19 @@ button[type="submit"]:hover {
 }
 
 .password-toggle .eye-off {
-    display: block;
+    display: none;
 }
 
 .password-toggle .eye-on {
-    display: none;
+    display: block;
 }
 
 .password-toggle.visible .eye-off {
-    display: none;
+    display: block;
 }
 
 .password-toggle.visible .eye-on {
-    display: block;
+    display: none;
 }
 
 /* Responsive styles */

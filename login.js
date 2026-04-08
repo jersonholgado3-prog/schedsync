@@ -34,6 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
     notif.style.display = 'block';
   };
 
+  // Password toggle logic is now handled globally by ui-effects.js ⚓
+
   // =====================================================
   // ✅ LOGIN PAGE LOGIC
   // =====================================================

@@ -247,6 +247,27 @@
       transform: translateY(-50%) scale(1.1);
     }
 
+    .password-toggle svg {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+
+    .password-toggle .eye-off {
+      display: none;
+    }
+
+    .password-toggle .eye-on {
+      display: block;
+    }
+
+    .password-toggle.visible .eye-off {
+      display: block;
+    }
+
+    .password-toggle.visible .eye-on {
+      display: none;
+    }
+
     /* Buttons ⚡⚓ */
     .btn {
       width: 100%;

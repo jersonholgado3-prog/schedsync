@@ -121,6 +121,11 @@ export function initUserProfile(profileSelector = "#userProfile") {
     // Set initial text
     updateThemeToggleText();
     updateModeToggleText();
+
+    // ✅ LISTEN FOR GLOBAL MODE CHANGES
+    window.addEventListener('uimodechange', () => {
+      updateModeToggleText();
+    });
   };
 
   // 3. Burger Icon & Container Setup
@@ -237,7 +242,8 @@ function updateModeToggleText() {
   if (toggle) {
     const uiMode = getUIMode();
     const isProfessional = uiMode === 'professional';
-    toggle.textContent = isProfessional ? '👔 Professional Mode' : '🦈 Student Mode';
+    // ✅ SHOW TARGET MODE (The one we are NOT currently in)
+    toggle.textContent = isProfessional ? '🦈 Student Mode' : '👔 Professional Mode';
   }
 }
 

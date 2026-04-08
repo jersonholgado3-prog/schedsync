@@ -39,6 +39,42 @@ document.addEventListener("DOMContentLoaded", () => {
     initUserProfile("#userProfile");
     initUniversalSearch(db);
 
+    // ✅ PROFILE EDIT BUTTON LOGIC
+    const editBtn = document.getElementById('floatBtn');
+    if (editBtn) {
+        editBtn.addEventListener('click', async () => {
+            const currentName = document.getElementById("userNameLarge").textContent;
+            const newName = await showPrompt("Edit Profile", "Enter your new name:", currentName);
+
+            if (newName && newName.trim() !== "" && newName !== currentName) {
+                try {
+                    const user = auth.currentUser;
+                    if (!user) {
+                        showToast("You must be logged in to edit your profile.", "error");
+                        return;
+                    }
+
+                    // 1. Update Firebase Auth
+                    await updateProfile(user, { displayName: newName });
+
+                    // 2. Update Firestore
+                    const docRef = doc(db, "users", user.uid);
+                    await updateDoc(docRef, { username: newName });
+
+                    // 3. Update UI
+                    document.getElementById("userNameLarge").textContent = newName;
+                    const headerUserName = document.querySelector("#userProfile .user-name");
+                    if (headerUserName) headerUserName.textContent = newName;
+
+                    showToast("Profile updated successfully!", "success");
+                } catch (error) {
+                    console.error("Failed to update profile:", error);
+                    showToast("Error updating profile. Please try again.", "error");
+                }
+            }
+        });
+    }
+
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             setupImageUpdate(user);

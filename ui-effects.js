@@ -10,21 +10,34 @@ export const getUIMode = () => {
 
 export const setUIMode = (mode) => {
     localStorage.setItem('uiMode', mode);
-    document.documentElement.classList.toggle('professional-mode', mode === 'professional');
+    const isProfessional = mode === 'professional';
+    document.documentElement.classList.toggle('professional-mode', isProfessional);
 
-    // Refresh animals
-    if (mode === 'professional') {
+    // ✅ REFRESH UI ELEMENTS
+    if (isProfessional) {
+        // Remove student mode elements
         document.getElementById('shark-container')?.remove();
         document.getElementById('turtle-container')?.remove();
+        console.log("👔 Professional Mode Activated");
     } else {
-        // Redraw only if not on auth page
+        // Re-inject student mode elements if not on auth page
         const path = window.location.pathname;
-        const isAuthPage = path.includes('login.html') || path.includes('signup.html') || path.includes('forgotpass.html') || path.includes('teacherlogin.html') || path.includes('index.html');
+        const isAuthPage = path.includes('login.html') || 
+                          path.includes('signup.html') || 
+                          path.includes('forgotpass.html') || 
+                          path.includes('teacherlogin.html') || 
+                          path.includes('index.html') ||
+                          path.endsWith('/');
+        
         if (!isAuthPage) {
             injectSecretShark();
             injectTurtles();
         }
+        console.log("🦈 Student Mode Activated");
     }
+
+    // Dispatch global event for other components to react (e.g., userprofile.js text)
+    window.dispatchEvent(new CustomEvent('uimodechange', { detail: { mode } }));
 };
 
 const injectPoppinsFont = () => {
@@ -421,7 +434,7 @@ const injectGlobalTransitions = () => {
             transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease !important;
             border-top-right-radius: 40px !important;
             overflow: hidden !important;
-            background: linear-gradient(to bottom, #FFD200 150px, #002044 150px) !important;
+            background: linear-gradient(to bottom, #FFD200 115px, #002044 115px) !important;
         }
 
         .sidebar.collapsed {
@@ -499,7 +512,7 @@ const injectGlobalTransitions = () => {
 
         /* ENSURE MAANGAS SIDEBAR STYLE GLOBALLY ⚓⚓⚓ */
         .sidebar {
-            background: linear-gradient(to bottom, #FFD200 150px, #002044 150px) !important;
+            background: linear-gradient(to bottom, #FFD200 115px, #002044 115px) !important;
             border-right: none !important;
         }
 
@@ -707,7 +720,7 @@ const injectGlobalTransitions = () => {
         .dark .profile-info-line span,
         .dark .schedule-meta,
         .dark .folder-count {
-            color: rgba(248, 250, 252, 0.7) !important;
+            color: #f1f5f9 !important;
         }
 
 
@@ -1118,8 +1131,16 @@ export const initPasswordVisibilityToggles = () => {
             const isPassword = input.type === 'password';
             input.type = isPassword ? 'text' : 'password';
 
-            // Toggle the SVG icon if needed (handled by CSS background or simple SVG change)
+            // Toggle the visibility class
             toggle.classList.toggle('visible');
+
+            // Explicitly handle SVGs for browsers that might ignore CSS transitions/classes
+            const eyeOn = toggle.querySelector('.eye-on');
+            const eyeOff = toggle.querySelector('.eye-off');
+            if (eyeOn && eyeOff) {
+                eyeOn.style.display = isPassword ? 'none' : 'block';
+                eyeOff.style.display = isPassword ? 'block' : 'none';
+            }
 
             // Maangas feedback 👁️
             console.log(isPassword ? "👁️ Password revealed" : "🙈 Password hidden");
