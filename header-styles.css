@@ -24,12 +24,12 @@ body,
 
 .header {
     display: grid !important;
-    grid-template-columns: auto 1fr auto !important;
+    grid-template-columns: min-content 1fr min-content !important; /* ✅ PREVENT LOGO SHIFT: Fix columns to min-content */
     align-items: center !important;
     min-height: 90px !important;
     height: auto !important;
     /* Allow growing if needed ⚓ */
-    gap: 1rem !important;
+    gap: 1.5rem !important;
     position: relative !important;
     z-index: 1000 !important;
     background-color: var(--bg-card) !important;
@@ -258,12 +258,13 @@ body,
     border-radius: 12px !important;
     width: 48px !important;
     height: 48px !important;
-    padding: 0 10px !important;
+    padding: 0 !important; /* ✅ REMOVE ARTIFACT: No padding by default */
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     overflow: hidden !important;
     cursor: pointer !important;
     box-shadow: 4px 4px 0px black !important;
     flex-shrink: 0 !important;
+    justify-content: center !important; /* Center icon when collapsed */
 }
 
 .search-icon {
@@ -282,11 +283,15 @@ body,
     font-weight: 600 !important;
     color: black !important;
     margin-left: 0 !important;
+    text-align: center !important; /* ✅ CENTER PLACEHOLDER: Ensure text is centered */
+    padding: 0 !important;
 }
 
 .search-wrapper:focus-within,
 .search-wrapper.expanded {
-    width: 250px !important;
+    width: 280px !important;
+    padding: 0 15px !important; /* ✅ ADD PADDING ONLY WHEN EXPANDED */
+    justify-content: flex-start !important;
 }
 
 .search-wrapper:focus-within .search-button,
@@ -294,6 +299,7 @@ body,
     width: 100% !important;
     opacity: 1 !important;
     margin-left: 10px !important;
+    padding: 0 5px !important;
 }
 
 .dark .search-button {
