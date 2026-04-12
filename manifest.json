@@ -1,0 +1,22 @@
+{
+  "name": "SchedSync Campus Management",
+  "short_name": "SchedSync",
+  "description": "Multi-page campus scheduling and management system.",
+  "start_url": "./homepage.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#005BAB",
+  "icons": [
+    {
+      "src": "images/LOGO.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "images/LOGO.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

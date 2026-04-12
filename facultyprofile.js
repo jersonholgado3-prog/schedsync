@@ -1,23 +1,10 @@
 import { initMobileNav } from "./js/ui/mobile-nav.js";
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getFirestore, doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { db, app } from "./js/config/firebase-config.js";
+import { doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { initUserProfile } from "./userprofile.js";
 import { initUniversalSearch } from "./search.js";
 import { toMin, toTime, to12, parseBlock, overlaps, normalizeDay } from "./js/utils/time-utils.js";
 import { showToast } from "./js/utils/ui-utils.js";
-
-const firebaseConfig = {
-    apiKey: "AIzaSyBrtJocBlfkPciYO7f8-7FwREE1tSF3VXU",
-    authDomain: "schedsync-e60d0.firebaseapp.com",
-    projectId: "schedsync-e60d0",
-    storageBucket: "schedsync-e60d0.firebasestorage.app",
-    messagingSenderId: "334140247575",
-    appId: "1:334140247575:web:930b0c12e024e4defc5652",
-    measurementId: "G-S59GL1W5Y2"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 
 // Global state for download
 let currentTeacherName = "";

@@ -1,28 +1,11 @@
 // login.js — handles both login.html and forgotpass.html
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { auth, db, app } from "./js/config/firebase-config.js";
 import {
-  getAuth,
   signInWithEmailAndPassword,
   sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-
-// ✅ Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyBrtJocBlfkPciYO7f8-7FwREE1tSF3VXU",
-  authDomain: "schedsync-e60d0.firebaseapp.com",
-  projectId: "schedsync-e60d0",
-  storageBucket: "schedsync-e60d0.firebasestorage.app",
-  messagingSenderId: "334140247575",
-  appId: "1:334140247575:web:930b0c12e024e4defc5652",
-  measurementId: "G-S59GL1W5Y2"
-};
-
-// ✅ Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+import { doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 document.addEventListener('DOMContentLoaded', () => {
   const notif = document.getElementById('notification');

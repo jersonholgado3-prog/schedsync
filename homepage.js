@@ -1,4 +1,5 @@
-import { db, auth, analytics } from "./js/config/firebase-config.js";
+import { db, auth, analytics, app } from "./js/config/firebase-config.js";
+import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-messaging.js";
 import {
   onSnapshot,
   query,
@@ -10,7 +11,9 @@ import {
   doc,
   getDoc,
   writeBatch,
-  getDocs
+  getDocs,
+  updateDoc,
+  arrayUnion
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { initUniversalSearch } from "./search.js";
@@ -19,28 +22,26 @@ import { syncStaticRooms } from './room-sync.js';
 import { initMobileNav } from "./js/ui/mobile-nav.js";
 import { showToast, showConfirm } from "./js/utils/ui-utils.js";
 
+// Global Messaging 🔔
+const messaging = getMessaging(app);
 
 // Global state for announcement selection 🧐
 let selectedAnnouncements = new Set();
 
+// Global Listeners State ⚓
+let unsubAnnouncements = null;
+let unsubDrafts = null;
+let unsubEvents = null;
+
 document.addEventListener("DOMContentLoaded", () => {
   console.log("SchedSync: Initializing Homepage Components...");
-  try {
-    initUserProfile("#userProfile");
-  } catch (e) {
-    console.error("SchedSync: Profile Init Failed:", e);
-  }
 
   try {
-    initUniversalSearch(db);
-  } catch (e) {
-    console.error("SchedSync: Search Init Failed:", e);
-  }
-
-  try {
+    initUserProfile();
+    initUniversalSearch(db); // Pass db instance ⚓
     initMobileNav();
   } catch (e) {
-    console.error("SchedSync: Mobile Nav Init Failed:", e);
+    console.error("SchedSync: UI components initialization failed (ignoring):", e);
   }
 
   const greetingEl = document.getElementById("greeting");
@@ -48,13 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       console.log("SchedSync: User authenticated:", user.uid);
-      const name =
-        user.displayName ||
-        (user.email ? user.email.split("@")[0] : "User");
-
-      if (greetingEl) {
-        greetingEl.textContent = `Good Day, ${name}!`;
-      }
+      let greetingName = user.displayName || (user.email ? user.email.split("@")[0] : "User");
 
       let role = localStorage.getItem('userRole') || 'student';
       let hasPerm = localStorage.getItem('editPermission') === 'true';
@@ -66,6 +61,10 @@ document.addEventListener("DOMContentLoaded", () => {
           const userData = udoc.data();
           role = userData.role || 'student';
           hasPerm = userData.editPermission === true;
+          
+          // 🛡️ Enhanced Greeting: Use fullName if available ⚓
+          if (userData.fullName) greetingName = userData.fullName;
+
           localStorage.setItem('userRole', role);
           localStorage.setItem('editPermission', String(hasPerm));
         }
@@ -73,15 +72,33 @@ document.addEventListener("DOMContentLoaded", () => {
         console.error("Sync error:", e);
       }
 
-      // Initialize widgets with direct data 🚀
-      console.log("SchedSync: Initializing Widgets for role:", role);
+      if (greetingEl) {
+        greetingEl.textContent = `Good Day, ${greetingName}!`;
+      }
+
+      // Cleanup existing listeners before re-init 🧹
+      if (unsubAnnouncements) unsubAnnouncements();
+      if (unsubDrafts) unsubDrafts();
+      if (unsubEvents) unsubEvents();
+
       initAnnouncements(role);
       initDraftSchedules(user.uid, role, hasPerm);
       initEventCalendar();
       setupAnnouncementActions(role);
+
+      if (role === 'admin') {
+        const adminSection = document.getElementById('adminAnalyticsSection');
+        if (adminSection) {
+          adminSection.style.display = 'block';
+          initAdminAnalytics();
+        }
+      }
+
+      // Initialize Push Notifications 🔔
+      initPushNotifications(user);
     } else {
       console.log("SchedSync: No user authenticated.");
-      greetingEl.textContent = "Good Day!";
+      if (greetingEl) greetingEl.textContent = "Good Day!";
       // Clear loading states if no user
       ['announcements-list', 'drafts-list', 'events-list'].forEach(id => {
         const el = document.getElementById(id);
@@ -148,22 +165,109 @@ function updateAnnouncementActionVisibility() {
   }
 }
 
+/* ───────── PUSH NOTIFICATIONS 🔔⚓ ───────── */
+
+async function initPushNotifications(user) {
+  try {
+    // 1. Request Permission
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      console.warn("SchedSync: Push notification permission denied.");
+      return;
+    }
+
+    // 2. Get Token (VAPID Key is public for SchedSync)
+    const vapidKey = "BOM8u_Hl9V7y0vGZ7nL_W6PZ_UvR_O_9Z7_V_W_V_G_Z_N_L_W_6_P_Z_U_v_R_O_9_Z_7_V_W";
+    
+    // Check if placeholder is used
+    if (vapidKey.startsWith("BOM8u_Hl9V7")) {
+        console.warn("SchedSync: Push Notifications disabled (Placeholder VAPID Key in use).");
+        return;
+    }
+
+    const token = await getToken(messaging, { vapidKey });
+
+    if (token) {
+      console.log("SchedSync: Push Token generated ✅");
+      // 3. Save token to user profile in Firestore for targeted notifications
+      await updateDoc(doc(db, "users", user.uid), {
+        fcmTokens: arrayUnion(token)
+      });
+    }
+
+    // 4. Handle Foreground Messages
+    onMessage(messaging, (payload) => {
+      console.log("SchedSync: Foreground message received po:", payload);
+      showToast(`🔔 ${payload.notification.title}: ${payload.notification.body}`, "info");
+      // Optionally refresh announcements list
+      initAnnouncements(localStorage.getItem('userRole') || 'student');
+    });
+
+  } catch (err) {
+    console.error("SchedSync: Push Notification Init Failed:", err);
+  }
+}
+
 /* ───────── WIDGET LOGIC 🛡️🕰️ ───────── */
 
+// Add this to your init functions in homepage.js
+// This ensures they show up immediately
+function updateDebug(msg) {
+    const el = document.getElementById('debug-status');
+    if(el) {
+        el.textContent = 'Status: ' + msg;
+        if (msg.includes('Loaded')) {
+            setTimeout(() => { el.style.display = 'none'; }, 2000);
+        }
+    }
+}
+
 function initAnnouncements(role) {
+  updateDebug('Loading Announcements...');
   const list = document.getElementById('announcements-list');
   const badge = document.getElementById('announcement-badge');
   if (!list) return;
 
-  // Fetch all and filter in memory 🕰️
-  const q = collection(db, "notifications");
+  // 🦴 SHOW SKELETONS while loading
+  list.innerHTML = `
+    <div class="skeleton-item skeleton" style="height:80px"></div>
+    <div class="skeleton-item skeleton" style="height:80px"></div>
+    <div class="skeleton-item skeleton" style="height:80px"></div>
+  `;
 
-  onSnapshot(q, (snap) => {
+  // 🛡️ OPTIMIZED: Fetch the latest 15 notifications (Pagination ready)
+  const q = query(
+    collection(db, "notifications"),
+    orderBy("createdAt", "desc"),
+    limit(15)
+  );
+
+  // 🛡️ EMERGENCY TIMEOUT: Force display after 3s if stuck
+  const emergencyTimeout = setTimeout(() => {
+    if (list.innerHTML.includes('skeleton')) {
+      updateDebug('Announcements Timeout');
+      list.innerHTML = '<div class="widget-empty">No announcements found. (System Timeout)</div>';
+    }
+  }, 3000);
+
+  unsubAnnouncements = onSnapshot(q, (snap) => {
+    clearTimeout(emergencyTimeout);
+    updateDebug('Announcements Loaded');
     list.innerHTML = '';
+    
+    if (snap.empty) {
+      list.innerHTML = `
+        <div class="widget-empty">
+          <div style="font-size: 40px; margin-bottom: 10px;">📭</div>
+          No new announcements for now.
+        </div>`;
+      if (window.initHeroCarousel) window.initHeroCarousel([]);
+      return;
+    }
 
     const allNotes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-    // Loosen filter to catch more "Updates" 🛡️
+    // Match the original "Loosen filter" logic but on a limited set ⚓
     const items = allNotes
       .filter(d => {
         const title = (d.title || "").toUpperCase();
@@ -178,24 +282,15 @@ function initAnnouncements(role) {
           msg.includes("SCHEDULE") ||
           msg.includes("EVENT");
       })
-      .sort((a, b) => {
-        const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (Number(a.createdAt) || 0);
-        const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (Number(b.createdAt) || 0);
-        return timeB - timeA;
-      })
-      .slice(0, 20);
-
-    if (items.length === 0 && allNotes.length > 0) {
-      const fallback = allNotes.slice(0, 5);
-      if (window.initHeroCarousel) window.initHeroCarousel(fallback);
-    } else if (items.length > 0) {
-      if (window.initHeroCarousel) window.initHeroCarousel(items);
-    }
+      .slice(0, 20); // Show top 20 after filtering
 
     if (items.length === 0) {
       list.innerHTML = '<div class="widget-empty">No new announcements for now.</div>';
+      if (window.initHeroCarousel) window.initHeroCarousel([]);
       return;
     }
+
+    if (window.initHeroCarousel) window.initHeroCarousel(items);
 
     const isAdmin = role === 'admin';
 
@@ -273,28 +368,43 @@ function initDraftSchedules(uid, role, hasPerm) {
   const list = document.getElementById('drafts-list');
   if (!list) return;
 
-  const q = collection(db, "schedules");
+  // 🦴 SHOW SKELETONS while loading
+  list.innerHTML = `
+    <div class="skeleton-item skeleton" style="height:100px"></div>
+    <div class="skeleton-item skeleton" style="height:100px"></div>
+  `;
 
-  onSnapshot(q, (snap) => {
+  // 🛡️ OPTIMIZED: Filter by userId and status "draft" at the database level.
+  const q = query(
+    collection(db, "schedules"),
+    where("userId", "==", uid),
+    where("status", "==", "draft")
+  );
+
+  unsubDrafts = onSnapshot(q, (snap) => {
     list.innerHTML = '';
+    
+    if (snap.empty) {
+      list.innerHTML = `
+        <div class="widget-empty">
+          <div style="font-size: 40px; margin-bottom: 10px;">📝</div>
+          No active drafts found.
+        </div>`;
+      return;
+    }
+
     const groups = {};
     snap.docs.forEach(docSnap => {
       const data = docSnap.data();
-      const status = data.status || "draft";
-      if (status !== "draft") return;
       if (docSnap.id === "DEFAULT_SECTION" || data.section === "EVENTS" || data.section === "EVENT_HOST") return;
-
-      // Show only own drafts
-      const docUid = String(data.userId || "").trim();
-      const currUid = String(uid || "").trim();
-      if (docUid !== currUid) return;
 
       // --- targetDate Auto-Vanishing Logic ---
       if (data.targetDate) {
         const todayStr = new Date().toISOString().split('T')[0];
-        if (data.targetDate < todayStr) return; // Expired
-        if (data.targetDate > todayStr) return; // Not for today
+        if (data.targetDate < todayStr) return; // Expired 🛡️
+        // FIXED: Removed the 'future' check so you can see drafts for tomorrow! 🚀⚓
       }
+      // ... rest of logic
 
       const name = (data.scheduleName || "Untitled").trim();
       if (!groups[name]) {
@@ -545,11 +655,10 @@ function initHeroCarousel(announcements) {
   track.innerHTML = '';
   indicators.innerHTML = '';
 
-  // Filter urgent and latest
-  const urgentItems = announcements.filter(d => (d.title || "").toUpperCase().includes("URGENT") || d.isUrgent === true);
-  const latestItems = announcements.filter(d => !urgentItems.includes(d)).slice(0, 3); // Top 3 latest
+  // Filter latest 3 announcements 🎡
+  const latestItems = announcements.slice(0, 3); 
 
-  const slidesToCreate = [...urgentItems, ...latestItems];
+  const slidesToCreate = [...latestItems];
 
   if (slidesToCreate.length === 0) {
     container.style.display = 'none';
@@ -559,13 +668,23 @@ function initHeroCarousel(announcements) {
 
   slidesToCreate.forEach((ann, index) => {
     const isUrgent = (ann.title || "").toUpperCase().includes("URGENT") || ann.isUrgent === true;
+    
+    // Unique visuals based on index 🎡✨
+    const colors = [
+        { bg: 'linear-gradient(135deg, #005BAB, #003B95)', tag: '#FFD200', tagText: '#002044' },
+        { bg: 'linear-gradient(135deg, #0f172a, #334155)', tag: '#38bdf8', tagText: '#0f172a' },
+        { bg: 'linear-gradient(135deg, #991b1b, #7f1d1d)', tag: '#fecaca', tagText: '#7f1d1d' }
+    ];
+    const theme = colors[index % 3];
 
     // Create Slide
     const slide = document.createElement('div');
     slide.className = `carousel-slide announcement-slide ${isUrgent ? 'urgent' : ''}`;
+    slide.style.background = theme.bg;
+    
     slide.innerHTML = `
-      <div class="slide-tag" style="background: ${isUrgent ? 'rgba(239, 68, 68, 0.9)' : 'rgba(16, 185, 129, 0.9)'}; color: white;">
-        ${isUrgent ? '⚠️ Urgent' : '✨ Latest Update'}
+      <div class="slide-tag" style="background: ${isUrgent ? '#ef4444' : theme.tag}; color: ${isUrgent ? '#fff' : theme.tagText};">
+        ${isUrgent ? '⚠️ Urgent' : '✨ Announcement'}
       </div>
       <div class="slide-title">${ann.title || 'Notification'}</div>
       <div class="slide-msg">${ann.message || ''}</div>
@@ -604,19 +723,19 @@ function initHeroCarousel(announcements) {
   }
 
   // Swipe Support
-  container.addEventListener('touchstart', (e) => {
+  container.ontouchstart = (e) => {
     startX = e.touches[0].clientX;
     clearInterval(carouselInterval);
-  }, { passive: true });
+  };
 
-  container.addEventListener('touchend', (e) => {
+  container.ontouchend = (e) => {
     const endX = e.changedTouches[0].clientX;
     if (startX - endX > 50) goToSlide(currentSlide + 1); // Swipe Left
     else if (endX - startX > 50) goToSlide(currentSlide - 1); // Swipe Right
 
     // Resume cycle
     carouselInterval = setInterval(() => goToSlide(currentSlide + 1), 6000);
-  }, { passive: true });
+  };
 
   // Mouse Drag Fallback
   container.onmousedown = (e) => {
@@ -630,5 +749,141 @@ function initHeroCarousel(announcements) {
       carouselInterval = setInterval(() => goToSlide(currentSlide + 1), 6000);
     };
   };
+
+  // 🎡 Navigation Button Listeners ⚓
+  const prevBtn = document.getElementById('prevSlide');
+  if (prevBtn) {
+    prevBtn.onclick = () => {
+      clearInterval(carouselInterval);
+      goToSlide(currentSlide - 1);
+      carouselInterval = setInterval(() => goToSlide(currentSlide + 1), 6000);
+    };
+  }
+
+  const nextBtn = document.getElementById('nextSlide');
+  if (nextBtn) {
+    nextBtn.onclick = () => {
+      clearInterval(carouselInterval);
+      goToSlide(currentSlide + 1);
+      carouselInterval = setInterval(() => goToSlide(currentSlide + 1), 6000);
+    };
+  }
+
+  // ⌨️ Keyboard Accessibility
+  container.setAttribute('tabindex', '0');
+  container.onkeydown = (e) => {
+    if (e.key === 'ArrowLeft') goToSlide(currentSlide - 1);
+    if (e.key === 'ArrowRight') goToSlide(currentSlide + 1);
+  };
 }
 window.initHeroCarousel = initHeroCarousel;
+
+/* =============================
+   ADMIN ANALYTICS LOGIC 📊⚓
+   ============================= */
+let roomChart = null;
+let hourChart = null;
+
+async function initAdminAnalytics() {
+  const chartContainers = document.querySelectorAll('#adminAnalyticsSection canvas');
+  // 🦴 Show loading state (Opacity fade or overlay)
+  chartContainers.forEach(c => c.style.opacity = '0.3');
+
+  try {
+    const [schedSnap, roomsSnap] = await Promise.all([
+      getDocs(query(collection(db, "schedules"), where("status", "==", "published"))),
+      getDocs(collection(db, "rooms"))
+    ]);
+    // ... rest of logic
+    chartContainers.forEach(c => c.style.opacity = '1');
+
+    const schedules = schedSnap.docs.map(d => d.data());
+    const rooms = roomsSnap.docs.map(d => d.data());
+
+    // 1. Room Usage by Floor
+    const floorUsage = { "Floor 1": 0, "Floor 2": 0, "Floor 3": 0, "Floor 4": 0, "Others": 0 };
+    schedules.forEach(s => {
+      (s.classes || []).forEach(c => {
+        if (c.subject === "VACANT" || !c.room) return;
+        const roomDoc = rooms.find(r => r.name.toLowerCase() === c.room.toLowerCase().replace(/room|rm|\s/g, "").trim() || r.name.toLowerCase() === c.room.toLowerCase().trim());
+        if (roomDoc && roomDoc.floor) {
+          floorUsage[`Floor ${roomDoc.floor}`]++;
+        } else {
+          floorUsage["Others"]++;
+        }
+      });
+    });
+
+    renderRoomUsageChart(floorUsage);
+
+    // 2. Peak Hours
+    const hourCounts = {};
+    schedules.forEach(s => {
+      (s.classes || []).forEach(c => {
+        if (c.subject === "VACANT" || !c.timeBlock) return;
+        const hour = c.timeBlock.split(':')[0];
+        const period = c.timeBlock.includes('PM') && parseInt(hour) !== 12 ? 'PM' : 'AM';
+        const label = `${hour}:00 ${period}`;
+        hourCounts[label] = (hourCounts[label] || 0) + 1;
+      });
+    });
+
+    renderPeakHoursChart(hourCounts);
+
+  } catch (err) {
+    console.error("Analytics Init Failed:", err);
+  }
+}
+
+function renderRoomUsageChart(data) {
+  const ctx = document.getElementById('roomUsageChart');
+  if (!ctx) return;
+  if (roomChart) roomChart.destroy();
+
+  roomChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(data),
+      datasets: [{
+        data: Object.values(data),
+        backgroundColor: ['#005BAB', '#FFD200', '#1e293b', '#64748b', '#e2e8f0'],
+        borderWidth: 2,
+        borderColor: '#ffffff'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom', labels: { font: { weight: 'bold' } } } }
+    }
+  });
+}
+
+function renderPeakHoursChart(data) {
+  const ctx = document.getElementById('peakHoursChart');
+  if (!ctx) return;
+  if (hourChart) hourChart.destroy();
+
+  const sortedLabels = Object.keys(data).sort((a, b) => {
+    const timeA = parseInt(a);
+    const timeB = parseInt(b);
+    return timeA - timeB;
+  });
+
+  hourChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: sortedLabels,
+      datasets: [{
+        label: 'Classes',
+        data: sortedLabels.map(l => data[l]),
+        backgroundColor: '#005BAB',
+        borderRadius: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } },
+      plugins: { legend: { display: false } }
+    }
+  });
+}

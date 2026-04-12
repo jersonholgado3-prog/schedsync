@@ -15,11 +15,21 @@ import { showToast, showConfirm } from "./js/utils/ui-utils.js";
 
 
 
-
 async function loadTeachers() {
-  const facultyGrid = document.getElementById("facultyGrid");
+  const facultyGrid = document.getElementById('facultyGrid');
   if (!facultyGrid) return;
-  facultyGrid.innerHTML = "<p style='text-align: center; width: 100%; grid-column: 1/-1;'>Loading teachers...</p>";
+
+  // 🦴 SHOW SKELETONS while loading
+  facultyGrid.innerHTML = '';
+  for (let i = 0; i < 8; i++) {
+    facultyGrid.innerHTML += `
+      <div class="faculty-skeleton-card skeleton">
+        <div class="skeleton-circle skeleton"></div>
+        <div class="skeleton-title skeleton" style="margin: 0 auto 10px;"></div>
+        <div class="skeleton-text skeleton" style="width: 60%; margin: 0 auto;"></div>
+      </div>
+    `;
+  }
 
   try {
     const q = query(

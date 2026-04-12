@@ -109,6 +109,7 @@ export function initUserProfile(profileSelector = "#userProfile") {
 
       if (confirmed) {
         try {
+          localStorage.setItem('manual_logout', 'true');
           await signOut(auth);
           window.location.href = "index.html";
         } catch (error) {

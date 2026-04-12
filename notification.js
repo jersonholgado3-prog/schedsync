@@ -1,4 +1,4 @@
-import { db, auth } from "./js/config/firebase-config.js";
+import { db, auth, app } from "./js/config/firebase-config.js";
 import {
   collection,
   query,
@@ -11,7 +11,8 @@ import {
   serverTimestamp,
   where,
   writeBatch,
-  Timestamp
+  Timestamp,
+  limit
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { initMobileNav } from "./js/ui/mobile-nav.js";
@@ -41,7 +42,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (closeBtn) {
     closeBtn.addEventListener("click", () => {
-      if (modal) modal.classList.remove("show");
+      if (modal) {
+        modal.classList.remove("show");
+        resetForm(); // Clean up 🧹
+      }
     });
   }
 
@@ -49,6 +53,38 @@ document.addEventListener("DOMContentLoaded", () => {
     sendBtn.addEventListener("click", async () => {
       await sendNotification();
     });
+  }
+
+  // Image URL Preview Logic 📸
+  const imageUrlInput = document.getElementById("notificationImageUrl");
+  const imagePreview = document.getElementById("imagePreview");
+  const previewImg = document.getElementById("previewImg");
+
+  if (imageUrlInput) {
+    imageUrlInput.oninput = () => {
+      const url = imageUrlInput.value.trim();
+      if (url) {
+        previewImg.src = url;
+        imagePreview.style.display = "block";
+        previewImg.onerror = () => {
+          imagePreview.style.display = "none";
+        };
+      } else {
+        resetImagePreview();
+      }
+    };
+  }
+
+  function resetImagePreview() {
+    if (imageUrlInput) imageUrlInput.value = "";
+    if (imagePreview) imagePreview.style.display = "none";
+    if (previewImg) previewImg.src = "";
+  }
+
+  function resetForm() {
+    const fields = document.querySelectorAll(".input-field, .textarea-field");
+    fields.forEach(f => f.value = "");
+    resetImagePreview();
   }
 
   // Selection and Deletion Listeners 🗑️✅
@@ -109,8 +145,15 @@ function loadNotifications(selectedIds, updateDeleteButtonsVisibility) {
   const container = document.getElementById("notificationsContainer");
   if (!container) return;
 
-  // Listen to notifications collection
-  const q = query(collection(db, "notifications"), orderBy("createdAt", "desc"));
+  // 🦴 SHOW SKELETONS while loading
+  container.innerHTML = `
+    <div class="skeleton-item skeleton" style="height: 60px;"></div>
+    <div class="skeleton-item skeleton" style="height: 60px;"></div>
+    <div class="skeleton-item skeleton" style="height: 60px;"></div>
+  `;
+
+  // Listen to notifications collection with a limit to stay within free tier easily 🛡️
+  const q = query(collection(db, "notifications"), orderBy("createdAt", "desc"), limit(50));
 
   onSnapshot(q, (snapshot) => {
     container.innerHTML = "";
@@ -142,11 +185,12 @@ function renderNotificationCard(container, data, id, selectedIds, updateDeleteBu
   }
 
   const isChecked = selectedIds && selectedIds.has(id);
+  const hasImage = data.imageUrl ? `<span title="Has Attachment" style="margin-left: 5px; cursor: help;">🖼️</span>` : "";
 
   card.innerHTML = `
         <div class="circle-checkbox ${isChecked ? 'checked' : ''}"></div>
         <div class="notification-card-item col-from">By: ${data.sender || "System"}</div>
-        <div class="notification-card-item col-title">${data.title}</div>
+        <div class="notification-card-item col-title">${data.title} ${hasImage}</div>
         <div class="notification-card-item col-content">${data.message}</div>
         <div class="notification-card-item col-date">${dateStr}</div>
     `;
@@ -188,6 +232,7 @@ async function sendNotification() {
   const toInput = document.querySelector(".input-field[placeholder='Recipients']");
   const titleInput = document.querySelector(".input-field[placeholder='Notification title']");
   const msgInput = document.querySelector(".textarea-field");
+  const imageUrlInput = document.getElementById("notificationImageUrl");
   const sendBtn = document.querySelector(".send-button");
   if (!toInput || !titleInput || !msgInput || !sendBtn) return;
 
@@ -196,6 +241,7 @@ async function sendNotification() {
   const recipient = toInput.value.trim();
   const title = titleInput.value.trim();
   const message = msgInput.value.trim();
+  const imageUrl = imageUrlInput ? imageUrlInput.value.trim() : null;
 
   if (!recipient || !title || !message) {
     showToast("Please fill all fields.", "error");
@@ -208,17 +254,19 @@ async function sendNotification() {
   try {
     const user = auth.currentUser;
     const senderName = user ? (user.displayName || user.email) : "Administrator";
-
+    
     await addDoc(collection(db, "notifications"), {
       recipient: recipient,
       title: title,
       message: message,
       sender: senderName,
       createdAt: serverTimestamp(),
-      date: new Date().toISOString()
+      date: new Date().toISOString(),
+      isAnnouncement: true, // Mark for homepage carousel ⚓
+      imageUrl: imageUrl // External URL link
     });
 
-    showToast("Notification sent!", "success");
+    showToast("Notification sent! 🚀✨", "success");
     const modal = document.getElementById("notificationModal");
     if (modal) modal.classList.remove("show");
 
@@ -226,6 +274,9 @@ async function sendNotification() {
     toInput.value = "";
     titleInput.value = "";
     msgInput.value = "";
+    if (imageUrlInput) imageUrlInput.value = "";
+    const imagePreview = document.getElementById("imagePreview");
+    if (imagePreview) imagePreview.style.display = "none";
 
   } catch (error) {
     console.error("Error sending notification:", error);
@@ -235,3 +286,4 @@ async function sendNotification() {
     sendBtn.disabled = false;
   }
 }
+

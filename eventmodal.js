@@ -3,9 +3,8 @@ const { useState, useEffect } = React;
 const { createRoot } = ReactDOM;
 const h = React.createElement; // Helper for creating elements
 
-import { getApps, getApp, initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getFirestore, addDoc, collection, doc, updateDoc, setDoc, deleteDoc, arrayUnion, getDocs, getDoc, query, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import { auth, db, app } from "./js/config/firebase-config.js";
+import { addDoc, collection, doc, updateDoc, setDoc, deleteDoc, arrayUnion, getDocs, getDoc, query, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { showToast, showConfirm } from "./js/utils/ui-utils.js";
 
 console.log("Loading EventModal script...");
@@ -352,20 +351,8 @@ async function getTeacherUidByName(db, teacherName) {
   }
 }
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBrtJocBlfkPciYO7f8-7FwREE1tSF3VXU",
-  authDomain: "schedsync-e60d0.firebaseapp.com",
-  projectId: "schedsync-e60d0",
-  storageBucket: "schedsync-e60d0.firebasestorage.app",
-  messagingSenderId: "334140247575",
-  appId: "1:334140247575:web:930b0c12e024e4defc5652",
-  measurementId: "G-S59GL1W5Y2"
-};
 
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-
+// SearchableDropdown component
 function SearchableDropdown({ options, value, onChange, placeholder, label }) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');

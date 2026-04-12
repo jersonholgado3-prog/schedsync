@@ -15,6 +15,22 @@
     --border-main: #334155;
 }
 
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: inherit;
+}
+
 body,
 .header,
 .sidebar,
@@ -22,9 +38,76 @@ body,
     font-family: 'Poppins', sans-serif !important;
 }
 
+/* 🧭 GLOBAL SIDEBAR HYBRID SYSTEM (RAIL + OVERLAY) ⚓ 🧭 */
+/* "Hindi kinakain ang text" + "Papatong lang sya pag expanded" */
+
+.sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 85px !important;
+    /* DEFAULT MINI-RAIL WIDTH 📏 */
+    height: 100vh !important;
+    z-index: 5000 !important;
+    background: linear-gradient(to bottom, #FFD200 150px, #002044 150px) !important;
+    border-top-right-radius: 40px !important;
+    border-bottom-right-radius: 40px !important;
+    box-shadow: 6px 0 15px rgba(0, 0, 0, 0.1) !important;
+    transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    overflow: hidden !important;
+    /* Hide labels when in rail mode 🤫 */
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* Expand on Hover OR When explicitly opened via burger 🦾 */
+.sidebar:hover,
+.sidebar.open {
+    width: 260px !important;
+    /* FULL OVERLAY WIDTH 🏗️ */
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Ensure content starts AFTER the rail so nothing is hidden 🛡️⚓ */
+.main-content-wrapper {
+    margin-left: 85px !important;
+    /* Matches base rail width */
+    width: calc(100% - 85px) !important;
+    flex: 1 !important;
+    min-width: 0;
+    transition: none !important;
+    /* No shift during rail expansion */
+}
+
+/* 🧪 Hide texts/labels in rail mode for cleaner Icons-only look */
+.sidebar:not(:hover):not(.open) span {
+    opacity: 0;
+    pointer-events: none;
+    display: none;
+}
+
+.sidebar-link {
+    white-space: nowrap;
+    padding: 0.8rem 0 !important;
+    /* Remove side padding, use width 100% */
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    /* Center icons in rail mode 🎯 */
+    margin: 0 !important;
+}
+
+.sidebar:hover .sidebar-link,
+.sidebar.open .sidebar-link {
+    padding: 0.8rem 1.5rem !important;
+    justify-content: flex-start !important;
+    /* Reset to left-aligned when expanded */
+}
+
 .header {
     display: grid !important;
-    grid-template-columns: min-content 1fr min-content !important; /* ✅ PREVENT LOGO SHIFT: Fix columns to min-content */
+    grid-template-columns: min-content 1fr min-content !important;
+    /* ✅ PREVENT LOGO SHIFT: Fix columns to min-content */
     align-items: center !important;
     min-height: 90px !important;
     height: auto !important;
@@ -43,13 +126,19 @@ body,
 
 /* 👔 ABSOLUTE PROFESSIONAL MODE FLATNESS (Universal Header Override) 👔 */
 .professional-mode,
-.professional-mode * {
+.professional-mode *:not(.sidebar-link img):not(.sidebar):not(.mobile-bottom-nav):not(.mob-nav-item):not(.mob-nav-item img) {
     box-shadow: none !important;
     text-shadow: none !important;
     transform: none !important;
     transition: none !important;
     filter: none !important;
     animation: none !important;
+    /* Rounded corners MUST remain for usability and design ⚓ */
+}
+
+.sidebar-link img {
+    filter: brightness(0) invert(1) !important;
+    /* Force white icons globally ⚪ */
 }
 
 .professional-mode .header,
@@ -63,9 +152,27 @@ body,
     /* Slightly thinner as requested 🧤 */
 }
 
-.hamburger-btn,
+.hamburger-btn {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border: 3px solid black;
+    border-radius: 12px;
+    background: white;
+    box-shadow: 4px 4px 0px black;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.hamburger-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px black;
+}
+
 .burger-icon {
-    display: none !important;
+    display: block !important;
 }
 
 /* Dark Mode Backgrounds */
@@ -102,7 +209,8 @@ body,
     filter: invert(1) brightness(1.5) !important;
 }
 
-.sidebar-link img {
+/* Standard sidebar link images are white ⚪ */
+.sidebar-link:not(.active) img {
     filter: brightness(0) invert(1) !important;
 }
 
@@ -208,7 +316,7 @@ body,
 
 .user-profile:hover,
 .user-profile-btn:hover {
-    transform: translate(-2px, -2px);
+    /* transform: translate(-2px, -2px); -- REMOVED SHIFTING EFFECT ⚓ */
     box-shadow: 6px 6px 0px black;
 }
 
@@ -263,13 +371,15 @@ body,
     border-radius: 12px !important;
     width: 48px !important;
     height: 48px !important;
-    padding: 0 !important; /* ✅ REMOVE ARTIFACT: No padding by default */
+    padding: 0 !important;
+    /* ✅ REMOVE ARTIFACT: No padding by default */
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     overflow: hidden !important;
     cursor: pointer !important;
     box-shadow: 4px 4px 0px black !important;
     flex-shrink: 0 !important;
-    justify-content: center !important; /* Center icon when collapsed */
+    justify-content: center !important;
+    /* Center icon when collapsed */
 }
 
 .search-icon {
@@ -288,14 +398,16 @@ body,
     font-weight: 600 !important;
     color: black !important;
     margin-left: 0 !important;
-    text-align: center !important; /* ✅ CENTER PLACEHOLDER: Ensure text is centered */
+    text-align: center !important;
+    /* ✅ CENTER PLACEHOLDER: Ensure text is centered */
     padding: 0 !important;
 }
 
 .search-wrapper:focus-within,
 .search-wrapper.expanded {
     width: 280px !important;
-    padding: 0 15px !important; /* ✅ ADD PADDING ONLY WHEN EXPANDED */
+    padding: 0 15px !important;
+    /* ✅ ADD PADDING ONLY WHEN EXPANDED */
     justify-content: flex-start !important;
 }
 
@@ -311,87 +423,655 @@ body,
     color: white !important;
 }
 
-/* Mobile Responsive Hooks */
+/* ═══════════════════════════════════════════════════════════
+   📱 MOBILE RESPONSIVE (max-width: 768px)
+   Header: Search + Bell + Avatar ONLY — Clean minimal strip
+   Matches reference: thin border, no shadow, rounded corners
+   ═══════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
+
+    /* --- SIDEBAR: Completely hidden on mobile (replaced by bottom nav) --- */
+    .sidebar {
+        display: none !important;
+    }
+
+    /* --- MAIN CONTENT: Full-width, space for bottom nav --- */
+    .main-content-wrapper {
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding-bottom: 75px !important;
+    }
+
+    /* --- HEADER: Clean minimal strip matching reference screenshot --- */
     .header {
-        height: auto !important;
-        min-height: 70px !important;
+        background: white !important;
+        border: 1.5px solid #d1d5db !important;
+        border-radius: 14px !important;
+        height: 52px !important;
+        min-height: 52px !important;
+        max-height: 52px !important;
         margin: 0.5rem !important;
-        padding: 0.5rem 0.75rem !important;
-        /* Reduced padding ⚓ */
+        padding: 0 0.6rem !important;
         display: flex !important;
         flex-direction: row !important;
         justify-content: space-between !important;
-        gap: 0.25rem !important;
-        /* Tight gap ⚓ */
+        align-items: center !important;
+        gap: 0.5rem !important;
         width: calc(100% - 1rem) !important;
-        /* Account for smaller margin ⚓ */
         box-sizing: border-box !important;
+        position: sticky !important;
+        top: 0.35rem !important;
+        z-index: 5001 !important;
+        box-shadow: none !important;
+        grid-template-columns: none !important;
     }
 
+    .dark .header {
+        background: #1e293b !important;
+        border-color: #334155 !important;
+    }
+
+    /* --- HIDE on mobile: Burger, Logo, Greeting, Name --- */
+    .burger-icon,
     .hamburger-btn,
-    .burger-icon {
-        display: flex !important;
-    }
-
+    .logo-container,
     .page-title,
-    .greeting {
+    .greeting,
+    .user-name,
+    .logo-section {
         display: none !important;
     }
 
-    .logo-container {
+    /* --- Left Header: Only show search --- */
+    .left-header {
+        display: flex !important;
+        flex: 0 0 auto !important;
         width: auto !important;
-        min-width: 100px !important;
-        /* Smaller min-width ⚓ */
-        max-width: 130px !important;
-        /* Restrain logo width on mobile ⚓ */
-        height: 40px !important;
-        padding: 4px !important;
-        box-shadow: 2px 2px 0px black !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        order: 1 !important;
+        justify-content: flex-start !important;
+        gap: 0 !important;
     }
 
+    /* --- Right section: Bell + Avatar --- */
+    .user-section {
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+        justify-content: flex-end !important;
+        width: auto !important;
+        max-width: none !important;
+        order: 2 !important;
+        flex-shrink: 0 !important;
+    }
+
+    /* --- Search & Bell: Clean rounded squares with thin border --- */
+    .search-wrapper,
+    .notification-icon-wrapper {
+        display: flex !important;
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        border: 1.5px solid #d1d5db !important;
+        border-radius: 10px !important;
+        background: white !important;
+        box-shadow: none !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0 !important;
+    }
+
+    .dark .search-wrapper,
+    .dark .notification-icon-wrapper {
+        background: #1e293b !important;
+        border-color: #475569 !important;
+    }
+
+    .search-wrapper .search-icon,
+    .notification-icon-wrapper img {
+        width: 20px !important;
+        height: 20px !important;
+    }
+
+    /* --- Avatar: Clean circle, no extra border --- */
     .user-profile,
     .user-profile-btn {
-        width: auto !important;
-        height: 45px !important;
-        padding: 0 0.75rem !important;
-        border-radius: 50px !important;
-        gap: 0.5rem !important;
+        display: flex !important;
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        padding: 0 !important;
+        border-radius: 50% !important;
+        overflow: hidden !important;
+        gap: 0 !important;
+        box-shadow: none !important;
+        border: 1.5px solid #d1d5db !important;
+        justify-content: center !important;
+        align-items: center !important;
+        background: white !important;
     }
 
-    .user-name {
-        display: none !important;
+    .dark .user-profile,
+    .dark .user-profile-btn {
+        background: #1e293b !important;
+        border-color: #475569 !important;
     }
 
-    .notification-icon-wrapper,
-    .search-wrapper {
-        width: 40px !important;
-        height: 40px !important;
-        border-radius: 10px !important;
-        box-shadow: 3px 3px 0px black !important;
+    .user-avatar {
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        border: none !important;
     }
 
-    /* Small mobile tweaks 📱⚓ */
-    @media (max-width: 400px) {
-        .logo-container {
-            min-width: 100px !important;
-        }
-
-        .header {
-            padding: 0.5rem !important;
-        }
-
-        .user-section {
-            gap: 0.5rem !important;
-        }
-    }
-
+    /* Search expanded: inline growth */
     .search-wrapper.expanded {
-        position: fixed !important;
-        top: 10px;
-        left: 10px;
-        width: calc(100vw - 20px) !important;
-        height: 60px !important;
-        z-index: 3000;
+        width: 100% !important;
+        height: 36px !important;
+        z-index: 5002 !important;
+        border-radius: 10px !important;
+        box-shadow: none !important;
     }
+}
+
+/* Extra small phones */
+@media (max-width: 400px) {
+    .header {
+        padding: 0.4rem 0.75rem !important;
+    }
+
+    .user-section {
+        gap: 0.4rem !important;
+    }
+}
+
+/* --- SMOOTH PAGE TRANSITIONS 🌊 --- */
+body {
+    animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Apply this to links to make navigation feel smoother */
+a {
+    transition: opacity 0.2s ease;
+}
+
+a:active {
+    opacity: 0.7;
+}
+
+/* --- UNIVERSAL SIDEBAR STYLES ⚓⚓⚓ --- */
+
+.container {
+    display: flex;
+    flex-direction: row;
+    min-height: 100vh;
+    width: 100%;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    background-color: inherit;
+    overflow-x: hidden;
+    /* Prevent side scroll 🛡️⚓ */
+}
+
+.main-content-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* Block horizontal jitter 🛡️⚓ */
+}
+
+/* Main Sidebar definition is now global at the top - removing duplicate 🛡️⚓ */
+
+.sidebar-header {
+    background-color: #FFD200;
+    height: 150px !important;
+    /* FIXED HEIGHT TO MATCH GRADIENT STOP 🏗️ */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-top-right-radius: 40px;
+    cursor: pointer;
+    margin-bottom: 1.5rem;
+    transition: padding 0.3s ease, height 0.3s ease;
+    padding: 1rem !important;
+    /* Smaller default for rail 🚂 */
+}
+
+/* More breathing room when expanded 🦾 */
+.sidebar:hover .sidebar-header,
+.sidebar.open .sidebar-header {
+    padding: 2rem !important;
+}
+
+.sidebar-header img {
+    width: 60px;
+    /* Standardized size for rail */
+    height: 60px;
+    object-fit: contain;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar:hover .sidebar-header img,
+.sidebar.open .sidebar-header img {
+    width: 80px;
+    /* Larger size for expanded */
+    height: 80px;
+}
+
+.sidebar-menu {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.8rem 1.5rem;
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    margin: 0;
+    border-top-left-radius: 35px;
+    border-bottom-left-radius: 35px;
+    white-space: nowrap;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+}
+
+.sidebar-link::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 0;
+    background-color: rgba(255, 255, 255, 0.1);
+    transition: width 0.25s ease;
+    z-index: -1;
+}
+
+.sidebar-link:hover {
+    color: white;
+    padding-left: 2rem;
+}
+
+.sidebar-link:hover::before {
+    width: 100%;
+}
+
+.sidebar-link.active {
+    background-color: white;
+    color: #002044;
+    box-shadow: -5px 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar-link.active:hover {
+    padding-left: 1.5rem;
+    /* No extra padding for active */
+}
+
+.sidebar-link img {
+    width: 24px;
+    height: 24px;
+    filter: brightness(0) invert(1);
+    transition: transform 0.25s ease;
+}
+
+.sidebar-link:hover img {
+    transform: scale(1.1);
+}
+
+.sidebar-link.active img {
+    filter: brightness(0) saturate(100%) invert(8%) sepia(35%) saturate(4681%) hue-rotate(193deg) brightness(97%) contrast(106%) !important;
+}
+
+/* ════════════════════════════════════════════════════
+   📱 MOBILE BOTTOM NAVIGATION BAR (Scrollable ⚡)
+   Replaces sidebar on mobile — mirrors all sidebar links
+   ════════════════════════════════════════════════════ */
+
+/* Hidden on desktop */
+.mobile-bottom-nav {
+    display: none;
+}
+
+@media (max-width: 768px) {
+
+    /* The Bar */
+    .mobile-bottom-nav {
+        display: flex !important;
+        position: fixed !important;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 70px;
+        background: #002044;
+        z-index: 6000;
+        overflow-x: auto;
+        /* Scroll magic ✨ */
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        /* Smooth iOS swipe */
+        scrollbar-width: none;
+        /* Hide scrollbar */
+        gap: 0;
+        padding: 0 4px;
+        padding-bottom: env(safe-area-inset-bottom);
+        /* iPhone notch */
+        border-top: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .mobile-bottom-nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Each Tab Item */
+    .mob-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        min-width: 68px;
+        /* Fixed width — enables scrolling */
+        padding: 8px 10px;
+        color: rgba(255, 255, 255, 0.55);
+        text-decoration: none;
+        font-size: 0.6rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        flex-shrink: 0;
+        /* Don't shrink! */
+        transition: color 0.2s ease;
+        position: relative;
+    }
+
+    .mob-nav-item img {
+        width: 24px !important;
+        height: 24px !important;
+        filter: brightness(0) invert(1) !important;
+        opacity: 1 !important;
+        transition: all 0.2s ease;
+        margin-bottom: 2px !important;
+    }
+
+    /* Active state — yellow highlight */
+    .mob-nav-item.active {
+        color: #FFD200 !important;
+    }
+
+    .mob-nav-item.active::after {
+        content: '' !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: 45px !important;
+        height: 4px !important;
+        background: #FFD200 !important;
+        border-radius: 0 0 6px 6px !important;
+        box-shadow: 0 0 10px rgba(255, 210, 0, 0.5) !important;
+    }
+
+    .mob-nav-item.active img {
+        opacity: 1 !important;
+        filter: brightness(0) invert(1) !important;
+        transform: translateY(-2px) !important;
+    }
+
+    /* Hover state */
+    .mob-nav-item:hover {
+        color: white !important;
+    }
+
+    .mob-nav-item:hover img {
+        opacity: 1 !important;
+    }
+}
+
+
+.mobile-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 4500 !important;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.mobile-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+/* 👔 NUCLEAR SHADOW KILL (GLOBAL FALLBACK) 👔 */
+html.professional-mode,
+html.professional-mode *:not(.sidebar-link img):not(.sidebar):not(.mobile-bottom-nav):not(.mob-nav-item):not(.mob-nav-item img),
+html.professional-mode *::before,
+html.professional-mode *::after {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    animation: none !important;
+    transition: none !important;
+    filter: none !important;
+}
+
+/* ⚪ FINAL UNSTOPPABLE ICON VISIBILITY FIX ⚓ */
+.mob-nav-item img,
+.sidebar-link img {
+    filter: brightness(0) invert(1) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   🔒 NUCLEAR MOBILE HEADER OVERRIDE — BEATS ALL PAGE-SPECIFIC CSS
+   This block is at the VERY END of header-styles.css to ensure
+   maximum cascade priority over page-specific stylesheets.
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* ── HEADER: escapes its container, locks to viewport top ── */
+  .header {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    height: 56px !important;
+    background: white !important;
+    border: none !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.08) !important;
+    z-index: 10000 !important;
+    padding: 0 12px !important;
+  }
+
+  /* ── BOTTOM NAV: locks to viewport bottom ── */
+  .mobile-bottom-nav {
+    display: flex !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: 64px !important;
+    background: #002044 !important;
+    z-index: 10000 !important;
+    align-items: center !important;
+    justify-content: space-around !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    border-top: 1px solid rgba(255,255,255,0.15) !important;
+  }
+
+  /* ── BODY: normal scroll, padded so content clears fixed bars ── */
+  html, body {
+    height: auto !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    position: static !important;
+    padding-top: 56px !important;    /* clears fixed header */
+    padding-bottom: 64px !important; /* clears fixed nav */
+  }
+
+  /* ── CONTENT WRAPPER: normal flow, no fixed/absolute ── */
+  .main-content-wrapper {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 12px !important;
+    margin: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .dark .header,
+  html.dark body .header {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+  }
+
+  /* HIDE everything except search, bell, avatar */
+  html body .burger-icon,
+  html body .hamburger-btn,
+  html body .logo-container,
+  html body .logo-section,
+  html body .page-title,
+  html body .greeting,
+  html body .user-name {
+    display: none !important;
+  }
+
+  /* Left: search only */
+  html body .left-header {
+    display: flex !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    order: 1 !important;
+    justify-content: flex-start !important;
+    gap: 0 !important;
+  }
+
+  /* Right: bell + avatar */
+  html body .user-section {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    justify-content: flex-end !important;
+    width: auto !important;
+    max-width: none !important;
+    order: 2 !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Search & Bell icons: clean rounded squares */
+  html body .search-wrapper,
+  html body .notification-icon-wrapper {
+    display: flex !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    border: 1.5px solid #d1d5db !important;
+    border-radius: 10px !important;
+    background: white !important;
+    box-shadow: none !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+  }
+
+  .dark .search-wrapper,
+  .dark .notification-icon-wrapper {
+    background: #1e293b !important;
+    border-color: #475569 !important;
+  }
+
+  html body .search-wrapper .search-icon,
+  html body .notification-icon-wrapper img {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  /* Avatar: clean circle */
+  html body .user-profile,
+  html body .user-profile-btn {
+    display: flex !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    overflow: hidden !important;
+    gap: 0 !important;
+    box-shadow: none !important;
+    border: 1.5px solid #d1d5db !important;
+    justify-content: center !important;
+    align-items: center !important;
+    background: white !important;
+  }
+
+  .dark .user-profile,
+  .dark .user-profile-btn {
+    background: #1e293b !important;
+    border-color: #475569 !important;
+  }
+
+  html body .user-avatar {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    max-width: 32px !important;
+    max-height: 32px !important;
+    border: none !important;
+  }
+
+  /* Search expanded */
+  html body .search-wrapper.expanded {
+    width: calc(100vw - 120px) !important;
+    height: 36px !important;
+    z-index: 11000 !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+  }
+
+  /* Sidebar always hidden on mobile */
+  html body .sidebar {
+    display: none !important;
+  }
 }

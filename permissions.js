@@ -1,9 +1,7 @@
 import { initMobileNav } from "./js/ui/mobile-nav.js";
 import { showToast, showConfirm } from "./js/utils/ui-utils.js";
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { auth, db, app } from "./js/config/firebase-config.js";
 import {
-    getFirestore,
     collection,
     query,
     where,
@@ -13,22 +11,9 @@ import {
     serverTimestamp,
     onSnapshot
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { initUserProfile } from "./userprofile.js";
-
-const firebaseConfig = {
-    apiKey: "AIzaSyBrtJocBlfkPciYO7f8-7FwREE1tSF3VXU",
-    authDomain: "schedsync-e60d0.firebaseapp.com",
-    projectId: "schedsync-e60d0",
-    storageBucket: "schedsync-e60d0.firebasestorage.app",
-    messagingSenderId: "334140247575",
-    appId: "1:334140247575:web:930b0c12e024e4defc5652",
-    measurementId: "G-S59GL1W5Y2"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
+import { logAction } from "./js/utils/audit-logger.js";
 
 // Initialize Header Profile
 document.addEventListener("DOMContentLoaded", () => {
@@ -161,6 +146,9 @@ window.acceptRequest = async (requestId, userId) => {
         });
 
         showToast("Permission Granted Successfully! ✨", "success");
+        
+        // 📜 AUDIT LOG
+        logAction("ACCEPT_PERMISSION", `Granted edit permission to user: ${userId}`);
     } catch (e) {
         console.error("Error accepting:", e);
         showToast("Action failed.", "error");
@@ -184,6 +172,9 @@ window.denyRequest = async (requestId, userId) => {
         });
 
         showToast("Request Denied.", "info");
+
+        // 📜 AUDIT LOG
+        logAction("DENY_PERMISSION", `Denied edit permission request from user: ${userId}`);
     } catch (e) {
         console.error("Error denying:", e);
     }
@@ -206,6 +197,9 @@ window.revokePermission = async (userId, userName) => {
         });
 
         showToast("Access Revoked!", "warning");
+
+        // 📜 AUDIT LOG
+        logAction("REVOKE_PERMISSION", `Revoked edit permission for user: ${userName} (${userId})`);
     } catch (e) {
         console.error("Error revoking:", e);
     }

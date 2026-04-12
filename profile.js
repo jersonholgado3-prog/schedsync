@@ -2,10 +2,11 @@ import { initMobileNav } from "./js/ui/mobile-nav.js";
 import { db, auth, app } from "./js/config/firebase-config.js";
 import { onAuthStateChanged, updateProfile, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { doc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
 import { initUserProfile } from "./userprofile.js";
 import { initUniversalSearch } from "./search.js";
 import { getUIMode, setUIMode } from "./ui-effects.js";
-import { showToast, showPrompt } from "./js/utils/ui-utils.js";
+import { showToast, showPrompt, showConfirm } from "./js/utils/ui-utils.js";
 
 /* ───────── TIME HELPERS ───────── */
 const toMin = t => {
@@ -33,6 +34,7 @@ const parseBlock = block => {
 };
 
 let currentUserData = null;
+const storage = getStorage(app);
 
 document.addEventListener("DOMContentLoaded", () => {
     initMobileNav();
@@ -103,6 +105,7 @@ function setupImageUpdate(user) {
     if (!profileContainer) return;
 
     profileContainer.title = "Click to change profile picture";
+    profileContainer.style.cursor = "pointer";
 
     profileContainer.addEventListener("click", async () => {
         const newUrl = await showPrompt("Update Profile Picture", "Paste your new image URL here:");
@@ -110,20 +113,17 @@ function setupImageUpdate(user) {
 
         async function handlePfpUpdate(newUrl) {
             if (!newUrl || newUrl.trim() === "") {
-                showToast("Please enter a valid URL.", "error");
+                showToast("Please enter a valid URL. 🔗", "error");
                 return;
             }
 
             try {
-                console.log("SchedSync: Updating PFP for user:", user.uid, "to URL:", newUrl);
                 // 1. Update Firebase Auth
                 await updateProfile(user, { photoURL: newUrl });
-                console.log("SchedSync: Auth Profile Updated.");
 
                 // 2. Update Firestore
                 const docRef = doc(db, "users", user.uid);
                 await updateDoc(docRef, { photoURL: newUrl });
-                console.log("SchedSync: Firestore Updated.");
 
                 // 3. Update UI
                 if (document.getElementById("profileImg")) {
@@ -134,10 +134,10 @@ function setupImageUpdate(user) {
                 const headerPillImg = document.querySelector("#userProfile img");
                 if (headerPillImg) headerPillImg.src = newUrl;
 
-                showToast("Profile picture updated successfully!", "success");
+                showToast("Profile picture updated! ✨", "success");
             } catch (error) {
                 console.error("SchedSync: Failed to update profile picture:", error);
-                showToast(`Error: ${error.message || "Failed to update profile picture"}`, "error");
+                showToast("Error updating profile picture.", "error");
             }
         }
     });

@@ -3,31 +3,43 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=1280" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#005BAB">
   <script>
-    (function () {
-      // 1. Theme Lock 🌙
-      const theme = localStorage.getItem("theme");
-      if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-        document.documentElement.classList.add("dark");
-      }
+      (function () {
+          // 1. Theme Lock 🌙
+          const theme = localStorage.getItem("theme");
+          if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+              document.documentElement.classList.add("dark");
+          }
 
-      // 2. UI Mode Lock 👔
-      const uiMode = localStorage.getItem("uiMode");
-      const userRole = localStorage.getItem("userRole");
-      const mode = uiMode || ((userRole === 'teacher' || userRole === 'admin') ? 'professional' : 'student');
-      if (mode === 'professional') {
-        document.documentElement.classList.add("professional-mode");
-      }
-    })();
-  </script>
-  <script type="module" src="role-restriction.js"></script>
+          // 2. UI Mode Lock 👔
+          const uiMode = localStorage.getItem("uiMode");
+          const userRole = localStorage.getItem("userRole");
+          const mode = uiMode || ((userRole === 'teacher' || userRole === 'admin') ? 'professional' : 'student');
+          if (mode === 'professional') {
+              document.documentElement.classList.add("professional-mode");
+          }
+
+          // 3. Service Worker Registration 🚀⚓ (Caching Engine)
+          if ('serviceWorker' in navigator) {
+              window.addEventListener('load', () => {
+                  navigator.serviceWorker.register('./service-worker.js')
+                      .then(reg => console.log('SchedSync SW: Registered ✅', reg.scope))
+                      .catch(err => console.error('SchedSync SW: Failed ❌', err));
+              });
+          }
+      })();
+  </script>  <script type="module" src="role-restriction.js"></script>
   <script type="module" src="homepage.js"></script>
-  <script type="module" src="ui-effects.js"></script>
 
   <link rel="stylesheet" href="header-styles.css" />
   <title>SchedSync - Homepage</title>
   <link rel="stylesheet" href="homepage.css" />
+  <link rel="stylesheet" href="skeleton.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>SchedSync - Homepage</title>
 </head>
 
 <body>
@@ -35,7 +47,7 @@
   <div class="container">
     <aside class="sidebar">
       <div class="sidebar-header" onclick="window.location.href='homepage.html'">
-        <img src="images/LOGO.png" class="logo-img">
+        <img src="images/LOGO.png" alt="Logo">
       </div>
       <nav class="sidebar-menu">
         <a href="homepage.html" class="sidebar-link active">
@@ -47,8 +59,8 @@
           <span>New Schedule</span>
         </a>
         <a href="myschedule.html" class="sidebar-link">
-          <img src="images/SCHED.png" alt="Schedules">
-          <span>Schedules</span>
+          <img src="images/SCHED.png" alt="My Schedule">
+          <span>My Schedule</span>
         </a>
         <a href="facultypage.html" class="sidebar-link">
           <img src="images/FACULTY.png" alt="Faculty">
@@ -62,10 +74,20 @@
           <img src="images/EVENT_MODE.png" alt="Events">
           <span>Events</span>
         </a>
+        <!-- ADMIN ONLY 🛡️ -->
+        <div id="adminSidebarLinks" style="display: none;">
+          <a href="audit_logs.html" class="sidebar-link">
+            <img src="images/SCHED.png" alt="Audit" style="filter: hue-rotate(180deg);">
+            <span>Audit Logs</span>
+          </a>
+        </div>
       </nav>
     </aside>
 
     <div class="main-content-wrapper">
+      <div id="debug-status" style="position:fixed; bottom:80px; left:10px; background:rgba(0,0,0,0.8); color:white; padding:5px; font-size:10px; z-index:9999; border-radius:5px; pointer-events:none;">
+        Status: Initializing...
+      </div>
       <header class="header">
         <div class="left-header">
           <div class="hamburger-btn">
@@ -115,651 +137,41 @@
             <img src="images/SCHEDSYNC_TITLE_DYNAMIC.png" class="welcome-title-img" alt="Welcome to SchedSync">
           </div>
 
-          <!-- ANNOUNCEMENT CAROUSEL (Compact Blue Theme) 🎠⚓ -->
-          <div class="hero-carousel-container" id="heroCarousel" style="display: none;">
-            <div class="carousel-track" id="carouselTrack">
+          <!-- ANNOUNCEMENT CAROUSEL (Compact Blue Theme) Carousel with NAV ARROWS 🎡⚓ -->
+          <div class="hero-carousel-container" id="heroCarousel" style="display: none;" role="region" aria-label="Announcements Carousel">
+            <div class="carousel-track" id="carouselTrack" aria-live="polite">
               <!-- Dynamic Slides Inject Here -->
             </div>
             <!-- Progress Indicators -->
             <div class="carousel-indicators" id="carouselIndicators"></div>
+            
+            <!-- Navigation Arrows 🎡⚓ -->
+            <button class="carousel-nav-btn prev" id="prevSlide" aria-label="Previous Slide">❮</button>
+            <button class="carousel-nav-btn next" id="nextSlide" aria-label="Next Slide">❯</button>
+          </div>
+
+          <!-- ADMIN ANALYTICS DASHBOARD 📊 -->
+          <div id="adminAnalyticsSection" style="display: none; grid-column: 1 / -1;">
+            <div class="widget-card" style="height: auto; min-height: 400px; padding: 25px;">
+              <div class="widget-header">
+                <div class="widget-title-group">
+                  <span style="font-size: 24px;">📊</span>
+                  <h2 class="widget-title">Campus Insights</h2>
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 20px;">
+                <div style="background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 16px; padding: 20px;">
+                  <h3 style="font-size: 14px; font-weight: 800; color: #64748b; margin-bottom: 15px; text-transform: uppercase; text-align: center;">Room Usage by Floor</h3>
+                  <canvas id="roomUsageChart"></canvas>
+                </div>
+                <div style="background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 16px; padding: 20px;">
+                  <h3 style="font-size: 14px; font-weight: 800; color: #64748b; margin-bottom: 15px; text-transform: uppercase; text-align: center;">Peak Scheduling Hours</h3>
+                  <canvas id="peakHoursChart"></canvas>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-
-        <style>
-          .welcome-hero {
-            background-color: #ffffff;
-            border: 3px solid black;
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 20px;
-            text-align: center;
-            box-shadow: 6px 6px 0px black;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 600px;
-            /* Requested size ⚓ */
-            position: relative;
-            overflow: hidden;
-          }
-
-          .welcome-title-img {
-            max-width: 950px;
-            /* Proportional expansion ⚓ */
-            width: 100%;
-            height: auto;
-            object-fit: contain;
-          }
-
-          .hero-carousel-container {
-            height: 260px !important;
-            /* EXACT 260px as requested 📏 */
-            min-height: 260px !important;
-            max-height: 260px !important;
-            display: flex !important;
-            flex-direction: column !important;
-            overflow: hidden !important;
-            position: relative;
-            width: 100%;
-            background: #4663a0; /* Target custom blue color */
-            border: 3px solid #5a7bbb !important; /* Lighter border for that blue */
-            border-radius: 24px;
-            margin-bottom: 25px;
-            cursor: grab;
-          }
-
-          #draftWidget {
-            height: 380px !important;
-            /* Slightly taller for more 'dating' 🦾 */
-            min-height: 380px !important;
-            max-height: 380px !important;
-            display: flex !important;
-            flex-direction: column !important;
-            overflow: hidden !important;
-          }
-
-          /* ABSOLUTE GLOBAL SHADOW KILL IN PRO-MODE 👔 🧤 */
-          html.professional-mode,
-          html.professional-mode *,
-          html.professional-mode *::before,
-          html.professional-mode *::after {
-            box-shadow: none !important;
-            text-shadow: none !important;
-            animation: none !important;
-            filter: none !important;
-            -webkit-filter: none !important;
-            transition: none !important;
-            transform: none !important;
-            outline: none !important;
-          }
-
-          /* Restore sidebar icon visibility ⚓ */
-          .professional-mode .sidebar-link img {
-            filter: brightness(0) invert(1) !important;
-          }
-
-          .professional-mode .sidebar-link.active img {
-            filter: brightness(0) saturate(100%) invert(8%) sepia(35%) saturate(4681%) hue-rotate(193deg) brightness(97%) contrast(106%) !important;
-          }
-
-          /* FORCE UNIFORM 'WELCOME' STYLE BORDERS IN PRO-MODE 🧤 */
-          .professional-mode .welcome-hero,
-          .professional-mode #draftWidget,
-          .professional-mode .widget-card,
-          .professional-mode .draft-item,
-          .professional-mode .announcement-item,
-          .professional-mode .draft-icon-box,
-          .professional-mode .announcement-icon {
-            border: 1.5px solid #64748b !important;
-            border-radius: 12px !important;
-            background: #ffffff !important;
-            box-shadow: none !important;
-            transform: none !important;
-            transition: none !important;
-            animation: none !important;
-          }
-
-          /* STICKY BLUE CAROUSEL FOR PRO-MODE 👔 🎡 */
-          .professional-mode .hero-carousel-container {
-            background: #4663a0 !important;
-            border: 1.5px solid #5a7bbb !important;
-            border-radius: 12px !important;
-            box-shadow: none !important;
-          }
-
-          .dark.professional-mode .welcome-hero,
-          .dark.professional-mode #draftWidget,
-          .dark.professional-mode .widget-card,
-          .dark.professional-mode .draft-item,
-          .dark.professional-mode .announcement-item,
-          .dark.professional-mode .draft-icon-box,
-          .dark.professional-mode .announcement-icon {
-            border-color: #334155 !important;
-            background: #0f172a !important;
-          }
-
-          .dark.professional-mode .hero-carousel-container {
-            background: #4663a0 !important; /* Target custom blue color */
-            border-color: #5a7bbb !important;
-          }
-
-          /* Carousel Visibility Overrides for 👔 PRO-MODE (REVERSED TO WHITE FOR BLUE BG) */
-          .professional-mode .slide-title,
-          .professional-mode .slide-msg {
-            color: #ffffff !important;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.5) !important;
-          }
-
-          .professional-mode .indicator.active {
-            background: #FFD200 !important; /* Reverting to energetic yellow */
-            box-shadow: none !important;
-          }
-
-          /* UNIFORM 'ANGAS' DESIGN: Student Mode Only 👨‍🎓 (Default) */
-          html:not(.professional-mode) .hero-carousel-container,
-          html:not(.professional-mode) #draftWidget,
-          html:not(.professional-mode) .widget-card {
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-            border: 2px solid #64748b !important;
-            border-radius: 24px !important;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          }
-
-          html.dark:not(.professional-mode) .hero-carousel-container,
-          html.dark:not(.professional-mode) #draftWidget,
-          html.dark:not(.professional-mode) .widget-card {
-            border-color: #334155 !important;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2) !important;
-          }
-
-          html.dark:not(.professional-mode) .hero-carousel-container {
-            background: #4663a0 !important; /* Target custom blue color */
-            border-color: #5a7bbb !important;
-          }
-
-          /* Subtle Mesh Pattern 🕸️ */
-          .hero-carousel-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-            background-size: 20px 20px;
-            pointer-events: none;
-            opacity: 0.8;
-            z-index: 1;
-          }
-
-          .carousel-track {
-            display: flex;
-            height: 100% !important;
-            flex: 1 !important;
-            transition: transform 0.65s cubic-bezier(0.65, 0, 0.35, 1);
-          }
-
-          .carousel-slide {
-            min-width: 100%;
-            height: 100% !important;
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: center !important;
-            align-items: center !important;
-            padding: 10px 40px 55px 40px !important;
-            /* Calibrated for 260px 🛡️ */
-            text-align: center;
-            position: relative;
-            z-index: 5;
-            gap: 6px !important;
-          }
-
-          .slide-tag {
-            padding: 4px 16px;
-            border-radius: 50px;
-            font-size: 9px;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            backdrop-filter: blur(12px);
-            color: #ffffff !important;
-            margin-bottom: 2px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            flex-shrink: 0;
-          }
-
-          .slide-title {
-            font-size: 26px !important;
-            font-weight: 900;
-            color: #ffffff !important;
-            letter-spacing: -0.01em;
-            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.9);
-            line-height: 1.1;
-            max-width: 95%;
-            margin: 0 !important;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            word-break: break-word;
-          }
-
-          .slide-msg {
-            font-size: 15px !important;
-            color: rgba(255, 255, 255, 0.9) !important;
-            line-height: 1.4;
-            max-width: 650px !important;
-            text-wrap: balance;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
-            margin: 0 !important;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            word-break: break-word;
-            overflow-wrap: break-word;
-          }
-
-          .carousel-indicators {
-            position: absolute;
-            bottom: 25px !important;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 12px;
-            z-index: 10;
-          }
-
-          .indicator {
-            width: 12px;
-            height: 5px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 4px;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
-          }
-
-          .indicator.active {
-            width: 40px;
-            background: #FFD200;
-            box-shadow: 0 0 25px rgba(255, 210, 0, 0.6);
-          }
-
-          /* DEFINITIVE 'ANGAS' DRAFTS WIDGET Restored 🔥 */
-          #draftWidget {
-            background: #ffffff !important;
-            padding: 1.8rem !important;
-            position: relative;
-            overflow: hidden !important;
-            display: flex;
-            flex-direction: column;
-          }
-
-          .dark #draftWidget {
-            background: #1e293b !important;
-          }
-
-          @keyframes neonPulse {
-            0% {
-              border-color: #cbd5e1;
-              box-shadow: 6px 6px 0px #000;
-            }
-
-            50% {
-              border-color: #ffffff;
-              box-shadow: 6px 6px 0px #000, 0 0 15px rgba(255, 255, 255, 0.2);
-            }
-
-            100% {
-              border-color: #cbd5e1;
-              box-shadow: 6px 6px 0px #000;
-            }
-          }
-
-          html:not(.professional-mode).dark #draftWidget {
-            animation: neonPulse 3s infinite ease-in-out;
-          }
-
-
-
-          #drafts-list {
-            position: relative;
-            z-index: 1;
-            margin-top: 15px;
-            flex: 1 !important;
-            /* Restore expansion behavior 🦾 */
-            height: 100% !important;
-            overflow-y: auto;
-            padding-right: 8px;
-          }
-
-          #draftWidget .widget-title,
-          .widget-card .widget-title {
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            color: #002044;
-            font-weight: 1000 !important;
-          }
-
-          .dark #draftWidget .widget-title,
-          .dark .widget-card .widget-title {
-             color: #FFD200;
-          }
-
-          /* 🤝 UNIFORM ITEM DESIGN (Drafts = Announcements = Events) - NO GRADIENTS IN PRO MODE 👔 */
-          .professional-mode .widget-title,
-          .professional-mode #draftWidget .widget-title,
-          .professional-mode .widget-card .widget-title {
-            background: none !important;
-            -webkit-background-clip: border-box !important;
-            background-clip: border-box !important;
-            -webkit-text-fill-color: initial !important;
-            color: #0f172a !important;
-            text-shadow: none !important;
-          }
-
-          .dark.professional-mode .widget-title,
-          .dark.professional-mode #draftWidget .widget-title,
-          .dark.professional-mode .widget-card .widget-title {
-            color: white !important;
-          }
-
-          .draft-item,
-          .announcement-item {
-            display: flex !important;
-            gap: 1.25rem !important;
-            padding: 1.25rem !important;
-            border: 1.5px solid #64748b !important;
-            border-radius: 20px !important;
-            background: #ffffff !important;
-            margin-bottom: 1rem !important;
-            position: relative;
-            cursor: pointer;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
-            min-height: 100px;
-          }
-
-          .dark .draft-item,
-          .dark .announcement-item {
-            background: #1e293b !important;
-            border-color: #334155 !important;
-            /* Silver/White border for Dark Mode 👁️⚡ */
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important;
-          }
-
-          .draft-item:hover,
-          .announcement-item:hover {
-            transform: translateY(-4px) !important;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
-            border-color: #64748b !important;
-            /* Maintaining visibility 🔥 */
-          }
-
-          .dark .draft-item:hover,
-          .dark .announcement-item:hover {
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5) !important;
-            border-color: #FFD200 !important;
-          }
-
-          /* EXPLICIT CHECKED STATE FOR ITEMS 🧤 */
-          .draft-item.checked,
-          .announcement-item.checked {
-            background-color: #dbeafe !important;
-            border: 2px solid #2563eb !important;
-            box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2) !important;
-          }
-
-          .dark .draft-item.checked,
-          .dark .announcement-item.checked {
-            background-color: rgba(96, 165, 250, 0.15) !important;
-            border-color: #60a5fa !important;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4) !important;
-          }
-
-          /* FORCE CIRCLE CHECKBOX TO BE CHECKED WHEN ITEM IS CHECKED 🧤 */
-          .announcement-item.checked .circle-checkbox,
-          #selectAllAnnouncements.checked {
-            background-color: #2563eb !important;
-            border-color: black !important;
-          }
-          .announcement-item.checked .circle-checkbox::after,
-          #selectAllAnnouncements.checked::after {
-            content: "✓";
-            color: white !important;
-            font-size: 13px;
-            font-weight: 900;
-          }
-          .dark .announcement-item.checked .circle-checkbox,
-          .dark #selectAllAnnouncements.checked {
-            background-color: #60a5fa !important;
-            border-color: white !important;
-          }
-
-          .draft-icon-box,
-          .announcement-icon {
-            width: 50px !important;
-            height: 50px !important;
-            background: #f1f5f9 !important;
-            border: 1.5px solid #64748b !important;
-            border-radius: 14px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            flex-shrink: 0;
-            font-size: 1.5rem;
-          }
-
-          .dark .draft-icon-box,
-          .dark .announcement-icon {
-            background: rgba(255, 255, 255, 0.05) !important;
-            border-color: #334155 !important;
-          }
-
-          .draft-content,
-          .announcement-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            min-width: 0;
-            overflow: hidden;
-          }
-
-          .draft-title,
-          .announcement-title {
-            font-size: 1.1rem !important;
-            font-weight: 1000 !important;
-            color: #0f172a !important;
-            margin: 0 !important;
-            text-transform: none !important;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            width: 100%;
-          }
-
-          .dark .draft-title,
-          .dark .announcement-title {
-            color: white !important;
-          }
-
-          .draft-msg,
-          .announcement-msg {
-            font-size: 0.9rem !important;
-            color: #334155 !important; /* Darker slate for better legibility 📖 */
-            line-height: 1.4;
-            margin: 0 !important;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            word-break: break-word;
-            overflow-wrap: break-word;
-          }
-
-          .dark .draft-msg,
-          .dark .announcement-msg {
-            color: #94a3b8 !important;
-          }
-
-          .draft-meta,
-          .announcement-meta {
-            font-size: 0.75rem !important;
-            font-weight: 800 !important;
-            color: #94a3b8 !important;
-            text-transform: uppercase;
-            letter-spacing: 0.02em;
-            margin-top: 4px;
-          }
-
-          .dark .draft-meta,
-          .dark .announcement-meta {
-            color: #64748b !important;
-          }
-
-          html:not(.professional-mode) .draft-item,
-          html:not(.professional-mode) .announcement-item {
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
-          }
-
-          html:not(.professional-mode) .draft-item:hover,
-          html:not(.professional-mode) .announcement-item:hover {
-            transform: translateY(-2px) !important;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
-          }
-
-          html.dark:not(.professional-mode) .draft-item:hover,
-          html.dark:not(.professional-mode) .announcement-item:hover {
-            border-color: #FFD200 !important;
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4) !important;
-          }
-
-          /* --- EVENT ITEM DESIGN (Calendar Widget) 🗓️ Centered version --- */
-          .event-item {
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important;
-            justify-content: center !important;
-            text-align: center !important;
-            padding: 1.25rem !important;
-            border: 1.5px solid #64748b !important;
-            border-radius: 20px !important;
-            background: #ffffff !important;
-            margin-bottom: 1rem !important;
-            cursor: pointer;
-            transition: all 0.25s ease;
-          }
-
-          .dark .event-item {
-            background: #1e293b !important;
-            border-color: #334155 !important;
-          }
-
-          .event-item:hover {
-            transform: translateY(-2px) !important;
-            border-color: #64748b !important;
-          }
-
-          .dark .event-item:hover {
-            border-color: #FFD200 !important;
-          }
-
-          .event-time-badge {
-            font-size: 0.85rem !important;
-            font-weight: 1000 !important;
-            color: #2563eb !important;
-            background: #dbeafe !important;
-            padding: 4px 12px !important;
-            border-radius: 50px !important;
-            border: 1.5px solid #2563eb !important;
-            margin-bottom: 8px !important;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-          }
-
-          .dark .event-time-badge {
-             background: rgba(96, 165, 250, 0.1) !important;
-             color: #60a5fa !important;
-             border-color: #60a5fa !important;
-          }
-
-          .event-info {
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important;
-            gap: 4px !important;
-          }
-
-          .event-title {
-            font-size: 1.1rem !important;
-            font-weight: 1000 !important;
-            color: #0f172a !important;
-            text-transform: uppercase;
-          }
-
-          .dark .event-title {
-            color: white !important;
-          }
-
-          .event-room {
-            font-size: 0.85rem !important;
-            font-weight: 800 !important;
-            color: #64748b !important;
-          }
-
-          .dark .event-room {
-            color: #94a3b8 !important;
-          }
-
-          /* SCROLLABLE WIDGET FIX 🦾 */
-          #announcements-list,
-          #drafts-list {
-            max-height: 400px;
-            overflow-y: auto;
-            padding: 5px 10px 5px 5px;
-          }
-
-          /* Custom Scrollbar */
-          #announcements-list::-webkit-scrollbar,
-          #drafts-list::-webkit-scrollbar {
-            width: 6px;
-          }
-
-          #announcements-list::-webkit-scrollbar-thumb,
-          #drafts-list::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 10px;
-          }
-
-          .dark #announcements-list::-webkit-scrollbar-thumb,
-          .dark #drafts-list::-webkit-scrollbar-thumb {
-            background: #334155;
-          }
-
-          /* SCROLLABLE WIDGET FIX 🦾 */
-          #announcements-list {
-            max-height: 500px;
-            overflow-y: auto;
-            padding-right: 5px;
-          }
-
-          #announcements-list::-webkit-scrollbar {
-            width: 6px;
-          }
-
-          #announcements-list::-webkit-scrollbar-track {
-            background: transparent;
-          }
-
-          #announcements-list::-webkit-scrollbar-thumb {
-            background: #334155;
-            border-radius: 10px;
-          }
-        </style>
 
         <aside class="dashboard-side">
           <!-- Announcements Widget -->
@@ -838,6 +250,31 @@
     </div>
     <script type="module" src="realtime-notifications.js"></script>
     <script type="module" src="ui-effects.js"></script>
+  <!-- ?? MOBILE BOTTOM NAVIGATION BAR ? -->
+  <nav class="mobile-bottom-nav" id="mobileBottomNav">
+    <a href="homepage.html"    class="mob-nav-item" data-page="homepage">
+      <img src="images/HOME.png" alt="Home"><span>Home</span>
+    </a>
+    <a href="newschedule.html" class="mob-nav-item" data-page="newschedule">
+      <img src="images/ADD_SCHED.png" alt="New Schedule"><span>New Sched</span>
+    </a>
+    <a href="myschedule.html"  class="mob-nav-item" data-page="myschedule">
+      <img src="images/SCHED.png" alt="My Schedule"><span>My Sched</span>
+    </a>
+    <a href="facultypage.html" class="mob-nav-item" data-page="facultypage">
+      <img src="images/FACULTY.png" alt="Faculty"><span>Faculty</span>
+    </a>
+    <a href="campuspage.html"  class="mob-nav-item" data-page="campuspage">
+      <img src="images/CAMPUS_ONE.png" alt="Campus"><span>Campus</span>
+    </a>
+    <a href="event.html"       class="mob-nav-item" data-page="event">
+      <img src="images/EVENT_MODE.png" alt="Events"><span>Events</span>
+    </a>
+    <!-- ADMIN ONLY � shown via JS -->
+    <a href="audit_logs.html"  class="mob-nav-item admin-only" data-page="audit_logs" style="display:none">
+      <img src="images/SCHED.png" alt="Audit Logs"><span>Audit</span>
+    </a>
+    </nav>
 </body>
 
 </html>

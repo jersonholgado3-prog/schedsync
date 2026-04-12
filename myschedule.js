@@ -80,6 +80,10 @@ async function renderAll(shouldFetch = true) {
     return;
   }
 
+  // 🦴 SHOW SKELETONS while loading
+  if (publishedBox) publishedBox.innerHTML = '<div class="skeleton-item skeleton"></div><div class="skeleton-item skeleton"></div>';
+  if (draftBox) draftBox.innerHTML = '<div class="skeleton-item skeleton"></div>';
+
   try {
     // 1. Fetch Role & Permission 🛡️
     const userDoc = await getDoc(doc(db, "users", currentUser.uid));

@@ -6,9 +6,13 @@
     padding: 0 !important;
     margin: 0 !important;
     max-width: 100% !important;
-    background-color: inherit;
-    border: none;
-    border-radius: 0;
+}
+
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column !important;
+        display: block !important;
+    }
 }
 
 .main-content-wrapper {
@@ -18,6 +22,15 @@
     min-width: 0;
     height: 100vh;
     overflow-y: auto;
+    padding-left: 200px; /* Desktop Sidebar Space 📐 */
+}
+
+@media (max-width: 768px) {
+    .main-content-wrapper {
+        padding-left: 0 !important;
+        margin-left: 0 !important;
+        height: auto !important;
+    }
 }
 
 
@@ -212,8 +225,9 @@
     width: 200px;
     height: 100vh;
     background: linear-gradient(to bottom, #FFD200 150px, #002044 150px);
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
     z-index: 1001;
     border: none !important;
     border-top-right-radius: 40px !important;
@@ -305,182 +319,69 @@
 
 @media (max-width: 768px) {
     .container {
-        z-index: auto !important;
-        position: static !important;
+        flex-direction: column !important;
+        display: block !important;
     }
 
     .sidebar {
-        position: fixed !important;
-        left: -280px !important;
-        top: 0 !important;
-        width: 280px !important;
-        height: 100vh !important;
-        z-index: 5000 !important;
-        /* Standardized 🛡️ */
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        border-radius: 0 40px 40px 0 !important;
-        display: flex !important;
-        background: linear-gradient(to bottom, #FFD200 150px, #002044 150px) !important;
-        pointer-events: auto !important;
-    }
-
-    .sidebar-link {
-        pointer-events: auto !important;
-    }
-
-    .mobile-overlay {
-        position: fixed !important;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 4000 !important;
-        display: none;
-        pointer-events: auto !important;
-    }
-
-    .sidebar.open {
-        transform: translateX(280px);
-        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.3);
-    }
-
-    .sidebar-header {
-        display: flex !important;
-        padding: 2rem !important;
-    }
-
-    .sidebar-menu {
-        flex-direction: column !important;
-        padding: 0 !important;
-    }
-
-    .sidebar-link {
-        margin-left: 0.75rem !important;
-        flex-direction: row !important;
-        font-size: 0.95rem !important;
-        padding: 0.8rem 1rem !important;
-    }
-
-    .sidebar-link span {
-        display: inline !important;
-    }
-
-    .header {
-        height: 70px !important;
-        margin: 0.75rem !important;
-        padding: 0 1rem !important;
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        gap: 0 !important;
-    }
-
-    .hamburger-btn {
-        display: flex !important;
-        align-items: center;
-        justify-content: center;
-        width: 45px;
-        height: 45px;
-        border: 3px solid black;
-        border-radius: 12px;
-        background: white;
-        box-shadow: 3px 3px 0px black;
-        cursor: pointer;
-        z-index: 5001 !important;
-        /* Above everything 🛡️ */
-    }
-
-    .hamburger-btn:active {
-        transform: translate(1px, 1px);
-        box-shadow: 2px 2px 0px black;
-    }
-
-    .logo-section {
-        width: auto !important;
-        margin-left: 0.5rem;
-        flex: 1;
-    }
-
-    .logo-container {
-        width: 110px !important;
-        /* Reduced size 📏 */
-        height: 40px !important;
-        box-shadow: 2px 2px 0px black !important;
-    }
-
-    .logo-container img {
-        max-height: 70% !important;
-    }
-
-    .user-section {
-        width: auto !important;
-        gap: 0.75rem !important;
-    }
-
-    .user-profile {
-        min-width: auto !important;
-        width: 45px !important;
-        height: 45px !important;
-        padding: 0 !important;
-        justify-content: center !important;
-        border-radius: 50% !important;
-    }
-
-    .user-name {
         display: none !important;
     }
 
-    .user-avatar {
-        width: 35px !important;
-        height: 35px !important;
-    }
-
-    .notification-icon {
-        width: 40px !important;
-        height: 40px !important;
-        padding: 6px !important;
-        border-radius: 10px !important;
-    }
-
-    .page-title,
-    .greeting {
-        display: none !important;
-    }
-
-    .search-wrapper {
-        height: 45px !important;
-        width: 45px !important;
-        border-radius: 12px !important;
-        box-shadow: 3px 3px 0px black !important;
+    .main-content-wrapper {
+        padding-left: 0 !important;
         margin-left: 0 !important;
-    }
-
-    .search-wrapper.expanded {
-        position: fixed !important;
-        top: 10px;
-        left: 10px;
-        width: calc(100vw - 20px) !important;
-        height: 60px !important;
-        z-index: 3000;
-    }
-
-    .container {
-        padding-bottom: 0 !important;
+        height: auto !important;
     }
 
     .main-layout {
         margin-top: 5px !important;
+        display: block !important;
+        width: 100% !important;
     }
 
-    .content-area,
-    .main {
-        padding: 1rem !important;
+    main {
+        padding: 0.5rem !important;
         width: 100% !important;
-        margin: 0 !important;
+    }
+
+    .campus-card {
+        padding: 1rem 0.5rem !important;
+        border-radius: 16px !important;
+        box-shadow: 4px 4px 0px black !important;
+        margin-bottom: 1.5rem !important;
+        width: 100% !important;
+    }
+
+    /* Room grid optimization: Always 2 columns on mobile */
+    #floor-1-dynamic, #floor-2-dynamic, #floor-3-dynamic, #floor-4-dynamic,
+    #laboratories-dynamic, #kitchen-bar-dynamic, #event-spaces-dynamic {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.5rem !important;
+    }
+
+    .room-pill {
+        min-height: 100px !important;
+        border-radius: 12px !important;
+        box-shadow: 3px 3px 0px black !important;
+    }
+
+    .room-pill > div:first-child {
+        margin-top: 15px !important;
+        font-size: 1.2rem !important;
+    }
+
+    .room-pill-text-label {
+        font-size: 0.8rem !important;
+        padding: 0 5px !important;
+    }
+
+    .occupancy-badge-inline {
+        margin-bottom: 10px !important;
+        font-size: 0.6rem !important;
+        padding: 2px 6px !important;
     }
 }
+
 
 
 .campus-card {
@@ -992,24 +893,7 @@
     filter: invert(1) brightness(1.5) !important;
 }
 
-@media (max-width: 768px) {
-    .header {
-        grid-template-columns: auto 1fr auto !important;
-        margin: 0.5rem !important;
-        padding: 0 0.5rem !important;
-        height: 70px !important;
-    }
-
-    .page-title,
-    .greeting {
-        display: none !important;
-    }
-
-    .left-header,
-    .user-section {
-        max-width: none !important;
-    }
-}
+/* Centralized mobile fixes handled above ⚓ */
 
 /* Occupancy & Vacancy Badges 🏗️⚓ */
 .occupancy-badge-inline {

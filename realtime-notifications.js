@@ -476,11 +476,16 @@ function showGamePopup(data) {
   }, 8000);
 }
 
+let overlayNotifUnsub = null;
 async function loadAllNotificationsForOverlay() {
   const list = document.getElementById('dg-notif-list-content');
   const q = query(collection(db, "notifications"), orderBy("createdAt", "desc"), limit(20));
 
-  onSnapshot(q, (snap) => {
+  if (overlayNotifUnsub) {
+    overlayNotifUnsub();
+  }
+
+  overlayNotifUnsub = onSnapshot(q, (snap) => {
     list.innerHTML = '';
     const dismissed = getDismissed();
 

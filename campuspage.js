@@ -142,30 +142,34 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-/* ───────── OCCUPANCY LOGIC ───────── */
+/* ───────── OCCUPANCY LOGIC 🛡️⚓ ───────── */
+let cachedSchedules = null;
+let isCalculating = false;
 
 async function updateRoomOccupancies() {
-  console.log("SchedSync DEBUG: Starting occupancy calculation...");
+  if (isCalculating) return;
+  isCalculating = true;
+
+  console.log("SchedSync: Updating room occupancies...");
   try {
-    const q = query(collection(db, "schedules"), where("status", "==", "published"));
-    const snap = await getDocs(q);
+    // 🛡️ OPTIMIZED: Only fetch schedules if they aren't cached 
+    // or use the cache if valid. In a real-time app, we'd use onSnapshot 
+    // on schedules separately.
+    if (!cachedSchedules) {
+      const q = query(collection(db, "schedules"), where("status", "==", "published"));
+      const snap = await getDocs(q);
+      cachedSchedules = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
     
-    // For Real-time Vacancy 🕰️⚓
     const now = new Date();
     const currentDay = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(now);
     const currentMins = now.getHours() * 60 + now.getMinutes();
 
-    const groupedByDate = {}; // { roomRoom: { WEEKLY: 0, isOccupiedNow: false } }
+    const groupedByDate = {}; 
 
-    snap.forEach(doc => {
-      const data = doc.data();
-      
-      // Skip EVENT and HOST pseudo-sections 🛡️⚓
-      if (data.section === "EVENTS" || data.section === "EVENT_HOST" || doc.id === "DEFAULT_SECTION") return;
+    cachedSchedules.forEach(data => {
+      if (data.section === "EVENTS" || data.section === "EVENT_HOST" || data.id === "DEFAULT_SECTION") return;
 
-      const isOverride = !!(data.targetDate || data.originalId);
-      
-      // For Today's Overrides 📅⚓
       let isRelevantToday = true;
       if (data.targetDate) {
         const todayStr = now.toISOString().split('T')[0];
@@ -181,12 +185,10 @@ async function updateRoomOccupancies() {
         const duration = block.end - block.start;
         if (duration <= 0) return;
 
-        // 📈 WEEKLY load: Only standard schedules
-        if (!isOverride) {
+        if (!(data.targetDate || data.originalId)) {
           groupedByDate[key].WEEKLY += duration;
         }
 
-        // ⏱️ NOW: Standard matching day OR Relevant Today's Override
         const dayMatches = normalizeDay(c.day) === normalizeDay(currentDay);
         if (dayMatches && isRelevantToday) {
           if (currentMins >= block.start && currentMins < block.end) {
@@ -196,17 +198,13 @@ async function updateRoomOccupancies() {
       });
     });
 
-    console.log("SchedSync DEBUG: Room State Grouped:", groupedByDate);
-
-    // TOTAL WEEKLY MINS = 4500
     const TOTAL_WEEKLY_MINS = 4500;
 
     document.querySelectorAll(".room-pill").forEach(pill => {
       const labelEl = pill.querySelector(".room-pill-text-label");
       if (!labelEl) return;
 
-      const textToResolve = labelEl.textContent.trim();
-      const cleanLabel = textToResolve.replace(/\s*\|?\s*\d{1,3}%\s*(?:OCCUPIED)?$/i, "").trim();
+      const cleanLabel = labelEl.textContent.replace(/\s*\|?\s*\d{1,3}%\s*(?:OCCUPIED)?$/i, "").trim();
       const roomNameRaw = cleanLabel.toLowerCase().replace(/room|rm|\s/g, "").trim();
 
       const roomData = groupedByDate[roomNameRaw] || { WEEKLY: 0, isOccupiedNow: false };
@@ -214,40 +212,40 @@ async function updateRoomOccupancies() {
 
       // Remove existing badges
       pill.querySelectorAll(".occupancy-badge-inline").forEach(b => b.remove());
-      pill.querySelectorAll(".vacant-badge").forEach(b => b.remove());
 
+      const badge = document.createElement("span");
+      badge.className = "occupancy-badge-inline";
+      
       if (roomData.isOccupiedNow) {
-        const badge = document.createElement("span");
-        badge.className = "occupancy-badge-inline";
         badge.textContent = `${percentage}% BUSY`;
-        if (percentage <= 30) badge.style.color = "#059669";
-        else if (percentage <= 70) badge.style.color = "#ea580c";
-        else badge.style.color = "#dc2626";
-        pill.appendChild(badge);
+        badge.style.color = percentage > 70 ? "#dc2626" : "#ea580c";
         pill.style.borderColor = percentage > 70 ? "#dc2626" : "#ea580c";
       } else {
-        const vacantBadge = document.createElement("span");
-        vacantBadge.className = "vacant-badge occupancy-badge-inline";
-        vacantBadge.textContent = "VACANT";
-        vacantBadge.style.color = "#059669";
-        pill.appendChild(vacantBadge);
+        badge.textContent = "VACANT";
+        badge.style.color = "#059669";
         pill.style.borderColor = "#059669";
       }
-
+      pill.appendChild(badge);
     });
   } catch (err) {
-    console.error("SchedSync DEBUG: Occupancy calculation failed:", err);
+    console.error("SchedSync: Occupancy failed:", err);
+  } finally {
+    isCalculating = false;
   }
 }
 
 function listenForRooms() {
   const q = query(collection(db, "rooms"), orderBy("name"));
 
-  onSnapshot(q, (snapshot) => {
-    // Clear only current dynamic pills
-    document.querySelectorAll(".room-pill-dynamic").forEach(el => el.remove());
+  // 🦴 SHOW SKELETONS while loading
+  const dynamicIds = ["floor-1-dynamic", "floor-2-dynamic", "floor-3-dynamic", "floor-4-dynamic", "laboratories-dynamic", "kitchen-bar-dynamic", "event-spaces-dynamic"];
+  dynamicIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '<div class="skeleton-text skeleton" style="width: 100px; height: 40px; border-radius: 50px;"></div>';
+  });
 
-    // Also clear the containers themselves in case there's anything else 🧹
+  onSnapshot(q, (snapshot) => {
+    // Clear dynamic containers
     const dynamicIds = ["floor-1-dynamic", "floor-2-dynamic", "floor-3-dynamic", "floor-4-dynamic", "laboratories-dynamic", "kitchen-bar-dynamic", "event-spaces-dynamic"];
     dynamicIds.forEach(id => {
       const el = document.getElementById(id);
@@ -259,37 +257,26 @@ function listenForRooms() {
       const pill = createRoomPill(room.name, doc.id);
       pill.classList.add("room-pill-dynamic");
 
-      if (room.type === "classroom") {
-        const container = document.getElementById(`floor-${room.floor}-dynamic`);
-        if (container) container.appendChild(pill);
-      } else if (room.type === "laboratory") {
-        if (room.name.toLowerCase().includes("kitchen") || room.name.toLowerCase().includes("bar")) {
-          const container = document.getElementById("kitchen-bar-dynamic");
-          if (container) container.appendChild(pill);
-        } else {
-          const container = document.getElementById("laboratories-dynamic");
-          if (container) container.appendChild(pill);
-        }
-      } else {
-        const container = document.getElementById("event-spaces-dynamic");
-        if (container) container.appendChild(pill);
-      }
+      const containerId = room.type === "classroom" ? `floor-${room.floor}-dynamic` :
+                        (room.name.toLowerCase().includes("kitchen") || room.name.toLowerCase().includes("bar")) ? "kitchen-bar-dynamic" :
+                        room.type === "laboratory" ? "laboratories-dynamic" : "event-spaces-dynamic";
+      
+      const container = document.getElementById(containerId);
+      if (container) container.appendChild(pill);
     });
 
-    // Re-initialize click listeners and update occupancies
+    // Re-bind listeners
     document.querySelectorAll(".room-pill").forEach(pill => {
       pill.style.cursor = "pointer";
       pill.onclick = (e) => {
-        // Prevent navigation if clicking the delete button 🛡️
         if (e.target.closest('.delete-room-btn')) return;
-
         const labelEl = pill.querySelector(".room-pill-text-label");
         const roomNameRaw = labelEl ? labelEl.textContent.trim() : pill.firstChild.textContent.trim();
-        const fullRoomName = /^\d+$/.test(roomNameRaw) ? `Room ${roomNameRaw}` : roomNameRaw;
-        window.location.href = `roomprofile.html?room=${encodeURIComponent(fullRoomName)}`;
+        window.location.href = `roomprofile.html?room=${encodeURIComponent(roomNameRaw)}`;
       };
     });
 
+    // 🛡️ TRIGGER OCCUPANCY: Use cached schedules if available 
     updateRoomOccupancies();
   });
 }

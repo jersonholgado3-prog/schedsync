@@ -1,0 +1,75 @@
+/* SchedSync Skeleton Loading Styles 🦴✨ */
+
+.skeleton {
+    background: #e2e8f0;
+    background: linear-gradient(
+        90deg,
+        #e2e8f0 25%,
+        #f1f5f9 50%,
+        #e2e8f0 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 8px;
+    display: inline-block;
+    width: 100%;
+}
+
+.dark .skeleton {
+    background: #1e293b;
+    background: linear-gradient(
+        90deg,
+        #1e293b 25%,
+        #334155 50%,
+        #1e293b 75%
+    );
+    background-size: 200% 100%;
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Specific Card Skeletons */
+.faculty-skeleton-card {
+    border: 2px solid black;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 6px 6px 0px black;
+    background: white;
+}
+
+.dark .faculty-skeleton-card {
+    background: #1e293b;
+    border-color: #334155;
+    box-shadow: 6px 6px 0px #000;
+}
+
+.skeleton-text {
+    height: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-title {
+    height: 1.5rem;
+    margin-bottom: 1rem;
+    width: 80%;
+}
+
+.skeleton-circle {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    margin: 0 auto 1rem;
+}
+
+.skeleton-item {
+    height: 100px;
+    margin-bottom: 1rem;
+    border-radius: 20px;
+}

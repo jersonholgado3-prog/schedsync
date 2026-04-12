@@ -292,11 +292,24 @@ async function applyHistoryState(state, message) {
 
 /* ───────── FIREBASE ───────── */
 
+let cachedPublishedSchedules = null;
+let lastPublishedSchedulesFetch = 0;
+
+async function getPublishedSchedules() {
+  const now = Date.now();
+  if (cachedPublishedSchedules && now - lastPublishedSchedulesFetch < 5000) {
+    return cachedPublishedSchedules;
+  }
+  const snap = await getDocs(query(collection(db, "schedules"), where("status", "==", "published")));
+  cachedPublishedSchedules = snap;
+  lastPublishedSchedulesFetch = now;
+  return snap;
+}
+
 async function updateRoomSelectionOccupancies() {
 
   try {
-    const q = query(collection(db, "schedules"), where("status", "==", "published"));
-    const snap = await getDocs(q);
+    const snap = await getPublishedSchedules();
     const roomMinutes = {};
 
     snap.forEach(doc => {
@@ -408,7 +421,7 @@ let draggedSource = null;
 
 function handleDragStart(e) {
   const td = e.target.closest('td');
-  if (!td) {
+  if (!td || td.classList.contains('vacant-empty') || !td.classList.contains('occupied')) {
     e.preventDefault();
     return;
   }
@@ -425,80 +438,73 @@ function handleDragStart(e) {
 
   requestAnimationFrame(() => {
     td.classList.add('dragging-source');
+    // Add visual feedback to the body
+    document.body.classList.add('is-dragging');
   });
 }
 
 function handleDragOver(e) {
-  if (!draggedSource) return;
-  e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
-
-  const target = e.target.closest('td, #deleteBtn, .day-action');
+  e.preventDefault(); // Required for drop
+  const target = e.target.closest('td, #deleteBtn');
   if (!target) return;
 
-  if (target.id === 'deleteBtn' || target.classList.contains('delete-target')) {
+  if (target.id === 'deleteBtn') {
     target.classList.add('drag-over-delete');
     return;
   }
 
   const td = target.closest('td');
-  if (td && !td.classList.contains('occupied')) {
-    td.classList.add('drag-over-target');
+  if (td) {
+    if (!td.classList.contains('occupied')) {
+      td.classList.add('drag-over-target');
+    }
   }
 }
 
 function handleDragEnd(e) {
+  document.querySelectorAll('.dragging-source, .drag-over-target, .drag-over-delete').forEach(el => {
+    el.classList.remove('dragging-source', 'drag-over-target', 'drag-over-delete');
+  });
+  document.body.classList.remove('is-dragging');
   draggedSource = null;
-  document.querySelectorAll('.dragging-source').forEach(el => el.classList.remove('dragging-source'));
-  document.querySelectorAll('.drag-over-target').forEach(el => el.classList.remove('drag-over-target'));
-  document.querySelectorAll('.drag-over-delete').forEach(el => el.classList.remove('drag-over-delete'));
 }
 
 function handleDragLeave(e) {
-  const target = e.target.closest('td, #deleteBtn, .day-action');
+  const target = e.target.closest('td, #deleteBtn');
   if (target) {
-    target.classList.remove('drag-over-target');
-    target.classList.remove('drag-over-delete');
+    target.classList.remove('drag-over-target', 'drag-over-delete');
   }
 }
 
 async function handleDrop(e) {
   e.preventDefault();
-
-  document.querySelectorAll('.dragging-source').forEach(el => el.classList.remove('dragging-source'));
-  document.querySelectorAll('.drag-over-target').forEach(el => el.classList.remove('drag-over-target'));
-  document.querySelectorAll('.drag-over-delete').forEach(el => el.classList.remove('drag-over-delete'));
-
-  const target = e.target.closest('td, #deleteBtn, .day-action');
+  const target = e.target.closest('td, #deleteBtn');
   if (!target || !draggedSource) return;
 
-  // 🗑️ DRAG TO DELETE LOGIC
-  if (target.id === 'deleteBtn' || target.classList.contains('delete-target')) {
-    // Temporarily set selected to the dragged item so deleteClass works
+  // Cleanup styles
+  document.body.classList.remove('is-dragging');
+  target.classList.remove('drag-over-target', 'drag-over-delete');
+
+  // 🗑️ DRAG TO DELETE
+  if (target.id === 'deleteBtn') {
     selected = { id: draggedSource.schedId, day: draggedSource.day, block: draggedSource.block };
     deleteClass(target);
     return;
   }
 
   const targetTd = target.closest('td');
-  if (!targetTd) return;
+  if (!targetTd || targetTd.classList.contains('occupied')) {
+    showToast("Invalid drop zone! 🛡️", "warning");
+    return;
+  }
 
-  // 🛡️ CAPTURE DATA LOCALLY BEFORE AWAIT ⚓
-  // Because dragend fires almost immediately after drop, it clears the global draggedSource.
+  // Move Logic
   const sourceData = { ...draggedSource };
   const targetSchedId = targetTd.dataset.schedId;
   const targetDay = targetTd.dataset.day;
   const targetStart = parseInt(targetTd.dataset.start);
 
-  // 🛡️ STRICT COLLISION PREVENTION 🦈
-  // If target is already occupied by a REAL class, block it strictly to prevent accidental deletion.
-  if (targetTd.classList.contains('occupied')) {
-    showToast("Slot occupied! 🛡️ Move original first.", "warning");
-    return;
-  }
-
-  // No popup for simple drag-and-drop - keep it smooth! 🚀⚓
-  pushToHistory(); // Capture state before move ⚓
+  pushToHistory();
 
   const sched = schedules.find(s => s.id === sourceData.schedId);
   const targetSched = schedules.find(s => s.id === targetSchedId);
@@ -511,77 +517,45 @@ async function handleDrop(e) {
 
   if (classIndex === -1) return;
 
+  // Clone class data
   const classData = { ...sched.classes[classIndex] };
-
-  // CALCULATE NEW DURATION
   const sourceParts = parseBlock(sourceData.block);
   const duration = sourceParts.end - sourceParts.start;
 
-  // If we dropped on a valid start time, use it. Otherwise fallback.
-  const newStart = isNaN(targetStart) ? parseBlock(targetTd.dataset.block).start : targetStart;
+  const newStart = isNaN(targetStart) ? sourceParts.start : targetStart;
   let newEnd = newStart + duration;
 
-  // 6:00 PM LIMIT VALIDATION
-  // If newEnd is 0 or less than newStart, it implies a wrap-around or midnight
-  if (newEnd > 1080 || newEnd <= newStart) {
-    showToast("Class cannot end after 6:00 PM", "error");
+  if (newEnd > 1080) {
+    showToast("Class too long for this slot! 🦈", "error");
     return;
   }
 
-  // Update Data
+  // Update class data
   classData.day = targetDay;
   classData.timeBlock = `${toTime(newStart)}-${toTime(newEnd)}`;
 
-  // Optimistic Update ⚓
-  // 1. Remove from source
+  // Remove from source
   sched.classes.splice(classIndex, 1);
 
-  // 2. Remove any existing placeholders (like MARKED_VACANT) at the target to avoid duplicates
-  if (!targetSched.classes) targetSched.classes = [];
-  const targetNormBlock = normalizeTimeBlock(classData.timeBlock);
-  targetSched.classes = targetSched.classes.filter(c =>
-    !(normalizeDay(c.day) === normalizeDay(targetDay) && normalizeTimeBlock(c.timeBlock) === targetNormBlock)
+  // Remove existing content at target if it's VACANT
+  targetSched.classes = (targetSched.classes || []).filter(
+      c => !(c.day === targetDay && parseBlock(c.timeBlock).start === newStart)
   );
 
-  // 3. Add to target
+  // Add to target
   targetSched.classes.push(classData);
 
   renderTable();
 
-  // Flash Animation
-  setTimeout(() => {
-    // Find the new cell. Since it might be merged, we look for the cell with the specific start time.
-    const newCell = document.querySelector(`td[data-sched-id="${targetSchedId}"][data-day="${targetDay}"][data-start="${newStart}"]`);
-    if (newCell) {
-      newCell.classList.add('maangas-cell-hit');
-      // Temporarily override color for flash effect
-      newCell.style.setProperty('background-color', '#bfdbfe', 'important');
-
-      setTimeout(() => {
-        newCell.classList.remove('maangas-cell-hit');
-        // RESTORE ORIGINAL COLOR
-        // Instead of clearing, we check if there's a custom color in classData
-        if (classData.color) {
-          newCell.style.setProperty('background-color', classData.color, 'important');
-        } else {
-          newCell.style.removeProperty('background-color');
-        }
-      }, 500);
-    }
-  }, 50);
-
   try {
-    if (sched.id === targetSched.id) {
-      await updateDoc(doc(db, "schedules", sched.id), { classes: sched.classes });
-    } else {
-      await updateDoc(doc(db, "schedules", sched.id), { classes: sched.classes });
+    await updateDoc(doc(db, "schedules", sched.id), { classes: sched.classes });
+    if (sched.id !== targetSched.id) {
       await updateDoc(doc(db, "schedules", targetSched.id), { classes: targetSched.classes });
     }
-    showToast("Class moved!", "success");
+    showToast("Class moved smoothly! 🌊", "success");
   } catch (err) {
-    console.error("Move failed", err);
-    showToast("Move failed", "error");
-    setTimeout(load, 1000);
+    console.error(err);
+    load(); // Fallback
   }
 }
 
@@ -631,9 +605,7 @@ async function hasRoomConflict(n, excludeId) {
   }
 
   // 2. Check Firebase (Published Schedules)
-  const snap = await getDocs(
-    query(collection(db, "schedules"), where("status", "==", "published"))
-  );
+  const snap = await getPublishedSchedules();
 
   for (const d of snap.docs) {
     if (d.id === excludeId) continue;
@@ -697,9 +669,7 @@ async function hasTeacherConflict(n, excludeId) {
   }
 
   // 2. Check Firebase
-  const snap = await getDocs(
-    query(collection(db, "schedules"), where("status", "==", "published"))
-  );
+  const snap = await getPublishedSchedules();
 
   for (const d of snap.docs) {
     if (d.id === excludeId) continue;
@@ -773,9 +743,7 @@ async function hasBlueprintConflict(newBlock, excludeId) {
   if (!room || room === "NA" || newBlock.subject === "VACANT" || newBlock.subject === "MARKED_VACANT") return null;
 
   // Find all published schedules that have classes in this room
-  const snap = await getDocs(
-    query(collection(db, "schedules"), where("status", "==", "published"))
-  );
+  const snap = await getPublishedSchedules();
   const roomSchedules = snap.docs.filter(d => {
     const classes = d.data().classes || [];
     return classes.some(c => c.room === room && c.subject !== "VACANT" && c.subject !== "MARKED_VACANT");
@@ -1988,9 +1956,28 @@ async function saveClass() {
     });
   }
 
+  // 🛡️ GLOBAL CONFLICT DETECTION ⚖️
+  showToast("Checking for conflicts... ⚖️", "info");
+
+  const conflictResults = await checkConflicts({
+    day: selected.day,
+    timeBlock: `${toTime(startMin)}-${toTime(endMin)}`,
+    room: mergedRoom,
+    teacher: mergedTeacher
+  }, selected.id);
+
+  if (conflictResults.hasConflict) {
+    let msg = "Cannot save! ";
+    if (conflictResults.room) msg += conflictResults.room;
+    if (conflictResults.teacher) msg += (conflictResults.room ? " & " : "") + conflictResults.teacher;
+
+    showToast(msg, "error");
+    return;
+  }
+
   const mergedBlock = {
     day: selected.day,
-    timeBlock: `${toTime(minStart)}-${toTime(maxEnd)}`,
+    timeBlock: `${toTime(startMin)}-${toTime(endMin)}`,
     subject: mergedSubject,
     teacher: mergedTeacher,
     room: mergedRoom,
@@ -3804,3 +3791,6 @@ function listenForComments() {
     renderTable(); // Refresh table to show bubbles
   });
 }
+
+/* ───────── CONFLICT DETECTION ENGINE ⚖️⚓ ───────── */
+

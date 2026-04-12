@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=1280" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="notificationpopup.css" />
     <!-- Changed title to Notifications -->
     <title>Notifications - SchedSync</title>
@@ -59,6 +59,13 @@
                     <img src="images/EVENT_MODE.png" alt="Events">
                     <span>Events</span>
                 </a>
+                <!-- ADMIN ONLY 🛡️ -->
+                <div id="adminSidebarLinks" style="display: none;">
+                  <a href="audit_logs.html" class="sidebar-link">
+                    <img src="images/SCHED.png" alt="Audit" style="filter: hue-rotate(180deg);">
+                    <span>Audit Logs</span>
+                  </a>
+                </div>
             </nav>
         </aside>
 
@@ -150,18 +157,28 @@
                                     <div class="form-content">
                                         <div class="field-group">
                                             <div class="field-label">To</div>
-                                            <input class="input-field" type="text" placeholder="Recipients">
+                                            <input class="input-field" type="text" id="notifRecipient" placeholder="Recipients">
                                         </div>
 
                                         <div class="field-group">
                                             <div class="field-label">Title</div>
-                                            <input class="input-field" type="text" placeholder="Notification title">
+                                            <input class="input-field" type="text" id="notifTitle" placeholder="Notification title">
                                         </div>
 
                                         <div class="field-group message-field">
                                             <div class="field-label message-label">Message</div>
-                                            <textarea class="textarea-field"
+                                            <textarea class="textarea-field" id="notifMessage"
                                                 placeholder="Type your message here..."></textarea>
+                                        </div>
+
+                                        <div class="field-group">
+                                            <div class="field-label">Attachment (Image URL)</div>
+                                            <div style="display: flex; gap: 10px; align-items: center;">
+                                                <input class="input-field" type="text" id="notificationImageUrl" placeholder="https://example.com/image.jpg" style="flex: 1;">
+                                                <div id="imagePreview" style="display: none; width: 50px; height: 50px; border: 2px solid black; border-radius: 8px; overflow: hidden; background: #eee;">
+                                                    <img id="previewImg" src="" style="width: 100%; height: 100%; object-fit: cover;">
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -181,6 +198,31 @@
     <script type="module" src="./notification.js"></script>
     <script type="module" src="realtime-notifications.js"></script>
     <script type="module" src="ui-effects.js"></script>
+  <!-- ?? MOBILE BOTTOM NAVIGATION BAR ? -->
+  <nav class="mobile-bottom-nav" id="mobileBottomNav">
+    <a href="homepage.html"    class="mob-nav-item" data-page="homepage">
+      <img src="images/HOME.png" alt="Home"><span>Home</span>
+    </a>
+    <a href="newschedule.html" class="mob-nav-item" data-page="newschedule">
+      <img src="images/ADD_SCHED.png" alt="New Schedule"><span>New Sched</span>
+    </a>
+    <a href="myschedule.html"  class="mob-nav-item" data-page="myschedule">
+      <img src="images/SCHED.png" alt="My Schedule"><span>My Sched</span>
+    </a>
+    <a href="facultypage.html" class="mob-nav-item" data-page="facultypage">
+      <img src="images/FACULTY.png" alt="Faculty"><span>Faculty</span>
+    </a>
+    <a href="campuspage.html"  class="mob-nav-item" data-page="campuspage">
+      <img src="images/CAMPUS_ONE.png" alt="Campus"><span>Campus</span>
+    </a>
+    <a href="event.html"       class="mob-nav-item" data-page="event">
+      <img src="images/EVENT_MODE.png" alt="Events"><span>Events</span>
+    </a>
+    <!-- ADMIN ONLY � shown via JS -->
+    <a href="audit_logs.html"  class="mob-nav-item admin-only" data-page="audit_logs" style="display:none">
+      <img src="images/SCHED.png" alt="Audit Logs"><span>Audit</span>
+    </a>
+    </nav>
 </body>
 
 </html>

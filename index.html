@@ -2,12 +2,11 @@
 <html lang="en">
 <script>
   (function () {
-    // 1. Theme Lock 🌙
-    // 1. Theme Lock 🌙 - DISABLED FOR AUTH PAGES
-    // const theme = localStorage.getItem("theme");
-    // if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-    //   document.documentElement.classList.add("dark");
-    // }
+    // 1. Theme Lock 🌙 - RE-ENABLED ✨
+    const theme = localStorage.getItem("theme");
+    if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+      document.documentElement.classList.add("dark");
+    }
 
     // 2. UI Mode Lock 👔
     const uiMode = localStorage.getItem("uiMode");
@@ -21,11 +20,12 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=1280" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Welcome to SchedSync</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="sync-1_styles.css" />
+<link rel='stylesheet' href='header-styles.css'>
 </head>
 
 <body class="landing-page">
@@ -62,13 +62,13 @@
           <div class="form-group">
             <label for="username">Email or Username</label>
             <input type="text" id="username" class="form-input" placeholder="Enter your credentials" autocomplete="off"
-              required>
+              required maxlength="50">
           </div>
 
           <div class="form-group">
             <label for="password">Password</label>
             <div class="password-wrapper">
-              <input type="password" id="password" class="form-input" placeholder="••••••••" required>
+              <input type="password" id="password" class="form-input" placeholder="••••••••" required maxlength="100">
               <div class="password-toggle" id="togglePassword">
                 <!-- Eye Off (Slashed) -->
                 <svg xmlns="http://www.w3.org/2000/svg" class="eye-off" viewBox="0 0 24 24" fill="none"
@@ -139,27 +139,13 @@
   </section>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    // 🛡️ Use Centralized Config ⚓
+    import { db, auth } from "./js/config/firebase-config.js";
     import {
-      getAuth,
-      signInWithEmailAndPassword
+      signInWithEmailAndPassword,
+      onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-
-    // ✅ Firebase configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyBrtJocBlfkPciYO7f8-7FwREE1tSF3VXU",
-      authDomain: "schedsync-e60d0.firebaseapp.com",
-      projectId: "schedsync-e60d0",
-      storageBucket: "schedsync-e60d0.firebasestorage.app",
-      messagingSenderId: "334140247575",
-      appId: "1:334140247575:web:930b0c12e024e4defc5652",
-      measurementId: "G-S59GL1W5Y2"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+    import { doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
     const notif = document.getElementById('notification');
     const showNotification = (message, type = 'success') => {
@@ -169,14 +155,17 @@
       notif.style.display = 'block';
     };
 
-
     const loginForm = document.getElementById('loginForm');
+    const loginBtn = document.getElementById('studentLoginBtn');
     const adminLoginBtn = document.getElementById('adminLoginBtn');
+
+    // Rate Limiting Variable 🛡️
+    let loginAttempts = parseInt(sessionStorage.getItem('_la') || '0');
+    let isLocked = sessionStorage.getItem('_il') === '1';
 
     // Handle Admin Login button click
     if (adminLoginBtn && loginForm) {
       adminLoginBtn.addEventListener('click', () => {
-        // Just trigger the form submit ⚓
         loginForm.dispatchEvent(new Event('submit'));
       });
     }
@@ -185,7 +174,13 @@
       loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const userInput = document.getElementById('username').value.trim();
+        if (isLocked) {
+          showNotification('Too many attempts. Please wait a moment. 🛡️', 'error');
+          return;
+        }
+
+        // 🛡️ Basic Sanitization
+        const userInput = document.getElementById('username').value.trim().toLowerCase();
         const password = document.getElementById('password').value;
 
         if (!userInput || !password) {
@@ -193,8 +188,12 @@
           return;
         }
 
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'Authenticating...';
+
         let email = userInput;
 
+        // If not email, search for username
         if (!userInput.includes('@')) {
           try {
             const q = query(collection(db, "users"), where("username", "==", userInput));
@@ -202,11 +201,15 @@
 
             if (querySnapshot.empty) {
               showNotification('No user found with that username.', 'error');
+              loginBtn.disabled = false;
+              loginBtn.textContent = 'Log In';
               return;
             }
             email = querySnapshot.docs[0].data().email;
           } catch (error) {
-            showNotification('Could not verify username.', 'error');
+            showNotification('Verification failed. Try again.', 'error');
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Log In';
             return;
           }
         }
@@ -221,6 +224,7 @@
           if (userDoc.exists()) {
             const userData = userDoc.data();
             localStorage.setItem('userRole', userData.role || 'student');
+            localStorage.removeItem('manual_logout');
             if (userData.section) localStorage.setItem('userSection', userData.section);
 
             // If it's a teacher and they haven't finished setup, go to teacherlogin ⚓
@@ -234,45 +238,69 @@
           showNotification('✅ Login successful! Redirecting...', 'success');
           setTimeout(() => {
             window.location.href = targetUrl;
-          }, 1500);
+          }, 1000);
 
         } catch (error) {
+          loginAttempts++;
+          sessionStorage.setItem('_la', loginAttempts);
+          if (loginAttempts >= 5) {
+            isLocked = true;
+            sessionStorage.setItem('_il', '1');
+            setTimeout(() => {
+              isLocked = false;
+              loginAttempts = 0;
+              sessionStorage.removeItem('_la');
+              sessionStorage.removeItem('_il');
+            }, 30000); // 30s Lock
+          }
+
           let msg = 'Login failed. Please check your credentials.';
           if (error.code === 'auth/wrong-password') msg = 'Incorrect password.';
           if (error.code === 'auth/user-not-found') msg = 'No account found.';
+          if (error.code === 'auth/invalid-email') msg = 'Invalid email format.';
+
           showNotification(msg, 'error');
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Log In';
         }
       });
     }
 
-    // Auto-redirect if already logged in and visiting this page ⚓
-    auth.onAuthStateChanged(async (user) => {
+    // 🛡️ Intelligent Session Monitor (Auto-Redirect Removed for Security) ⚓
+    onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // If we want to force them to login, we can sign them out ⚓
-        // But let's only do it if they haven't just logged in successfully
-        if (!sessionStorage.getItem('justLoggedIn')) {
-          // We'll leave it for now but the user says it's auto-logging.
-          // Actually, let's just SIGN OUT to be sure 🕊️⚓
-          // await auth.signOut(); 
-        }
+        console.log("SchedSync: Active session detected for:", user.email);
+        // We stay on index.html to force manual login/verification 🔒
+      } else {
+        console.log("SchedSync: No active session.");
       }
     });
-
-    // FORCE SIGN OUT ON LOAD to prevent "auto-log" 🕊️⚓
-    // This ensures that hitting the landing page always requires a fresh login.
-    const forceFreshLogin = async () => {
-      try {
-        await auth.signOut();
-        localStorage.removeItem('userRole');
-        localStorage.removeItem('userSection');
-        console.log("Logged out for fresh session ⚓");
-      } catch (e) {
-        console.error("Sign out error:", e);
-      }
-    };
-    forceFreshLogin();
   </script>
   <script type="module" src="ui-effects.js"></script>
+  <!-- ?? MOBILE BOTTOM NAVIGATION BAR ? -->
+  <nav class="mobile-bottom-nav" id="mobileBottomNav">
+    <a href="homepage.html"    class="mob-nav-item" data-page="homepage">
+      <img src="images/HOME.png" alt="Home"><span>Home</span>
+    </a>
+    <a href="newschedule.html" class="mob-nav-item" data-page="newschedule">
+      <img src="images/ADD_SCHED.png" alt="New Schedule"><span>New Sched</span>
+    </a>
+    <a href="myschedule.html"  class="mob-nav-item" data-page="myschedule">
+      <img src="images/SCHED.png" alt="My Schedule"><span>My Sched</span>
+    </a>
+    <a href="facultypage.html" class="mob-nav-item" data-page="facultypage">
+      <img src="images/FACULTY.png" alt="Faculty"><span>Faculty</span>
+    </a>
+    <a href="campuspage.html"  class="mob-nav-item" data-page="campuspage">
+      <img src="images/CAMPUS_ONE.png" alt="Campus"><span>Campus</span>
+    </a>
+    <a href="event.html"       class="mob-nav-item" data-page="event">
+      <img src="images/EVENT_MODE.png" alt="Events"><span>Events</span>
+    </a>
+    <a href="audit_logs.html"  class="mob-nav-item admin-only" data-page="audit_logs" style="display:none">
+      <img src="images/SCHED.png" alt="Audit Logs"><span>Audit</span>
+    </a>
+    </nav>
 </body>
 
 </html>

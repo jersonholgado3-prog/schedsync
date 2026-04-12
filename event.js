@@ -1,7 +1,6 @@
 import { initMobileNav } from "./js/ui/mobile-nav.js";
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { auth, db, app } from "./js/config/firebase-config.js";
 import {
-  getFirestore,
   doc,
   getDocs,
   getDoc,
@@ -11,7 +10,7 @@ import {
   query,
   orderBy
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { initUserProfile } from "./userprofile.js";
 import { initUniversalSearch } from "./search.js";
 
@@ -20,20 +19,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initUserProfile("#userProfile");
   initUniversalSearch();
 });
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBrtJocBlfkPciYO7f8-7FwREE1tSF3VXU",
-  authDomain: "schedsync-e60d0.firebaseapp.com",
-  projectId: "schedsync-e60d0",
-  storageBucket: "schedsync-e60d0.firebasestorage.app",
-  messagingSenderId: "334140247575",
-  appId: "1:334140247575:web:930b0c12e024e4defc5652",
-  measurementId: "G-S59GL1W5Y2"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
 
 let allEvents = [];
 let itemsToShow = 5;

@@ -431,7 +431,7 @@ const injectGlobalTransitions = () => {
 
         /* ──── AUTO-COLLAPSING SIDEBAR 📏 ──── */
         .sidebar {
-            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease !important;
+            transition: width 0.6s cubic-bezier(0.19, 1, 0.22, 1), background-color 0.4s ease !important;
             border-top-right-radius: 40px !important;
             overflow: hidden !important;
             background: linear-gradient(to bottom, #FFD200 115px, #002044 115px) !important;

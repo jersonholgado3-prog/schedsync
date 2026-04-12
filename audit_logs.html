@@ -3,202 +3,445 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=1280">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SchedSync - Audit Logs</title>
+    
+    <!-- Core Links ⚓ -->
     <link rel="stylesheet" href="header-styles.css">
+    <link rel="stylesheet" href="homepage.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <script type="module">
+        import { auth, db } from "./js/config/firebase-config.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+        // 🛡️ Early Theme & UI Mode Lock ⚓
+        (function () {
+            const theme = localStorage.getItem("theme");
+            if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+                document.documentElement.classList.add("dark");
+            }
+            const uiMode = localStorage.getItem("uiMode") || 'professional';
+            if (uiMode === 'professional') {
+                document.documentElement.classList.add("professional-mode");
+            }
+        })();
+
+        // 🛡️ ADMIN GUARD ⚓
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+            const udoc = await getDoc(doc(db, "users", user.uid));
+            const role = udoc.data()?.role;
+            localStorage.setItem('userRole', role || 'student');
+
+            if (role !== 'admin') {
+                alert("Access Denied: Admins Only 🛡️");
+                window.location.href = 'homepage.html';
+            } else {
+                document.body.style.display = 'block'; // Show if admin
+            }
+        });
+    </script>
+
     <style>
-        :root {
-            --sti-blue: #005BAB;
-            --sti-yellow: #FFD200;
-            --bg-dark: #0f172a;
-            --card-dark: #1e293b;
-            --text-main: #f8fafc;
-            --text-dim: #94a3b8;
-        }
-
-        body {
-            background: var(--bg-dark);
-            color: var(--text-main);
-            font-family: 'Inter', sans-serif;
+        body { 
+            display: none; 
             margin: 0;
-            overflow-x: hidden;
+            background-color: var(--bg-main);
         }
-
+        
         .audit-container {
-            max-width: 1200px;
-            margin: 40px auto;
-            padding: 0 20px;
-        }
-
-        .audit-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            border-bottom: 4px solid var(--sti-blue);
-            padding-bottom: 20px;
-        }
-
-        .audit-header h1 {
-            font-size: 32px;
-            font-weight: 900;
-            margin: 0;
-            color: var(--sti-yellow);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .log-list {
+            flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 25px;
+            padding: 25px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
         }
 
-        .log-item {
-            background: var(--card-dark);
-            border: 2px solid #334155;
-            border-radius: 16px;
-            padding: 20px;
+        /* Stats Cards Section 📊 */
+        .stats-grid {
             display: grid;
-            grid-template-columns: 80px 1fr 180px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
-            align-items: center;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
+            margin-bottom: 5px;
         }
 
-        .log-item:hover {
-            border-color: var(--sti-blue);
-            transform: translateX(10px);
-            box-shadow: -5px 0 0 var(--sti-blue);
-        }
-
-        .log-icon {
-            font-size: 32px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: #0f172a;
-            width: 60px;
-            height: 60px;
-            border-radius: 12px;
-        }
-
-        .log-details {
+        .stat-card {
+            background: white;
+            border: 3px solid black;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 6px 6px 0px black;
             display: flex;
             flex-direction: column;
             gap: 5px;
         }
 
-        .log-action {
-            font-weight: 950;
-            font-size: 14px;
-            letter-spacing: 1px;
-            padding: 4px 12px;
-            border-radius: 6px;
-            display: inline-block;
-            width: fit-content;
+        .dark .stat-card {
+            background: #1e293b;
+            border-color: #334155;
+            box-shadow: 6px 6px 0px #000;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 900;
+            color: #005BAB;
+        }
+
+        .dark .stat-value {
+            color: #FFD200;
+        }
+
+        /* Filter Bar 🔍 */
+        .filter-bar {
+            background: white;
+            border: 3px solid black;
+            border-radius: 20px;
+            padding: 15px 25px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            box-shadow: 6px 6px 0px black;
             margin-bottom: 5px;
         }
 
-        /* Action Colors */
-        .action-SAVE_SCHEDULE {
-            background: #1e3a8a;
-            color: #60a5fa;
+        .dark .filter-bar {
+            background: #1e293b;
+            border-color: #334155;
+            box-shadow: 6px 6px 0px #000;
         }
 
-        .action-PUBLISH_SCHEDULE {
-            background: #064e3b;
-            color: #34d399;
+        .search-input-group {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #f1f5f9;
+            border: 2px solid black;
+            border-radius: 12px;
+            padding: 8px 15px;
         }
 
-        .action-DELETE_SCHEDULE {
-            background: #450a0a;
-            color: #f87171;
+        .dark .search-input-group {
+            background: #0f172a;
+            border-color: #334155;
         }
 
-        .action-UPDATE_CLASS {
-            background: #3f2b00;
-            color: #fbbf24;
-        }
-
-        .action-ADD_CLASS {
-            background: #1e3a8a;
-            color: #60a5fa;
-        }
-
-        .log-msg {
-            font-size: 16px;
+        .search-input-group input {
+            border: none;
+            background: transparent;
+            width: 100%;
+            font-family: inherit;
             font-weight: 600;
-            color: var(--text-main);
+            color: inherit;
+            outline: none;
         }
 
-        .log-user {
-            font-size: 13px;
-            color: var(--text-dim);
+        .filter-select {
+            padding: 8px 15px;
+            border: 2px solid black;
+            border-radius: 12px;
             font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            background: white;
         }
 
-        .log-time {
-            text-align: right;
-            font-family: monospace;
-            font-size: 13px;
-            color: var(--text-dim);
+        /* Log List & Items 📑 */
+        .log-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 10px;
         }
 
-        .empty-logs {
-            text-align: center;
-            padding: 100px;
-            font-size: 20px;
-            color: var(--text-dim);
+        .log-item {
+            background: white;
+            border: 1.5px solid #64748b;
+            border-radius: 20px;
+            padding: 1.25rem;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            cursor: pointer;
+        }
+
+        .log-item:hover {
+            /* transform: translateY(-3px); -- REMOVED LIFTING EFFECT ⚓ */
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            border-color: #005BAB;
+        }
+
+        .dark .log-item {
+            background: #1e293b;
+            border-color: #334155;
+        }
+
+        .dark .log-item:hover {
+            border-color: #FFD200;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.4);
+        }
+
+        .log-icon-box {
+            width: 55px;
+            height: 55px;
+            background: #f1f5f9;
+            border: 2px solid black;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+            box-shadow: 3px 3px 0px black;
+        }
+
+        .dark .log-icon-box {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: #334155;
+            box-shadow: 3px 3px 0px #000;
+        }
+
+        .log-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 0;
+        }
+
+        .log-header-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2px;
+        }
+
+        .log-action-badge {
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding: 3px 10px;
+            border-radius: 50px;
+            border: 1.5px solid black;
+            box-shadow: 2px 2px 0px black;
+            width: fit-content;
+        }
+
+        .log-timestamp {
+            font-size: 0.75rem;
             font-weight: 800;
+            color: #64748b;
         }
+
+        .log-message {
+            font-size: 1.05rem;
+            font-weight: 900;
+            color: #0f172a;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dark .log-message {
+            color: white;
+        }
+
+        .log-user-meta {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Action Palette 🎨 */
+        .action-SAVE_SCHEDULE, .action-ADD_CLASS, .action-PUBLISH_GROUP { background: #dbeafe; color: #1e40af; border-color: #1e40af; }
+        .action-PUBLISH_SCHEDULE { background: #d1fae5; color: #065f46; border-color: #065f46; }
+        .action-DELETE_SCHEDULE, .action-DELETE_GROUP, .action-DENY_PERMISSION { background: #fee2e2; color: #991b1b; border-color: #991b1b; }
+        .action-UPDATE_CLASS, .action-REVOKE_PERMISSION { background: #fef3c7; color: #92400e; border-color: #92400e; }
+        .action-UNPUBLISH_GROUP { background: #f1f5f9; color: #334155; border-color: #334155; }
+        .action-ADD_CALENDAR_EVENT, .action-ACCEPT_PERMISSION { background: #dcfce7; color: #166534; border-color: #166534; }
+        .action-DELETE_CALENDAR_EVENT { background: #fdf2f8; color: #9d174d; border-color: #9d174d; }
 
         .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(255, 255, 255, 0.1);
-            border-top: 4px solid var(--sti-yellow);
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f1f5f9;
+            border-top: 5px solid #005BAB;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 50px auto;
+            margin: 100px auto;
         }
 
         @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
 
-            100% {
-                transform: rotate(360deg);
-            }
+        .empty-state {
+            text-align: center;
+            padding: 80px 40px;
+            background: white;
+            border: 3px solid black;
+            border-radius: 20px;
+            margin-top: 20px;
+        }
+
+        .dark .empty-state {
+            background: #1e293b;
+            border-color: #334155;
+        }
+
+        .professional-mode .log-item,
+        .professional-mode .stat-card,
+        .professional-mode .filter-bar,
+        .professional-mode .widget-card {
+            box-shadow: none !important;
+            border-radius: 12px !important;
+            border-width: 1.5px !important;
+            transform: none !important;
         }
     </style>
 </head>
 
 <body>
-    <header class="header">
-        <div class="logo-container" onclick="window.location.href='homepage.html'">
-            <img src="images/BANNER.png" class="logo-img" alt="SchedSync Logo">
-        </div>
-        <div class="user-section">
-            <div class="user-profile-btn" id="userProfile">
-                <div class="user-name">Admin</div>
-                <div class="user-avatar" id="headerAvatar">👤</div>
+    <div class="container">
+        <!-- SIDEBAR 🛡️ -->
+        <aside class="sidebar">
+            <div class="sidebar-header" onclick="window.location.href='homepage.html'">
+                <img src="images/LOGO.png" class="logo-img">
             </div>
-        </div>
-    </header>
+            <nav class="sidebar-menu">
+                <a href="homepage.html" class="sidebar-link">
+                    <img src="images/HOME.png" alt="Home">
+                    <span>Home</span>
+                </a>
+                <a href="newschedule.html" class="sidebar-link">
+                    <img src="images/ADD_SCHED.png" alt="New Schedule">
+                    <span>New Schedule</span>
+                </a>
+                <a href="myschedule.html" class="sidebar-link">
+                    <img src="images/SCHED.png" alt="Schedules">
+                    <span>Schedules</span>
+                </a>
+                <a href="facultypage.html" class="sidebar-link">
+                    <img src="images/FACULTY.png" alt="Faculty">
+                    <span>Faculty</span>
+                </a>
+                <a href="campuspage.html" class="sidebar-link">
+                    <img src="images/CAMPUS_ONE.png" alt="Campus">
+                    <span>Campus</span>
+                </a>
+                <a href="event.html" class="sidebar-link">
+                    <img src="images/EVENT_MODE.png" alt="Events">
+                    <span>Events</span>
+                </a>
+                <!-- ADMIN ONLY 🛡️ -->
+                <div id="adminSidebarLinks" style="display: none;">
+                    <a href="audit_logs.html" class="sidebar-link active">
+                        <img src="images/SCHED.png" alt="Audit" style="filter: hue-rotate(180deg) brightness(0) invert(1);">
+                        <span>Audit Logs</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
 
-    <div class="audit-container">
-        <div class="audit-header">
-            <h1>🛡️ AUDIT LOGS</h1>
-            <div id="logCount" style="font-weight: 900; color: var(--sti-blue);">Loading...</div>
-        </div>
+        <div class="main-content-wrapper">
+            <header class="header">
+                <div class="left-header">
+                    <div class="hamburger-btn">☰</div>
+                    <div class="logo-container" onclick="window.location.href='homepage.html'">
+                        <img src="images/BANNER.png" class="logo-img" alt="SchedSync Logo" style="max-height: 100%; width: 100%; object-fit: contain;">
+                    </div>
+                </div>
 
-        <div id="loading" class="loading-spinner"></div>
-        <div id="logList" class="log-list"></div>
+                <div class="greeting">🛡️ SYSTEM AUDIT</div>
+
+                <div class="user-section">
+                    <div class="notification-icon-wrapper" onclick="window.location.href='notification.html'">
+                        <img src="images/BELL.png" alt="Notifications">
+                    </div>
+                    <div class="user-profile-btn" id="userProfile">
+                        <div class="user-name">Admin</div>
+                        <div class="user-avatar" id="headerAvatar" style="background-color: #e2e8f0; border: 2px solid black; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                            <img src="images/default_shark.jpg" alt="User" style="width: 100%; height: 100%; object-fit: cover;">
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="dashboard-container">
+                <div class="audit-container">
+                    <!-- Stats Section -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <span class="stat-label">Total Logs</span>
+                            <span class="stat-value" id="totalLogs">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Critical Actions</span>
+                            <span class="stat-value" id="criticalActions">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Active Admins</span>
+                            <span class="stat-value" id="activeAdmins">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Filter Bar -->
+                    <div class="filter-bar">
+                        <div class="search-input-group">
+                            <span>🔍</span>
+                            <input type="text" id="logSearch" placeholder="Search by user or action...">
+                        </div>
+                        <select id="actionFilter" class="filter-select">
+                            <option value="ALL">All Actions</option>
+                            <option value="SCHEDULE">Schedules</option>
+                            <option value="PERMISSION">Permissions</option>
+                            <option value="CALENDAR">Calendar</option>
+                        </select>
+                    </div>
+
+                    <!-- Main Log Card -->
+                    <div class="widget-card">
+                        <div class="widget-header" style="justify-content: space-between; margin-bottom: 20px;">
+                            <h2 class="widget-title">Audit Trail</h2>
+                            <span id="logStatus" style="font-weight: 800; color: #64748b; font-size: 0.85rem;">FETCHING...</span>
+                        </div>
+
+                        <div id="loading" class="loading-spinner"></div>
+                        <div id="logList" class="log-list"></div>
+                    </div>
+                </div>
+            </main>
+        </div>
     </div>
+
+    <script type="module" src="ui-effects.js"></script>
+    <script type="module" src="userprofile.js"></script>
+    <script type="module" src="realtime-notifications.js"></script>
 
     <script type="module">
         import { db, auth } from "./js/config/firebase-config.js";
@@ -211,63 +454,165 @@
 
             onAuthStateChanged(auth, (user) => {
                 if (!user) {
-                    window.location.href = 'login.html';
+                    window.location.href = 'index.html';
                     return;
                 }
                 listenToLogs();
             });
         });
 
+        let allLogs = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initUserProfile("#userProfile");
+
+            onAuthStateChanged(auth, (user) => {
+                if (!user) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+                listenToLogs();
+            });
+
+            // Set up Search & Filters
+            document.getElementById('logSearch').addEventListener('input', applyFilters);
+            document.getElementById('actionFilter').addEventListener('change', applyFilters);
+        });
+
         function listenToLogs() {
             const listEl = document.getElementById('logList');
             const loading = document.getElementById('loading');
-            const countEl = document.getElementById('logCount');
+            const statusEl = document.getElementById('logStatus');
 
-            const q = query(collection(db, "audit_logs"), orderBy("timestamp", "desc"), limit(100));
+            const q = query(collection(db, "audit_logs"), orderBy("timestamp", "desc"), limit(150));
 
             onSnapshot(q, (snap) => {
                 loading.style.display = 'none';
-                listEl.innerHTML = '';
-                countEl.textContent = `${snap.size} RECENT ENTRIES`;
+                statusEl.textContent = `REAL-TIME: ${snap.size} ENTRIES`;
+                
+                allLogs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                // Update Stats
+                document.getElementById('totalLogs').textContent = snap.size;
+                const criticalCount = allLogs.filter(l => l.action?.includes('DELETE') || l.action?.includes('REVOKE') || l.action?.includes('DENY')).length;
+                document.getElementById('criticalActions').textContent = criticalCount;
+                const admins = new Set(allLogs.map(l => l.userEmail)).size;
+                document.getElementById('activeAdmins').textContent = admins;
 
-                if (snap.empty) {
-                    listEl.innerHTML = '<div class="empty-logs">No logs found. Everything is quiet... 🕶️</div>';
-                    return;
+                applyFilters();
+            });
+        }
+
+        function applyFilters() {
+            const listEl = document.getElementById('logList');
+            const searchTerm = document.getElementById('logSearch').value.toLowerCase();
+            const actionFilter = document.getElementById('actionFilter').value;
+
+            const filtered = allLogs.filter(log => {
+                const matchesSearch = (log.userName || "").toLowerCase().includes(searchTerm) || 
+                                     (log.details || "").toLowerCase().includes(searchTerm) ||
+                                     (log.action || "").toLowerCase().includes(searchTerm);
+                
+                let matchesCategory = true;
+                if (actionFilter !== 'ALL') {
+                    if (actionFilter === 'SCHEDULE') matchesCategory = log.action.includes('SCHEDULE') || log.action.includes('CLASS') || log.action.includes('GROUP');
+                    if (actionFilter === 'PERMISSION') matchesCategory = log.action.includes('PERMISSION');
+                    if (actionFilter === 'CALENDAR') matchesCategory = log.action.includes('CALENDAR');
                 }
 
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    const logItem = document.createElement('div');
-                    logItem.className = 'log-item';
+                return matchesSearch && matchesCategory;
+            });
 
-                    const date = d.timestamp?.toDate() || new Date();
-                    const timeStr = date.toLocaleString();
+            renderLogs(filtered);
+        }
 
-                    const icons = {
-                        'SAVE_SCHEDULE': '💾',
-                        'PUBLISH_SCHEDULE': '🚀',
-                        'PUBLISH_GROUP': '📦',
-                        'DELETE_SCHEDULE': '🗑️',
-                        'DELETE_GROUP': '💥',
-                        'UPDATE_CLASS': '✏️',
-                        'ADD_CLASS': '➕',
-                        'UNPUBLISH_GROUP': '🔒'
-                    };
+        function renderLogs(logs) {
+            const listEl = document.getElementById('logList');
+            listEl.innerHTML = '';
 
-                    logItem.innerHTML = `
-                        <div class="log-icon">${icons[d.action] || '📑'}</div>
-                        <div class="log-details">
-                            <span class="log-action action-${d.action}">${d.action}</span>
-                            <span class="log-msg">${d.details}</span>
-                            <span class="log-user">By ${d.userName} (${d.userEmail})</span>
-                        </div>
-                        <div class="log-time">${timeStr}</div>
-                    `;
-                    listEl.appendChild(logItem);
+            if (logs.length === 0) {
+                listEl.innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size: 3rem; margin-bottom: 15px;">🔍</div>
+                        <div style="font-weight: 900; font-size: 1.25rem;">No logs matched your filters</div>
+                        <div style="color: #64748b; font-weight: 600;">Try broadening your search or selection.</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const icons = {
+                'SAVE_SCHEDULE': '💾',
+                'PUBLISH_SCHEDULE': '🚀',
+                'PUBLISH_GROUP': '📦',
+                'DELETE_SCHEDULE': '🗑️',
+                'DELETE_GROUP': '💥',
+                'UPDATE_CLASS': '✏️',
+                'ADD_CLASS': '➕',
+                'UNPUBLISH_GROUP': '🔒',
+                'ADD_CALENDAR_EVENT': '📅',
+                'DELETE_CALENDAR_EVENT': '🚫',
+                'ACCEPT_PERMISSION': '✅',
+                'DENY_PERMISSION': '❌',
+                'REVOKE_PERMISSION': '🔐'
+            };
+
+            logs.forEach(d => {
+                const logItem = document.createElement('div');
+                logItem.className = 'log-item';
+
+                const date = d.timestamp?.toDate ? d.timestamp.toDate() : (d.timestamp ? new Date(d.timestamp) : new Date());
+                const timeStr = date.toLocaleString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
                 });
+
+                logItem.innerHTML = `
+                    <div class="log-icon-box">${icons[d.action] || '📑'}</div>
+                    <div class="log-content">
+                        <div class="log-header-meta">
+                            <span class="log-action-badge action-${d.action}">${d.action}</span>
+                            <span class="log-timestamp">${timeStr}</span>
+                        </div>
+                        <h3 class="log-message">${d.details}</h3>
+                        <div class="log-user-meta">
+                            <span>👤 ${d.userName}</span>
+                            <span style="opacity: 0.5;">•</span>
+                            <span>📧 ${d.userEmail}</span>
+                        </div>
+                    </div>
+                `;
+                listEl.appendChild(logItem);
             });
         }
     </script>
+  <!-- ?? MOBILE BOTTOM NAVIGATION BAR ? -->
+  <nav class="mobile-bottom-nav" id="mobileBottomNav">
+    <a href="homepage.html"    class="mob-nav-item" data-page="homepage">
+      <img src="images/HOME.png" alt="Home"><span>Home</span>
+    </a>
+    <a href="newschedule.html" class="mob-nav-item" data-page="newschedule">
+      <img src="images/ADD_SCHED.png" alt="New Schedule"><span>New Sched</span>
+    </a>
+    <a href="myschedule.html"  class="mob-nav-item" data-page="myschedule">
+      <img src="images/SCHED.png" alt="My Schedule"><span>My Sched</span>
+    </a>
+    <a href="facultypage.html" class="mob-nav-item" data-page="facultypage">
+      <img src="images/FACULTY.png" alt="Faculty"><span>Faculty</span>
+    </a>
+    <a href="campuspage.html"  class="mob-nav-item" data-page="campuspage">
+      <img src="images/CAMPUS_ONE.png" alt="Campus"><span>Campus</span>
+    </a>
+    <a href="event.html"       class="mob-nav-item" data-page="event">
+      <img src="images/EVENT_MODE.png" alt="Events"><span>Events</span>
+    </a>
+    <!-- ADMIN ONLY � shown via JS -->
+    <a href="audit_logs.html"  class="mob-nav-item admin-only" data-page="audit_logs" style="display:none">
+      <img src="images/SCHED.png" alt="Audit Logs"><span>Audit</span>
+    </a>
+    </nav>
 </body>
 
 </html>
