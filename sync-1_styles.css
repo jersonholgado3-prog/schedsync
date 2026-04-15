@@ -35,6 +35,10 @@
       background: linear-gradient(135deg, #f0f2f5 0%, #e0e7ff 100%);
     }
 
+    .dark #atmospheric-bg {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    }
+
     .blob {
       position: absolute;
       width: 500px;
@@ -137,6 +141,10 @@
       color: #374151;
       max-width: 600px;
       font-weight: 400;
+    }
+
+    .dark .hero-text p {
+      color: #cbd5e1;
     }
 
     /* --- Premium Login Card (Glassmorphism) 💎⚓ --- */

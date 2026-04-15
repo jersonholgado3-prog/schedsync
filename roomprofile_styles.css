@@ -200,14 +200,22 @@
 
         .profile-content {
             display: flex;
-            gap: 3rem;
+            gap: 2rem;
             align-items: center;
+        }
+
+        @media (max-width: 768px) {
+            .profile-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 1.5rem;
+            }
         }
 
         .profile-image-container {
             width: 250px;
             height: 250px;
-            border: 2px solid black;
+            border: 3px solid black;
             border-radius: 30px;
             flex-shrink: 0;
             overflow: hidden;
@@ -215,6 +223,15 @@
             align-items: center;
             justify-content: center;
             background-color: #f3f4f6;
+            box-shadow: 4px 4px 0px black;
+        }
+
+        @media (max-width: 768px) {
+            .profile-image-container {
+                width: 150px;
+                height: 150px;
+                border-radius: 20px;
+            }
         }
 
         .profile-image-container img {
@@ -226,12 +243,20 @@
 
         .profile-details {
             flex: 1;
+            width: 100%;
         }
 
         .profile-name {
-            font-size: 3rem;
+            font-size: 2.5rem;
             font-weight: 800;
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem;
+            line-height: 1.1;
+        }
+
+        @media (max-width: 768px) {
+            .profile-name {
+                font-size: 1.75rem;
+            }
         }
 
         .divider-2 {
@@ -256,7 +281,13 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            table-layout: fixed;
+            min-width: 600px; /* Force minimum width for readability 🛡️ */
+        }
+
+        @media (max-width: 768px) {
+            table {
+                min-width: 700px; /* More room for time labels on mobile 🕰️ */
+            }
         }
 
         th,
@@ -323,7 +354,7 @@
         /* DAILY OCCUPANCY GRID 📊 */
         .daily-occupancy-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
             gap: 1rem;
             margin-top: 1.5rem;
             width: 100%;
@@ -335,27 +366,62 @@
             padding: 10px;
             text-align: center;
             background: white;
-            box-shadow: 3px 3px 0px black;
-            transition: transform 0.2s;
+            box-shadow: 4px 4px 0px black;
+            transition: all 0.2s;
         }
 
         .daily-occ-item:hover {
             transform: translate(-2px, -2px);
-            box-shadow: 5px 5px 0px black;
+            box-shadow: 6px 6px 0px black;
         }
 
         .daily-occ-day {
             font-weight: 800;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
             margin-bottom: 5px;
             color: #64748b;
         }
 
         .daily-occ-value {
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             font-weight: 900;
             color: black;
+        }
+
+        /* 📥 Professional Download Button ⚓ */
+        .download-all-header-btn {
+            background: #FFD200 !important;
+            color: black !important;
+            border: 2px solid black !important;
+            border-radius: 12px !important;
+            box-shadow: 3px 3px 0px black !important;
+            font-weight: 900 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.05em !important;
+            transition: all 0.2s !important;
+            cursor: pointer;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .download-all-header-btn:hover {
+            background: #e6bd00 !important;
+            box-shadow: 5px 5px 0px black !important;
+            transform: translate(-1px, -1px);
+        }
+
+        .download-all-header-btn:active {
+            transform: translate(1px, 1px);
+            box-shadow: 2px 2px 0px black !important;
+        }
+
+        @media (max-width: 768px) {
+            .download-all-header-btn {
+                width: 100% !important;
+                justify-content: center !important;
+                margin-top: 1rem;
+            }
         }
 
         .daily-occ-item.today {
@@ -415,10 +481,32 @@
             color: #cbd5e1;
         }
 
+        /* ⚪ High specificity dark mode fixes ⚓ */
+        html.dark body .content-box {
+            background-color: #1e293b !important;
+            border-color: #334155 !important;
+            box-shadow: 6px 6px 0px #000 !important;
+        }
+
+        html.dark body th {
+            background-color: #0f172a !important;
+            color: #f1f5f9 !important;
+            border-color: #334155 !important;
+        }
+
+        html.dark body td {
+            background-color: #1e293b !important;
+            border-color: #334155 !important;
+            color: #cbd5e1 !important;
+        }
+
         .dark .occupied,
-        .dark .vacant-marked {
+        .dark .vacant-marked,
+        html.dark body .occupied,
+        html.dark body .vacant-marked {
             background-color: #1e40af !important;
-            color: #dbeafe;
+            color: #dbeafe !important;
+            border: 1px solid rgba(255,255,255,0.1) !important;
         }
 
         .dark img {

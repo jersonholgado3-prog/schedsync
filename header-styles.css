@@ -1013,9 +1013,11 @@ html.professional-mode *::after {
   }
 
   .dark .header,
-  html.dark body .header {
+  html.dark body .header,
+  html.dark .header {
     background: #1e293b !important;
     border-color: #334155 !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4) !important;
   }
 
   /* HIDE everything except search, bell, avatar */
@@ -1070,9 +1072,20 @@ html.professional-mode *::after {
   }
 
   .dark .search-wrapper,
-  .dark .notification-icon-wrapper {
+  .dark .notification-icon-wrapper,
+  html.dark body .search-wrapper,
+  html.dark body .notification-icon-wrapper {
     background: #1e293b !important;
     border-color: #475569 !important;
+  }
+
+  /* ⚪ Ensure icons are visible in mobile dark mode ⚓ */
+  .dark .search-icon,
+  .dark .notification-icon-wrapper img,
+  html.dark body .search-icon,
+  html.dark body .notification-icon-wrapper img {
+    filter: invert(1) brightness(1.5) !important;
+    opacity: 1 !important;
   }
 
   html body .search-wrapper .search-icon,
@@ -1100,9 +1113,18 @@ html.professional-mode *::after {
   }
 
   .dark .user-profile,
-  .dark .user-profile-btn {
+  .dark .user-profile-btn,
+  html.dark body .user-profile,
+  html.dark body .user-profile-btn {
     background: #1e293b !important;
     border-color: #475569 !important;
+  }
+
+  /* ⚪ Ensure profile artifacts are visible in mobile dark mode ⚓ */
+  .dark .user-avatar,
+  html.dark body .user-avatar {
+    border-color: #475569 !important;
+    background-color: #334155 !important;
   }
 
   html body .user-avatar {
