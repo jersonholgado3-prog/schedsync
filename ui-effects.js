@@ -72,7 +72,6 @@ const injectGlobalTransitions = () => {
             filter: blur(150px);
         }
         
-        .professional-mode .container, 
         .professional-mode .card,
         .professional-mode .header,
         .professional-mode .logo-container,
@@ -307,7 +306,6 @@ const injectGlobalTransitions = () => {
             border-color: black !important;
         }
 
-        .dark.professional-mode .container, 
         .dark.professional-mode .card,
         .dark.professional-mode .header,
         .dark.professional-mode .logo-container,
@@ -824,11 +822,19 @@ const injectGlobalTransitions = () => {
             background-color: rgba(99, 102, 241, 0.1) !important;
         }
 
-        .container, .main-layout, .page-content, .main {
+        .main-layout, .page-content, .main {
             opacity: 1 !important;
             position: relative;
             z-index: 10;
             background-color: transparent !important; /* Forces transparency for swimswim animations 🦈 */
+        }
+
+        /* ⚓ .container intentionally excluded: adding position:relative + overflow-x:hidden
+           to .container breaks position:fixed on the header & bottom nav in Chrome/mobile.
+           The fixed nav elements become positioned relative to .container instead of the viewport. */
+        .container {
+            opacity: 1 !important;
+            background-color: transparent !important;
         }
 
         #atmospheric-bg {

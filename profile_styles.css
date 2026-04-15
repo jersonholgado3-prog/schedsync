@@ -304,7 +304,7 @@
       }
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 768px), (max-width: 950px) and (orientation: landscape) {
       .main-layout {
         flex-direction: column;
       }
@@ -642,7 +642,7 @@
       display: block;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 768px), (max-width: 950px) and (orientation: landscape) {
       .container {
         z-index: auto !important;
         position: static !important;
@@ -789,21 +789,84 @@
         z-index: 3000;
       }
 
-      .container {
-        padding-bottom: 0 !important;
-      }
-
-      .main-layout {
-        margin-top: 5px !important;
-      }
-
-      .content-area,
-      .main {
-        padding: 1rem !important;
+    .main-content-wrapper {
+        margin-left: 0 !important;
         width: 100% !important;
-        margin: 0 !important;
-      }
+        padding-top: 80px !important;
+        padding-bottom: 80px !important;
+        height: auto !important;
     }
+
+    .sidebar {
+        display: none !important;
+    }
+
+    .content-area {
+        padding: 1rem !important;
+    }
+
+    .content-box {
+        padding: 1rem !important;
+        border-radius: 20px !important;
+        box-shadow: 4px 4px 0px black !important;
+    }
+
+    .profile-content {
+        flex-direction: column !important;
+        gap: 1.5rem !important;
+        align-items: center !important;
+        text-align: center !important;
+        min-height: auto !important;
+    }
+
+    .profile-image {
+        margin-left: 0 !important;
+        width: 150px !important;
+        height: 150px !important;
+        border-radius: 20px !important;
+    }
+
+    .profile-name {
+        font-size: 1.5rem !important;
+    }
+
+    .profile-info-line {
+        font-size: 0.9rem !important;
+        justify-content: center !important;
+        gap: 0.5rem !important;
+    }
+
+    .profile-info-line span:first-child {
+        min-width: 80px !important;
+    }
+
+    /* Table Fix 🛡️ */
+    .table-scroll {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        border-radius: 12px !important;
+        border: 2px solid black !important;
+        margin-top: 0.5rem !important;
+    }
+
+    table {
+        min-width: 600px !important;
+        table-layout: auto !important;
+    }
+
+    th, td {
+        padding: 8px 4px !important;
+        font-size: 11px !important;
+    }
+
+    col.time {
+        width: 80px !important;
+    }
+
+    .divider {
+        margin: 1rem 0 !important;
+    }
+}
 
 
 
@@ -1333,7 +1396,7 @@
       flex-shrink: 0 !important;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 768px), (max-width: 950px) and (orientation: landscape) {
       .header {
         grid-template-columns: auto 1fr auto !important;
         margin: 0.5rem !important;

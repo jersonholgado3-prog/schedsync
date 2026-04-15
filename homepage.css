@@ -48,13 +48,17 @@
   align-items: center !important;
   justify-content: space-between !important;
   margin-bottom: 1.5rem !important;
-  width: 100% !important;
+  /* width: 100% !important; -- REMOVED to prevent sticking out 🛡️⚓ */
+  position: relative;
 }
 
 .widget-title-group {
   display: flex !important;
   align-items: center !important;
-  gap: 12px !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  flex: 1 !important;
+  margin-right: 15px !important;
 }
 
 .widget-header img {
@@ -128,7 +132,7 @@
   background-color: #ffffff;
   border: 3px solid black;
   border-radius: 20px;
-  padding: 20px;
+  padding: 0;
   margin-bottom: 20px;
   text-align: center;
   box-shadow: 6px 6px 0px black;
@@ -142,11 +146,11 @@
 }
 
 .welcome-title-img {
-  max-width: 850px;
+  max-width: 100%;
   /* ENLARGED BANNER 🎯⚓ -- Container stays same size */
   width: 100%;
-  height: auto;
-  object-fit: contain;
+  height: 100%;
+  object-fit: cover;
 }
 
 .hero-carousel-container {
@@ -489,6 +493,12 @@ html:not(.professional-mode).dark #draftWidget {
   letter-spacing: 0.12em;
   color: #002044;
   font-weight: 1000 !important;
+  margin: 0 !important;
+  font-size: 1.1rem !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  flex: 1;
 }
 
 .dark #draftWidget .widget-title,
@@ -519,6 +529,7 @@ html:not(.professional-mode).dark #draftWidget {
   display: flex !important;
   gap: 1.25rem !important;
   padding: 1.25rem !important;
+  padding-right: 3rem !important; /* PROTECT DELETE AREA 🛡️⚓ */
   border: 1.5px solid #64748b !important;
   border-radius: 20px !important;
   background: #ffffff !important;
@@ -526,8 +537,10 @@ html:not(.professional-mode).dark #draftWidget {
   position: relative;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
-  min-height: 100px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05) !important;
+  min-height: 140px;
+  height: auto !important;
+  overflow: visible !important;
 }
 
 .dark .draft-item,
@@ -599,6 +612,47 @@ html:not(.professional-mode).dark #draftWidget {
   justify-content: center !important;
   flex-shrink: 0;
   font-size: 1.5rem;
+  position: relative;
+}
+
+.announcement-delete,
+.draft-delete {
+  position: absolute !important;
+  top: 10px !important;
+  right: 10px !important;
+  width: 30px !important;
+  height: 30px !important;
+  background: #fee2e2 !important;
+  color: #ef4444 !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  cursor: pointer !important;
+  z-index: 100 !important;
+  transition: all 0.2s ease !important;
+  border: 2px solid #ef4444 !important;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2) !important;
+}
+
+.announcement-delete:hover,
+.draft-delete:hover {
+  background: #ef4444 !important;
+  color: white !important;
+  transform: scale(1.1) !important;
+}
+
+.announcement-item::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 15%;
+  height: 70%;
+  width: 3px;
+  background: var(--secondary-blue);
+  border-radius: 10px;
 }
 
 .dark .draft-icon-box,
@@ -614,20 +668,20 @@ html:not(.professional-mode).dark #draftWidget {
   flex-direction: column;
   gap: 4px;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible !important;
 }
 
 .draft-title,
 .announcement-title {
   font-size: 1.1rem !important;
-  font-weight: 1000 !important;
+  font-weight: 900 !important;
   color: #0f172a !important;
   margin: 0 !important;
   text-transform: none !important;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: 100%;
+  white-space: normal !important; /* ALLOW WRAP 🚀⚓ */
+  overflow: visible !important;
+  width: calc(100% - 25px) !important;
+  line-height: 1.3 !important;
 }
 
 .dark .draft-title,
@@ -639,16 +693,11 @@ html:not(.professional-mode).dark #draftWidget {
 .announcement-msg {
   font-size: 0.9rem !important;
   color: #334155 !important;
-  /* Darker slate for better legibility 📖 */
   line-height: 1.4;
   margin: 0 !important;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  display: block !important; /* NO LINE CLAMP 🛑⚓ */
+  overflow: visible !important;
   word-break: break-word;
-  overflow-wrap: break-word;
 }
 
 .dark .draft-msg,
@@ -914,28 +963,56 @@ html.dark:not(.professional-mode) .announcement-item:hover {
 }
 
 /* SCROLLABLE WIDGET FIX 🦾 */
-#announcements-list, #drafts-list {
+#announcements-list {
+  display: flex !important;
+  flex-direction: row !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  gap: 15px !important;
+  padding-bottom: 10px !important;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+#drafts-list {
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
   max-height: none !important;
 }
 
-/* Custom Scrollbar MERGED 🛡️⚓ */
-#announcements-list::-webkit-scrollbar,
-#drafts-list::-webkit-scrollbar {
-  width: 6px;
+.announcement-item {
+  flex: 0 0 300px !important; /* Fixed width for horizontal scrolling 📏⚓ */
+  scroll-snap-align: start;
+  margin-bottom: 0 !important; /* Remove bottom margin for row layout */
 }
 
-#announcements-list::-webkit-scrollbar-thumb,
-#drafts-list::-webkit-scrollbar-thumb {
-  background: #334155;
+/* Custom Scrollbar MERGED 🛡️⚓ */
+#announcements-list {
+  display: flex !important;
+  flex-direction: row !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  gap: 15px !important;
+  padding: 5px 10px 15px 10px !important;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+#announcements-list::-webkit-scrollbar {
+  height: 6px;
+}
+
+#announcements-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
   border-radius: 10px;
 }
 
-#announcements-list::-webkit-scrollbar-track,
-#drafts-list::-webkit-scrollbar-track {
-  background: transparent;
+.widget-title-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding-left: 5px !important;
 }
 
 /* --- RESPONSIVE FIXES FOR HORIZONTAL SCROLL 📏⚓ --- */
@@ -958,7 +1035,7 @@ html.dark:not(.professional-mode) .announcement-item:hover {
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-width: 950px) and (orientation: landscape) {
   .dashboard-container {
     gap: 15px;
     padding: 15px 0.75rem 20px 0.75rem !important;
@@ -966,8 +1043,9 @@ html.dark:not(.professional-mode) .announcement-item:hover {
     flex-direction: column !important;
     width: 100% !important;
     height: auto !important;
-    min-height: 100% !important; /* Force content height */
+    /* ⚓ Removed min-height: 100% — body is now the scroll container */
     overflow-y: visible !important;
+    overflow-x: hidden !important;
   }
 
   .main-dashboard-grid, .dashboard-side {

@@ -155,13 +155,13 @@ button[type="submit"]:hover {
 
 .password-toggle {
     position: absolute;
-    right: 1.5rem;
-    top: 50%;
-    transform: translateY(-50%);
-    cursor: pointer;
+    right: 1.25rem;
+    top: 0;
+    bottom: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
     color: #6b7280;
     transition: color 0.2s;
     z-index: 5;
@@ -197,7 +197,7 @@ button[type="submit"]:hover {
 }
 
 /* Responsive styles */
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-width: 950px) and (orientation: landscape) {
     .container {
         padding-right: 1.25rem;
         padding-bottom: 6rem;
@@ -216,7 +216,7 @@ button[type="submit"]:hover {
 }
 
 /* Universal Mobile Enhancements 📱✨ */
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-width: 950px) and (orientation: landscape) {
     .container {
         padding: 1.5rem !important;
         align-items: center !important;

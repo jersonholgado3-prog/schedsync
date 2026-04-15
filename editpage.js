@@ -142,6 +142,36 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       });
 
+      // --- MOBILE ORIENTATION GUARD 📱🔄 ---
+      const handleOrientation = () => {
+        const isPortrait = window.innerHeight > window.innerWidth;
+        const isMobile = window.innerWidth <= 768;
+        
+        let guard = document.getElementById('orientation-guard');
+        if (!guard) {
+          guard = document.createElement('div');
+          guard.id = 'orientation-guard';
+          guard.innerHTML = `
+            <div class="guard-content">
+              <div class="rotate-icon">🔄</div>
+              <h2>Switch to Landscape</h2>
+              <p>For the best schedule editing experience, please rotate your device. 📱✨</p>
+            </div>
+          `;
+          document.body.appendChild(guard);
+        }
+
+        if (isMobile && isPortrait) {
+          guard.classList.add('visible');
+        } else {
+          guard.classList.remove('visible');
+        }
+      };
+
+      window.addEventListener('resize', handleOrientation);
+      window.addEventListener('orientationchange', handleOrientation);
+      handleOrientation();
+
       // --- Presence & Tracking ---
       if (typeof initPresence === 'function') initPresence();
       if (typeof listenForComments === 'function') listenForComments();
@@ -778,11 +808,19 @@ async function hasBlueprintConflict(newBlock, excludeId) {
 }
 
 /* ───────── LOAD TABLE ───────── */
+// 🔄 Dynamic Curriculum Data 🎓
+let dynamicSubjects = [];
+
 /* ───────── LOAD TABLE ───────── */
 async function load() {
   if (isLoaded || !currentUser) return;
   isLoaded = true;
   try {
+    // --- Load Dynamic Curriculum ---
+    const curQ = query(collection(db, "curriculums"));
+    const curSnap = await getDocs(curQ);
+    dynamicSubjects = curSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    console.log(`SchedSync: Loaded ${dynamicSubjects.length} dynamic subjects.`);
 
     schedules = [];
     const urlParams = new URLSearchParams(window.location.search);
@@ -1047,20 +1085,47 @@ function getSubjectOptions(query) {
   if (!selected || !selected.id) return [];
   const sched = schedules.find(s => s.id === selected.id);
   const schedSection = sched ? (sched.section || "") : "";
-  const strand = getStrandFromSection(schedSection); // e.g., "ICT"
+  const strand = getStrandFromSection(schedSection); // e.g., "ICT", "BSCS"
 
   let options = [];
 
-  // 1. Prioritized (Specific to the Current Strand)
-  if (strand && SUBJECT_DATA[strand]) {
-    options.push({ name: `${strand} MAJOR SUBJECTS`, isHeader: true });
-    options.push(...SUBJECT_DATA[strand]);
-  }
+  // 1. Dynamic Subjects from Firestore 🚀
+  if (dynamicSubjects.length > 0) {
+    // Prioritize subjects for the current strand/category
+    if (strand) {
+      const majorSubjects = dynamicSubjects.filter(s => s.category === strand.toUpperCase());
+      if (majorSubjects.length > 0) {
+        options.push({ name: `${strand.toUpperCase()} MAJOR SUBJECTS`, isHeader: true });
+        options.push(...majorSubjects.map(s => s.name));
+      }
+    }
 
-  // 2. Others (Core & Applied)
-  options.push({ name: "CORE & APPLIED SUBJECTS", isHeader: true });
-  let general = [...new Set([...SUBJECT_DATA.CORE, ...SUBJECT_DATA.APPLIED])];
-  options.push(...general);
+    // Core and Applied from dynamic data
+    const coreApplied = dynamicSubjects.filter(s => s.category === "CORE" || s.category === "APPLIED");
+    if (coreApplied.length > 0) {
+      options.push({ name: "CORE & APPLIED SUBJECTS", isHeader: true });
+      options.push(...[...new Set(coreApplied.map(s => s.name))]);
+    }
+
+    // Others (any category that isn't the current strand, core, or applied)
+    const others = dynamicSubjects.filter(s => s.category !== strand?.toUpperCase() && s.category !== "CORE" && s.category !== "APPLIED");
+    if (others.length > 0) {
+        const otherCats = [...new Set(others.map(s => s.category))];
+        otherCats.forEach(cat => {
+            options.push({ name: `${cat} SUBJECTS`, isHeader: true });
+            options.push(...others.filter(s => s.category === cat).map(s => s.name));
+        });
+    }
+  } else {
+    // Fallback to static if dynamic is empty (optional, but good for safety)
+    if (strand && SUBJECT_DATA[strand]) {
+      options.push({ name: `${strand} MAJOR SUBJECTS`, isHeader: true });
+      options.push(...SUBJECT_DATA[strand]);
+    }
+    options.push({ name: "CORE & APPLIED SUBJECTS", isHeader: true });
+    let general = [...new Set([...SUBJECT_DATA.CORE, ...SUBJECT_DATA.APPLIED])];
+    options.push(...general);
+  }
 
   if (query) {
     const lowerQuery = query.toLowerCase();
@@ -1068,7 +1133,7 @@ function getSubjectOptions(query) {
     
     options.forEach(item => {
       if (typeof item === 'object' && item.isHeader) {
-        filtered.push(item); // Keep headers for now
+        filtered.push(item);
       } else {
         const str = typeof item === 'object' ? item.name : item;
         if (str.toLowerCase().includes(lowerQuery)) {
@@ -1077,12 +1142,9 @@ function getSubjectOptions(query) {
       }
     });
 
-    // Clean up stranded/empty headers
     return filtered.filter((item, index, arr) => {
       if (typeof item === 'object' && item.isHeader) {
-        // If last item in array, header is empty
         if (index === arr.length - 1) return false;
-        // If next item is also a header, then this header is empty
         if (typeof arr[index + 1] === 'object' && arr[index + 1].isHeader) return false;
       }
       return true;
@@ -1092,27 +1154,38 @@ function getSubjectOptions(query) {
 }
 
 function getTeacherOptions(query) {
-  const subjectName = document.getElementById('subject').value;
+  const subjectName = (document.getElementById('subject').value || "").trim().toUpperCase();
 
-  // 1. Identify Subject Type (Forte)
-  let foundForte = null;
-  for (const [key, subjects] of Object.entries(SUBJECT_DATA)) {
-    if (subjects.includes(subjectName)) {
-      foundForte = key;
-      break;
-    }
+  // 1. Identify Subject Category (Forte) dynamically
+  let foundCategory = null;
+  const dynamicSub = dynamicSubjects.find(s => s.name.toUpperCase() === subjectName);
+  if (dynamicSub) {
+    foundCategory = dynamicSub.category;
+  } else {
+      // Fallback to static check
+      for (const [key, subjects] of Object.entries(SUBJECT_DATA)) {
+        if (subjects.map(s => s.toUpperCase()).includes(subjectName)) {
+          foundCategory = key;
+          break;
+        }
+      }
   }
 
   // 2. Filter Teachers
   const relevantTeachers = teachers.filter(t => {
     // A. Direct Subject Match
-    if (t.subjects && t.subjects.includes(subjectName)) return true;
+    if (t.subjects && t.subjects.map(s => s.toUpperCase()).includes(subjectName)) return true;
 
-    // B. Forte Match (Map CORE/APPLIED to GENERAL)
-    const normalizedForte = (foundForte === 'CORE' || foundForte === 'APPLIED') ? 'GENERAL' : foundForte;
-    const normalizedTeacherForte = (t.forte === 'CORE' || t.forte === 'APPLIED') ? 'GENERAL' : t.forte;
+    // B. Forte/Category Match
+    const normalizedCat = (foundCategory === 'CORE' || foundCategory === 'APPLIED') ? 'GENERAL' : foundCategory;
+    const teacherFortes = Array.isArray(t.forte) ? t.forte : [t.forte || "GENERAL"];
+    
+    const hasForteMatch = teacherFortes.some(f => {
+        const normF = (f === 'CORE' || f === 'APPLIED') ? 'GENERAL' : f;
+        return normalizedCat && normF === normalizedCat;
+    });
 
-    if (normalizedForte && normalizedTeacherForte === normalizedForte) return true;
+    if (hasForteMatch) return true;
 
     // C. If no subject selected, return all
     if (!subjectName) return true;
@@ -1217,7 +1290,7 @@ function renderTable() {
   DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
   /* HEADERS */
-  colgroup.innerHTML = `<col class="section"><col class="time">`;
+  colgroup.innerHTML = `<col class="sticky-col-1"><col class="sticky-col-2">`;
   theadTr.innerHTML = `<th class="sticky-col-1">SCHEDULE</th><th class="sticky-col-2">TIME</th>`;
   DAYS.forEach(d => {
     colgroup.insertAdjacentHTML("beforeend", `<col class="day">`);
@@ -1301,7 +1374,7 @@ function renderTable() {
     // TOOLBAR ROW
     let toolbarHtml = `
       <tr class="toolbar-row" style="background: #a5f3fc;">
-        <td colspan="2" style="text-align: center; font-size: 0.75rem; font-weight: 800; color: #000; border-right: 1px solid #000; border-bottom: 1px solid #000; vertical-align: middle; text-transform: uppercase; letter-spacing: 1px;">ACTIONS</td>
+        <td colspan="2" style="position: sticky; left: 0; z-index: 90; background: #a5f3fc; text-align: center; font-size: 0.75rem; font-weight: 800; color: #000; border-right: 1px solid #000; border-bottom: 1px solid #000; vertical-align: middle; text-transform: uppercase; letter-spacing: 1px;">ACTIONS</td>
     `;
     DAYS.forEach(d => {
       const isPasteReady = copiedDayClasses && copiedDayClasses.length > 0;
@@ -1726,32 +1799,30 @@ async function findAvailableRooms(day, timeBlock, excludeSchedId, subjectName) {
     });
   });
 
-  // 3. Filter allRooms based on Subject Type
+  // 3. Filter allRooms based on Subject Category (Dynamic)
   let isICT = false;
-  if (subjectName) {
-    if (SUBJECT_DATA.ICT && SUBJECT_DATA.ICT.includes(subjectName)) {
-      isICT = true;
-    } else if (/programming|computer|system|tech|web|animation|multimedia|design|app/i.test(subjectName)) {
-      isICT = true;
-    }
+  const upperSubj = (subjectName || "").toUpperCase();
+  const dynamicSub = dynamicSubjects.find(s => s.name.toUpperCase() === upperSubj);
+  const cat = dynamicSub ? dynamicSub.category : "";
+
+  if (cat === "ICT" || cat === "BSCS" || cat === "BSIT" || cat === "MAWD") {
+    isICT = true;
+  } else if (/programming|computer|system|tech|web|animation|multimedia|design|app/i.test(upperSubj)) {
+    isICT = true;
   }
 
   // 4. Final Filter
   const available = allRooms.filter(r => {
-    // Handle both string (legacy) and object room data
     const roomName = (typeof r === 'object' ? r.name : r).trim();
     const roomUpper = roomName.toUpperCase();
     if (unavailableRooms.has(roomUpper)) return false;
 
-    // Filter Comlabs for Non-ICT
-    if (!isICT) {
-      if (/COMLAB|LAB|MAC|CISCO/i.test(roomUpper)) return false;
-    }
+    // Filter Specialized Labs
+    if (!isICT && /COMLAB|LAB|MAC|CISCO/i.test(roomUpper)) return false;
 
     return true;
   });
 
-  // Return names only
   return available.map(r => typeof r === 'object' ? r.name : r);
 }
 
@@ -1791,33 +1862,38 @@ async function findAvailableTeachers(day, timeBlock, excludeSchedId, subjectName
     });
   });
 
-  // 3. Identify Subject Forte
-  let foundForte = null;
-  if (subjectName) {
-    for (const [key, subjects] of Object.entries(SUBJECT_DATA)) {
-      if (subjects.includes(subjectName)) {
-        foundForte = key;
-        break;
+  // 3. Identify Subject Category (Dynamic)
+  const upperSubj = (subjectName || "").toUpperCase();
+  const dynamicSub = dynamicSubjects.find(s => s.name.toUpperCase() === upperSubj);
+  let foundCategory = dynamicSub ? dynamicSub.category : null;
+
+  if (!foundCategory) {
+      for (const [key, subjects] of Object.entries(SUBJECT_DATA)) {
+        if (subjects.map(s => s.toUpperCase()).includes(upperSubj)) {
+          foundCategory = key;
+          break;
+        }
       }
-    }
   }
 
   // 4. Filter Available Teachers
   const available = teachers.filter(t => {
     if (unavailableTeachers.has(t.name.trim().toUpperCase())) return false;
-
     if (!subjectName) return true;
 
     // A. Direct Subject Match
-    if (t.subjects && t.subjects.includes(subjectName)) return true;
+    if (t.subjects && t.subjects.map(s => s.toUpperCase()).includes(upperSubj)) return true;
 
-    // B. Forte Match
-    const normalizedForte = (foundForte === 'CORE' || foundForte === 'APPLIED') ? 'GENERAL' : foundForte;
-    const normalizedTeacherForte = (t.forte === 'CORE' || t.forte === 'APPLIED') ? 'GENERAL' : t.forte;
+    // B. Category Match
+    const normalizedCat = (foundCategory === 'CORE' || foundCategory === 'APPLIED') ? 'GENERAL' : foundCategory;
+    const teacherFortes = Array.isArray(t.forte) ? t.forte : [t.forte || "GENERAL"];
+    
+    const hasForteMatch = teacherFortes.some(f => {
+        const normF = (f === 'CORE' || f === 'APPLIED') ? 'GENERAL' : f;
+        return normalizedCat && normF === normalizedCat;
+    });
 
-    if (normalizedForte && normalizedTeacherForte === normalizedForte) return true;
-
-    return false;
+    return hasForteMatch;
   }).map(t => t.name);
 
   return available.slice(0, 5);
@@ -3793,4 +3869,6 @@ function listenForComments() {
 }
 
 /* ───────── CONFLICT DETECTION ENGINE ⚖️⚓ ───────── */
+
+
 

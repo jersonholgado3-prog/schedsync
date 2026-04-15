@@ -321,7 +321,7 @@
       display: block;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 768px), (max-width: 950px) and (orientation: landscape) {
       .sidebar {
         position: fixed !important;
         left: -280px !important;

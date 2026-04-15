@@ -228,9 +228,12 @@
 
     .password-toggle {
       position: absolute;
-      right: 1.5rem;
-      top: 50%;
-      transform: translateY(-50%);
+      right: 1.25rem;
+      top: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
       color: var(--secondary-blue);
       /* Solid color for visibility 👁️⚓ */
@@ -524,7 +527,7 @@
     }
 
     /* Universal Mobile Enhancements 📱✨ */
-    @media (max-width: 768px) {
+    @media (max-width: 768px), (max-width: 950px) and (orientation: landscape) {
       .container {
         padding: 1.5rem !important;
         align-items: center !important;
@@ -534,13 +537,16 @@
       .login-container,
       .signup-form-container,
       .info-container,
-      .welcome-card {
-        padding: 2rem 1.25rem !important;
+      .welcome-card,
+      .login-card {
+        padding: 2.25rem 1.5rem !important;
         margin-top: 1.5rem !important;
         width: 100% !important;
-        max-width: 100% !important;
-        border-radius: 24px !important;
+        max-width: 450px !important;
+        border-radius: 30px !important;
         box-shadow: 6px 6px 0px black !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
       }
 
       h1,
@@ -583,15 +589,35 @@
       }
 
       header {
-        position: relative !important;
+        position: fixed !important;
         top: 0 !important;
         left: 0 !important;
-        margin-bottom: 1.5rem !important;
+        right: 0 !important;
         width: 100% !important;
-        justify-content: center !important;
-        border: none !important;
+        margin: 0 !important;
+        padding: 10px 1rem !important;
         background: var(--secondary-blue) !important;
-        box-shadow: none !important;
+        z-index: 9999 !important;
+        border-radius: 0 !important;
+        border: none !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
+      }
+
+      .hero-container {
+        padding-top: 100px !important; /* Make room for fixed header ⚓ */
+      }
+
+      body.landing-page {
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      html {
+        padding: 0 !important;
+        margin: 0 !important;
       }
 
       .login-card {
@@ -608,6 +634,10 @@
       .sync-container {
         flex-direction: column !important;
         padding: 1rem !important;
+      }
+      body.landing-page {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
       }
     }
 

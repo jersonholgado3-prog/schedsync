@@ -112,7 +112,7 @@ button:hover {
 }
 
 /* Universal Mobile Enhancements 📱✨ */
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-width: 950px) and (orientation: landscape) {
     .container {
         padding: 1.5rem !important;
         align-items: center !important;

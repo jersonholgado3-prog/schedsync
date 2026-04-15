@@ -276,16 +276,17 @@ header {
 
 .password-toggle {
     position: absolute;
-    right: 1.5rem;
-    top: 50%;
-    transform: translateY(-50%);
+    right: 1.25rem;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
     color: var(--secondary-blue);
     transition: all 0.2s;
     z-index: 10;
     padding: 5px;
-    display: flex;
-    align-items: center;
 }
 
 .password-toggle:hover {
@@ -326,7 +327,7 @@ header {
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-width: 950px) and (orientation: landscape) {
     .signup-form-container {
         padding: 2.5rem 1.5rem;
         border-radius: 30px;

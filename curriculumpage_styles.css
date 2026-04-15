@@ -1,0 +1,199 @@
+.dashboard-container {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-height: calc(100vh - 120px);
+}
+
+.top-controls {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.add-btn, .migrate-btn {
+    background: #FFD200;
+    border: 3px solid black;
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 4px 4px 0px black;
+    transition: all 0.2s;
+}
+
+.add-btn:hover, .migrate-btn:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px black;
+}
+
+.migrate-btn {
+    background: #005BAB;
+    color: white;
+}
+
+/* Curriculum Grid */
+.curriculum-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.category-card {
+    background: white;
+    border: 3px solid black;
+    border-radius: 15px;
+    box-shadow: 6px 6px 0px black;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.category-header {
+    background: #FFD200;
+    padding: 15px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    border-bottom: 3px solid black;
+    text-transform: uppercase;
+}
+
+.category-body {
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.subject-item {
+    padding: 10px;
+    border: 2px solid black;
+    border-radius: 8px;
+    background: #f8fafc;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.subject-item:hover {
+    background: #dbeafe;
+}
+
+.subject-name {
+    flex: 1;
+    word-break: break-word;
+}
+
+.subject-actions {
+    display: none;
+}
+
+/* Modals */
+.modal {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.6);
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: white;
+    border: 3px solid black;
+    border-radius: 20px;
+    padding: 25px;
+    width: 400px;
+    max-width: 90%;
+    box-shadow: 8px 8px 0px black;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.close-modal {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 24px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-weight: 700;
+}
+
+.form-group input, .form-group select {
+    padding: 10px;
+    border: 2px solid black;
+    border-radius: 8px;
+    font-family: inherit;
+    font-weight: 600;
+}
+
+.submit-btn {
+    background: #005BAB;
+    color: white;
+    padding: 12px;
+    border: 3px solid black;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 4px 4px 0px black;
+    margin-top: 10px;
+}
+
+.delete-btn {
+    padding: 12px;
+    border: 3px solid black;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 4px 4px 0px black;
+    margin-top: 5px;
+}
+
+/* Dark Mode */
+.dark .category-card {
+    background: #1e293b;
+    border-color: #334155;
+    box-shadow: 6px 6px 0px #000;
+}
+.dark .category-header {
+    background: #334155;
+    color: white;
+    border-color: #000;
+}
+.dark .subject-item {
+    background: #0f172a;
+    border-color: #334155;
+    color: white;
+}
+.dark .subject-item:hover {
+    background: #1e293b;
+}
+
+/* Professional Mode Override */
+.professional-mode .add-btn, .professional-mode .migrate-btn, 
+.professional-mode .category-card, .professional-mode .submit-btn,
+.professional-mode .delete-btn, .professional-mode .modal-content {
+    box-shadow: none !important;
+    transform: none !important;
+    border-width: 1.5px !important;
+}

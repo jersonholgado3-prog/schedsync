@@ -311,7 +311,7 @@
             }
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 768px), (max-width: 950px) and (orientation: landscape) {
             .container {
                 padding: 1rem;
             }
@@ -438,7 +438,7 @@
             color: black;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 768px), (max-width: 950px) and (orientation: landscape) {
             .search-container {
                 max-width: 90%;
                 margin: 16px auto;
@@ -708,7 +708,7 @@
             display: block;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 768px), (max-width: 950px) and (orientation: landscape) {
             .container {
                 z-index: auto !important;
                 position: static !important;
@@ -1347,7 +1347,7 @@
             flex-shrink: 0 !important;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 768px), (max-width: 950px) and (orientation: landscape) {
             .header {
                 grid-template-columns: auto 1fr auto !important;
                 margin: 0.5rem !important;

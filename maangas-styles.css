@@ -218,7 +218,7 @@ td[draggable="true"]:active {
 }
 
 /* Mobile Tweak 📏 */
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-width: 950px) and (orientation: landscape) {
     .download-all-header-btn {
         padding: 0.6rem 1rem !important;
         font-size: 0.7rem !important;
