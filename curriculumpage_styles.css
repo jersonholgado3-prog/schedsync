@@ -33,8 +33,44 @@
     color: white;
 }
 
-/* Curriculum Grid */
+/* Curriculum Layout */
 .curriculum-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    width: 100%;
+}
+
+.course-section {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background: #f1f5f9;
+    padding: 20px;
+    border-radius: 20px;
+    border: 3px solid black;
+}
+
+.dark .course-section {
+    background: #0f172a;
+    border-color: #334155;
+}
+
+.course-title {
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: #005BAB;
+    text-transform: uppercase;
+    border-left: 8px solid #FFD200;
+    padding-left: 15px;
+    margin-bottom: 5px;
+}
+
+.dark .course-title {
+    color: #38bdf8;
+}
+
+.terms-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 20px;
@@ -48,6 +84,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    height: 100%;
 }
 
 .category-header {

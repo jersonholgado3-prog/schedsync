@@ -33,199 +33,125 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function loadSubjects() {
         try {
-            const q = query(collection(db, "curriculums"));
+            // Load from 'courses' collection for hierarchical structure
+            const q = query(collection(db, "courses"), orderBy("name"));
             const snapshot = await getDocs(q);
-            allSubjects = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const courses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-            if (allSubjects.length === 0 && isAdmin) {
-                migrateDataBtn.style.display = 'block';
+            if (courses.length === 0 && isAdmin) {
+                // Check legacy 'curriculums' collection
+                const legacyQ = query(collection(db, "curriculums"));
+                const legacySnapshot = await getDocs(legacyQ);
+                if (legacySnapshot.empty) {
+                    migrateDataBtn.style.display = 'block';
+                }
             } else {
                 migrateDataBtn.style.display = 'none';
             }
 
-            renderGrid();
+            renderHierarchicalGrid(courses);
         } catch (error) {
             console.error("Error loading subjects: ", error);
-            // Fallback to static if firebase fails
-            allSubjects = [];
-            Object.keys(SUBJECT_DATA).forEach(cat => {
-                if (cat === "GENERAL_KEYS") return;
-                SUBJECT_DATA[cat].forEach(sub => {
-                    allSubjects.push({ id: `static_${Date.now()}_${Math.random()}`, name: sub, category: cat });
-                });
-            });
-            renderGrid();
+            curriculumGrid.innerHTML = '<div class="error">Error loading curriculum data.</div>';
         }
     }
 
-    function renderGrid() {
+    function renderHierarchicalGrid(courses) {
         curriculumGrid.innerHTML = '';
         
-        // Define standard SHS categories and combine with dynamic ones from PDFs
-        const baseCategories = ["CORE", "APPLIED", "STEM", "HUMSS", "ICT", "ABM"];
-        const dynamicCategories = [...new Set(allSubjects.map(s => s.category))];
-        const categories = [...new Set([...baseCategories, ...dynamicCategories])];
-
-        // Sort categories, but keep SHS ones potentially separate or just alphabetical
-        categories.sort().forEach(cat => {
-            const subs = allSubjects.filter(s => s.category === cat);
-            if (subs.length === 0) return;
-
-            const card = document.createElement('div');
-            card.className = 'category-card';
-
-            const header = document.createElement('div');
-            header.className = 'category-header';
-            header.textContent = cat;
-
-            const body = document.createElement('div');
-            body.className = 'category-body';
-
-            subs.forEach(subj => {
-                const item = document.createElement('div');
-                item.className = 'subject-item';
-                
-                const nameSpan = document.createElement('span');
-                nameSpan.className = 'subject-name';
-                nameSpan.textContent = subj.name;
-
-                item.appendChild(nameSpan);
-
-                if (isAdmin) {
-                    item.addEventListener('click', () => openModal(subj));
-                }
-
-                body.appendChild(item);
-            });
-
-            card.appendChild(header);
-            card.appendChild(body);
-            curriculumGrid.appendChild(card);
-        });
-    }
-
-    // PDF Parsing Logic
-    if (pdfUpload) {
-        pdfUpload.addEventListener('change', async (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = async function() {
-                const typedarray = new Uint8Array(this.result);
-                try {
-                    const pdf = await pdfjsLib.getDocument(typedarray).promise;
-                    let fullText = "";
-                    
-                    for (let i = 1; i <= pdf.numPages; i++) {
-                        const page = await pdf.getPage(i);
-                        const textContent = await page.getTextContent();
-                        const pageText = textContent.items.map(item => item.str).join(" ");
-                        fullText += pageText + "\n";
-                    }
-
-                    extractAndSaveSubjects(fullText, file.name);
-                } catch (error) {
-                    console.error("Error parsing PDF:", error);
-                    alert("Failed to parse PDF file.");
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        });
-    }
-
-    async function extractAndSaveSubjects(text, fileName) {
-        // Simple logic to guess category from filename or content
-        let category = "GENERAL";
-        const upperName = fileName.toUpperCase();
-        if (upperName.includes("STEM")) category = "STEM";
-        else if (upperName.includes("BSCS")) category = "BSCS";
-        else if (upperName.includes("BSIT")) category = "BSIT";
-        else if (upperName.includes("BSAIS") || upperName.includes("ACCOUNTING")) category = "BSIS";
-        else if (upperName.includes("BSHM") || upperName.includes("HOSPITALITY")) category = "BSHM";
-        else if (upperName.includes("BSTM") || upperName.includes("TOURISM")) category = "BSTM";
-        else if (upperName.includes("ABM")) category = "ABM";
-        else if (upperName.includes("MAWD")) category = "MAWD";
-        else if (upperName.includes("HUMSS")) category = "HUMSS";
-
-        const subjects = [];
-        
-        // Target format: CourseID (6 digits) -> SubjectCode -> CatalogNo -> OfferingNo -> Description -> Units
-        // Example: 001615 ACCT 1001 20 Basic Accounting 6.00
-        const subjectRegex = /\d{6}\s+[A-Z]{3,4}\s+\d{4}\s+\d{2}\s+([A-Za-z0-9\s,&:\-().]+?)\s+\d\.\d\d/g;
-        let match;
-        while ((match = subjectRegex.exec(text)) !== null) {
-            const name = match[1].trim();
-            if (name && name.length > 3) {
-                subjects.push(name);
-            }
-        }
-
-        // Fallback for SHS or other formats
-        if (subjects.length === 0) {
-            const lines = text.split('\n');
-            lines.forEach(line => {
-                // Look for common subject-like patterns if the specific regex fails
-                if (line.includes("Lecture") || line.includes("Laboratory")) {
-                    // Try to extract the name before the component type
-                    const parts = line.split(/\s{2,}/);
-                    if (parts.length > 2) {
-                        const name = parts[parts.length - 3].trim();
-                        if (name.length > 3 && !name.includes("Page")) subjects.push(name);
-                    }
-                }
-            });
-        }
-
-        const uniqueSubjects = [...new Set(subjects)];
-        if (uniqueSubjects.length === 0) {
-            alert("Could not extract any subjects from the PDF. Please ensure it follows the curriculum format.");
+        if (courses.length === 0) {
+            curriculumGrid.innerHTML = '<div class="no-data">No curriculum data available. Attach a PDF to get started.</div>';
             return;
         }
 
-        if (confirm(`Found ${uniqueSubjects.length} subjects for category ${category}. Save to system?`)) {
-            const promises = uniqueSubjects.map(name => {
-                const docId = doc(collection(db, "curriculums")).id;
-                return setDoc(doc(db, "curriculums", docId), { name, category });
-            });
-            try {
-                await Promise.all(promises);
-                alert("Subjects imported successfully!");
-                loadSubjects();
-            } catch (err) {
-                console.error("Error saving subjects:", err);
-                alert("Failed to save subjects to database.");
-            }
-        }
-    }
+        courses.forEach(course => {
+            const courseSection = document.createElement('div');
+            courseSection.className = 'course-section';
 
-    if (clearAllBtn) {
-        clearAllBtn.addEventListener('click', async () => {
-            if (!confirm("Are you sure you want to delete ALL subjects from the curriculum? This cannot be undone.")) return;
-            
-            try {
-                const q = query(collection(db, "curriculums"));
-                const snapshot = await getDocs(q);
-                const deletePromises = snapshot.docs.map(d => deleteDoc(doc(db, "curriculums", d.id)));
-                await Promise.all(deletePromises);
-                alert("All subjects cleared.");
-                loadSubjects();
-            } catch (error) {
-                console.error("Error clearing subjects:", error);
-                alert("Failed to clear subjects.");
+            const courseTitle = document.createElement('h2');
+            courseTitle.className = 'course-title';
+            courseTitle.textContent = course.name;
+            courseSection.appendChild(courseTitle);
+
+            if (course.terms && typeof course.terms === 'object') {
+                const termNames = Object.keys(course.terms).sort((a, b) => {
+                    const getOrder = (name) => {
+                        let order = 0;
+                        if (name.includes("First Year")) order += 10;
+                        else if (name.includes("Second Year")) order += 20;
+                        else if (name.includes("Third Year")) order += 30;
+                        else if (name.includes("Fourth Year")) order += 40;
+                        if (name.includes("First Term")) order += 1;
+                        else if (name.includes("Second Term")) order += 2;
+                        return order;
+                    };
+                    return getOrder(a) - getOrder(b);
+                });
+
+                const termsGrid = document.createElement('div');
+                termsGrid.className = 'terms-grid';
+
+                termNames.forEach(termName => {
+                    const subjects = course.terms[termName];
+                    const termCard = document.createElement('div');
+                    termCard.className = 'category-card';
+
+                    const header = document.createElement('div');
+                    header.className = 'category-header';
+                    header.innerHTML = `<div class="term-main">${termName}</div>`;
+                    
+                    const body = document.createElement('div');
+                    body.className = 'category-body';
+
+                    subjects.forEach(subj => {
+                        const item = document.createElement('div');
+                        item.className = 'subject-item';
+                        
+                        const nameSpan = document.createElement('span');
+                        nameSpan.className = 'subject-name';
+                        nameSpan.textContent = subj;
+
+                        item.appendChild(nameSpan);
+
+                        if (isAdmin) {
+                            item.addEventListener('click', () => openModal({
+                                name: subj,
+                                courseId: course.id,
+                                termName: termName,
+                                originalName: subj
+                            }));
+                        }
+
+                        body.appendChild(item);
+                    });
+
+                    termCard.appendChild(header);
+                    termCard.appendChild(body);
+                    termsGrid.appendChild(termCard);
+                });
+                courseSection.appendChild(termsGrid);
             }
+            curriculumGrid.appendChild(courseSection);
         });
     }
-    function openModal(subject = null) {
-        if (subject) {
+
+    const courseIdInput = document.getElementById('courseId');
+    const termNameInput = document.getElementById('termName');
+
+    function openModal(data = null) {
+        if (data) {
             modalTitle.textContent = "Edit Subject";
-            subjectIdInput.value = subject.id;
-            subjectNameInput.value = subject.name;
-            subjectCategoryInput.value = subject.category;
+            subjectIdInput.value = data.originalName || "";
+            courseIdInput.value = data.courseId || "";
+            termNameInput.value = data.termName || "";
+            subjectNameInput.value = data.name || "";
+            subjectCategoryInput.value = data.category || "";
             deleteSubjectBtn.style.display = 'block';
         } else {
-            modalTitle.textContent = "Add Subject";
+            modalTitle.textContent = "Add Subject (General)";
             subjectIdInput.value = "";
+            courseIdInput.value = "GENERAL_CURRICULUM";
+            termNameInput.value = "General Subjects";
             subjectNameInput.value = "";
             subjectCategoryInput.value = "CORE";
             deleteSubjectBtn.style.display = 'none';
@@ -241,16 +167,41 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     subjectForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const docId = subjectIdInput.value || doc(collection(db, "curriculums")).id;
-        const subjectData = {
-            name: subjectNameInput.value.trim(),
-            category: subjectCategoryInput.value,
-        };
+        const cId = courseIdInput.value || "GENERAL_CURRICULUM";
+        const tName = termNameInput.value || "General Subjects";
+        const originalName = subjectIdInput.value;
+        const newName = subjectNameInput.value.trim();
 
         try {
-            await setDoc(doc(db, "curriculums", docId), subjectData);
+            const courseRef = doc(db, "courses", cId);
+            const courseSnap = await getDocs(query(collection(db, "courses")));
+            const courseDoc = courseSnap.docs.find(d => d.id === cId);
+            
+            let terms = {};
+            if (courseDoc && courseDoc.exists()) {
+                terms = courseDoc.data().terms || {};
+            }
+
+            if (!terms[tName]) terms[tName] = [];
+
+            if (originalName) {
+                // Edit existing
+                const idx = terms[tName].indexOf(originalName);
+                if (idx !== -1) terms[tName][idx] = newName;
+                else terms[tName].push(newName);
+            } else {
+                // Add new
+                if (!terms[tName].includes(newName)) terms[tName].push(newName);
+            }
+
+            await setDoc(doc(db, "courses", cId), {
+                name: cId === "GENERAL_CURRICULUM" ? "General Curriculum" : (courseDoc?.data()?.name || cId),
+                terms: terms,
+                updatedAt: new Date().toISOString()
+            }, { merge: true });
+
             modal.style.display = 'none';
-            loadSubjects(); // Reload
+            loadSubjects();
         } catch (error) {
             console.error("Error saving subject:", error);
             alert("Failed to save subject.");
@@ -258,10 +209,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     deleteSubjectBtn.addEventListener('click', async () => {
-        if (!confirm("Are you sure you want to delete this subject?")) return;
-        const docId = subjectIdInput.value;
+        const cId = courseIdInput.value;
+        const tName = termNameInput.value;
+        const originalName = subjectIdInput.value;
+
+        if (!confirm(`Are you sure you want to delete "${originalName}"?`)) return;
+
         try {
-            await deleteDoc(doc(db, "curriculums", docId));
+            const courseSnap = await getDocs(query(collection(db, "courses")));
+            const courseDoc = courseSnap.docs.find(d => d.id === cId);
+            
+            if (courseDoc && courseDoc.exists()) {
+                const data = courseDoc.data();
+                const terms = data.terms || {};
+                if (terms[tName]) {
+                    terms[tName] = terms[tName].filter(s => s !== originalName);
+                    await setDoc(doc(db, "courses", cId), { terms }, { merge: true });
+                }
+            }
             modal.style.display = 'none';
             loadSubjects();
         } catch (error) {
@@ -270,22 +235,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     migrateDataBtn.addEventListener('click', async () => {
-        if (!confirm("This will upload static subjects from subject-data.js to Firestore. Proceed?")) return;
+        if (!confirm("This will upload all static subjects to the 'General Curriculum' course. Proceed?")) return;
         
         migrateDataBtn.textContent = "Migrating...";
         migrateDataBtn.disabled = true;
 
-        let promises = [];
+        const terms = {};
         Object.keys(SUBJECT_DATA).forEach(cat => {
             if (cat === "GENERAL_KEYS") return;
-            SUBJECT_DATA[cat].forEach(sub => {
-                const newDocRef = doc(collection(db, "curriculums"));
-                promises.push(setDoc(newDocRef, { name: sub, category: cat }));
-            });
+            terms[cat] = SUBJECT_DATA[cat];
         });
 
         try {
-            await Promise.all(promises);
+            await setDoc(doc(db, "courses", "GENERAL_CURRICULUM"), {
+                name: "General Curriculum (SHS)",
+                terms: terms,
+                updatedAt: new Date().toISOString()
+            });
             alert("Migration complete!");
             loadSubjects();
         } catch (error) {

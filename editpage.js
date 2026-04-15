@@ -817,10 +817,34 @@ async function load() {
   isLoaded = true;
   try {
     // --- Load Dynamic Curriculum ---
-    const curQ = query(collection(db, "curriculums"));
-    const curSnap = await getDocs(curQ);
-    dynamicSubjects = curSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    console.log(`SchedSync: Loaded ${dynamicSubjects.length} dynamic subjects.`);
+    const courseQ = query(collection(db, "courses"));
+    const courseSnap = await getDocs(courseQ);
+    
+    dynamicSubjects = [];
+    courseSnap.forEach(d => {
+        const data = d.data();
+        if (data.terms) {
+            Object.values(data.terms).forEach(subjects => {
+                subjects.forEach(name => {
+                    // Flatten into the expected format
+                    dynamicSubjects.push({ 
+                        id: `course_${d.id}_${name}`, 
+                        name: name, 
+                        category: data.name // Using course name as category
+                    });
+                });
+            });
+        }
+    });
+
+    // Fallback if no courses found, check legacy
+    if (dynamicSubjects.length === 0) {
+        const curQ = query(collection(db, "curriculums"));
+        const curSnap = await getDocs(curQ);
+        dynamicSubjects = curSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
+    
+    console.log(`SchedSync: Loaded ${dynamicSubjects.length} dynamic subjects from courses.`);
 
     schedules = [];
     const urlParams = new URLSearchParams(window.location.search);
@@ -1991,10 +2015,12 @@ async function saveClass() {
     ? document.getElementById("colorPicker").value
     : document.getElementById("colorSelect").value;
 
-  // Persistence for Vacant slots 🦈
-  // If the panel is empty but it was ALREADY a marked vacant, keep it as vacant (so color updates work)
+  // 🛡️ RE-VALIDATE VACANT STATE 🦈
+  // Fix: Only treat as empty if the user cleared the field AND it wasn't already marked vacant.
+  // If it was already marked vacant, and they typed nothing, we keep it vacant.
+  // BUT: If they typed something, mergedSubject will be truthy, and we skip this.
   if (!mergedSubject && originalBlock && originalBlock.subject === "MARKED_VACANT") {
-    mergedSubject = "MARKED_VACANT";
+      mergedSubject = "MARKED_VACANT";
   }
 
   // IF SUBJECT IS STILL EMPTY -> WE CLEAR THE SLOT 👻
@@ -2020,12 +2046,13 @@ async function saveClass() {
       const cParsed = parseBlock(c.timeBlock);
       minStart = Math.min(minStart, cParsed.start);
       maxEnd = Math.max(maxEnd, cParsed.end);
-      if (mergedSubject === "VACANT" || mergedSubject === "" || mergedSubject === "MARKED_VACANT") {
+      
+      // 🕵️ Only inherit if the user hasn't provided anything yet ⚓
+      if (!mergedSubject || mergedSubject === "VACANT" || mergedSubject === "MARKED_VACANT") {
         if (c.subject && c.subject !== "VACANT" && c.subject !== "MARKED_VACANT") {
           mergedSubject = c.subject;
           mergedTeacher = c.teacher;
           mergedRoom = c.room;
-          // 🔑 INHERIT COLOR TOO Prevents color "jumping" during merges.
           if (c.color) mergedColor = c.color;
         }
       }
@@ -2038,6 +2065,7 @@ async function saveClass() {
   const conflictResults = await checkConflicts({
     day: selected.day,
     timeBlock: `${toTime(startMin)}-${toTime(endMin)}`,
+    subject: mergedSubject, // 🔑 PASS SUBJECT TO AVOID GUARD BYPASS
     room: mergedRoom,
     teacher: mergedTeacher
   }, selected.id);

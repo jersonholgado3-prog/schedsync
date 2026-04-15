@@ -50,6 +50,10 @@
         <a href="campuspage.html" class="sidebar-link">
           <img src="images/CAMPUS_ONE.png" alt="Campus"><span>Campus</span>
         </a>
+        <a href="sectionspage.html" class="sidebar-link">
+          <img src="images/SCHED.png" alt="Sections" style="filter: invert(1) brightness(2);">
+          <span>Sections</span>
+        </a>
         <a href="event.html" class="sidebar-link">
           <img src="images/EVENT_MODE.png" alt="Events"><span>Events</span>
         </a>
@@ -124,20 +128,15 @@
       <h2 id="modalTitle">Manage Subject</h2>
       <form id="subjectForm">
         <input type="hidden" id="subjectId">
+        <input type="hidden" id="courseId">
+        <input type="hidden" id="termName">
         <div class="form-group">
           <label for="subjectName">Subject Name</label>
           <input type="text" id="subjectName" required>
         </div>
         <div class="form-group">
-          <label for="subjectCategory">Category / Strand</label>
-          <select id="subjectCategory" required>
-            <option value="CORE">CORE</option>
-            <option value="APPLIED">APPLIED</option>
-            <option value="STEM">STEM</option>
-            <option value="HUMSS">HUMSS</option>
-            <option value="ICT">ICT</option>
-            <option value="ABM">ABM</option>
-          </select>
+          <label for="subjectCategory">Category / Strand (Optional)</label>
+          <input type="text" id="subjectCategory" placeholder="e.g. Major, Core, etc.">
         </div>
         <button type="submit" class="submit-btn" id="saveSubjectBtn">Save Subject</button>
         <button type="button" class="delete-btn" id="deleteSubjectBtn" style="display: none; background: #ef4444; color: white;">Delete Subject</button>
@@ -162,6 +161,10 @@
     </a>
     <a href="campuspage.html"  class="mob-nav-item" data-page="campuspage">
       <img src="images/CAMPUS_ONE.png" alt="Campus"><span>Campus</span>
+    </a>
+    <a href="sectionspage.html" class="mob-nav-item" data-page="sections">
+      <img src="images/SCHED.png" alt="Sections" style="filter: invert(1) brightness(2);">
+      <span>Sections</span>
     </a>
     <a href="curriculumpage.html" class="mob-nav-item active" data-page="curriculumpage">
       <img src="images/CURRICULUM.png" alt="Curriculum"><span>Curriculum</span>

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sections Management - SchedSync</title>
+  <script type="module" src="ui-effects.js"></script>
+  <link rel="stylesheet" href="header-styles.css" />
+  <script>
+    (function () {
+      const theme = localStorage.getItem("theme");
+      if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+        document.documentElement.classList.add("dark");
+      }
+      const uiMode = localStorage.getItem("uiMode");
+      const userRole = localStorage.getItem("userRole");
+      const mode = uiMode || ((userRole === 'teacher' || userRole === 'admin') ? 'professional' : 'student');
+      if (mode === 'professional') {
+        document.documentElement.classList.add("professional-mode");
+      }
+    })();
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="campuspage_styles.css" />
+  <style>
+    .section-card {
+      background: white;
+      border: 3px solid black;
+      border-radius: 12px;
+      padding: 15px;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 4px 4px 0px black;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 10px;
+    }
+    .section-card:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0px black;
+      background: #f8fafc;
+    }
+    .dark .section-card {
+      background: #1e293b;
+      border-color: #334155;
+      box-shadow: 4px 4px 0px #000;
+      color: white;
+    }
+    .section-name {
+      font-weight: 900;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+    }
+    .section-strand {
+      font-size: 0.8rem;
+      background: #FFD200;
+      color: black;
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1.5px solid black;
+    }
+    .add-section-btn {
+      background: #005BAB;
+      color: white;
+      border: 3px solid black;
+      border-radius: 12px;
+      padding: 10px 20px;
+      font-weight: 700;
+      box-shadow: 4px 4px 0px black;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .add-section-btn:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0px black;
+    }
+  </style>
+</head>
+
+<body class="bg-white text-black font-bold">
+  <div class="container">
+    <aside class="sidebar">
+      <div class="sidebar-header" onclick="window.location.href='homepage.html'">
+        <img src="images/LOGO.png" alt="Logo">
+      </div>
+      <nav class="sidebar-menu">
+        <a href="homepage.html" class="sidebar-link">
+          <img src="images/HOME.png" alt="Home">
+          <span>Home</span>
+        </a>
+        <a href="newschedule.html" class="sidebar-link">
+          <img src="images/ADD_SCHED.png" alt="New Schedule">
+          <span>New Schedule</span>
+        </a>
+        <a href="myschedule.html" class="sidebar-link">
+          <img src="images/SCHED.png" alt="My Schedule">
+          <span>My Schedule</span>
+        </a>
+        <a href="facultypage.html" class="sidebar-link">
+          <img src="images/FACULTY.png" alt="Faculty">
+          <span>Faculty</span>
+        </a>
+        <a href="campuspage.html" class="sidebar-link">
+          <img src="images/CAMPUS_ONE.png" alt="Campus">
+          <span>Campus</span>
+        </a>
+        <a href="sectionspage.html" class="sidebar-link active">
+          <img src="images/SCHED.png" alt="Sections" style="filter: invert(1) brightness(2);">
+          <span>Sections</span>
+        </a>
+        <a href="event.html" class="sidebar-link">
+          <img src="images/EVENT_MODE.png" alt="Events">
+          <span>Events</span>
+        </a>
+        <a href="curriculumpage.html" class="sidebar-link">
+          <img src="images/CURRICULUM.png" alt="Curriculum">
+          <span>Curriculum</span>
+        </a>
+        <div id="adminSidebarLinks" style="display: none;">
+          <a href="audit_logs.html" class="sidebar-link">
+            <img src="images/SCHED.png" alt="Audit" style="filter: hue-rotate(180deg);">
+            <span>Audit Logs</span>
+          </a>
+        </div>
+      </nav>
+    </aside>
+
+    <div class="main-content-wrapper">
+      <header class="header">
+        <div class="left-header">
+          <div class="hamburger-btn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </div>
+          <div class="logo-container" onclick="window.location.href='homepage.html'">
+            <img src="images/BANNER.png" class="logo-img" alt="SchedSync Logo" style="max-height: 100%; width: 100%; object-fit: contain;">
+          </div>
+          <div class="search-wrapper">
+            <img src="images/SEARCH.png" class="search-icon" alt="Search">
+            <input type="text" id="sectionSearch" class="search-button" placeholder="Search sections" aria-label="Search">
+          </div>
+        </div>
+        <div class="page-title">Sections</div>
+        <div class="user-section">
+          <div class="notification-icon-wrapper" onclick="window.openGameNotifications()">
+            <img src="images/BELL.png" alt="Notifications">
+          </div>
+          <div class="user-profile-btn" id="userProfile">
+            <div class="user-name">User</div>
+            <div class="user-avatar" id="headerAvatar">
+              <img src="images/default_shark.jpg" alt="User" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="main-layout">
+        <main class="flex-1 space-y-10 p-8">
+          <section>
+            <div class="flex justify-between items-center mb-6">
+              <h2 class="text-2xl">Academic Sections</h2>
+              <button id="addSectionBtn" class="add-section-btn admin-only" style="display: none;">+ Add Section</button>
+            </div>
+            
+            <div id="sections-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+              <!-- Sections will be injected here -->
+              <div class="loading-state col-span-full text-center py-10 opacity-50">Loading sections...</div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL FOR ADDING/EDITING SECTION -->
+  <div id="sectionModal" class="modal fixed inset-0 bg-black/60 z-[10000] hidden items-center justify-center">
+    <div class="bg-white dark:bg-slate-800 border-4 border-black p-8 rounded-2xl w-96 shadow-[8px_8px_0px_#000] relative">
+      <span id="closeModal" class="absolute top-4 right-4 text-2xl cursor-pointer">×</span>
+      <h2 id="modalTitle" class="text-2xl mb-6">Add New Section</h2>
+      <form id="sectionForm" class="space-y-4">
+        <input type="hidden" id="sectionId">
+        <div>
+          <label class="block mb-1 text-sm">Section Name</label>
+          <input type="text" id="sectionName" class="w-full border-2 border-black p-2 rounded-lg" placeholder="e.g. ABM 1201" required>
+        </div>
+        <div>
+          <label class="block mb-1 text-sm">Strand / Program</label>
+          <select id="sectionStrand" class="w-full border-2 border-black p-2 rounded-lg" required>
+            <option value="ABM">ABM</option>
+            <option value="STEM">STEM</option>
+            <option value="HUMSS">HUMSS</option>
+            <option value="ICT">ICT</option>
+            <option value="MAWD">MAWD</option>
+            <option value="BSAIS">BSAIS</option>
+            <option value="BSCS">BSCS</option>
+            <option value="BSIT">BSIT</option>
+            <option value="BSHM">BSHM</option>
+            <option value="BSTM">BSTM</option>
+          </select>
+        </div>
+        <div>
+          <label class="block mb-1 text-sm">Grade Level</label>
+          <select id="sectionGrade" class="w-full border-2 border-black p-2 rounded-lg" required>
+            <option value="11">Grade 11</option>
+            <option value="12">Grade 12</option>
+            <option value="1st Year">1st Year</option>
+            <option value="2nd Year">2nd Year</option>
+            <option value="3rd Year">3rd Year</option>
+            <option value="4th Year">4th Year</option>
+          </select>
+        </div>
+        <button type="submit" class="w-full bg-[#005BAB] text-white border-2 border-black p-3 rounded-lg shadow-[4px_4px_0px_#000] font-bold">SAVE SECTION</button>
+        <button type="button" id="deleteSectionBtn" class="w-full bg-red-500 text-white border-2 border-black p-2 rounded-lg font-bold hidden">DELETE SECTION</button>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="sectionspage.js"></script>
+</body>
+</html>
