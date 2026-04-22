@@ -7,31 +7,32 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#005BAB">
   <script>
-      (function () {
-          // 1. Theme Lock 🌙
-          const theme = localStorage.getItem("theme");
-          if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-              document.documentElement.classList.add("dark");
-          }
+    (function () {
+      // 1. Theme Lock 🌙
+      const theme = localStorage.getItem("theme");
+      if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+        document.documentElement.classList.add("dark");
+      }
 
-          // 2. UI Mode Lock 👔
-          const uiMode = localStorage.getItem("uiMode");
-          const userRole = localStorage.getItem("userRole");
-          const mode = uiMode || ((userRole === 'teacher' || userRole === 'admin') ? 'professional' : 'student');
-          if (mode === 'professional') {
-              document.documentElement.classList.add("professional-mode");
-          }
+      // 2. UI Mode Lock 👔
+      const uiMode = localStorage.getItem("uiMode");
+      const userRole = localStorage.getItem("userRole");
+      const mode = uiMode || ((userRole === 'teacher' || userRole === 'admin') ? 'professional' : 'student');
+      if (mode === 'professional') {
+        document.documentElement.classList.add("professional-mode");
+      }
 
-          // 3. Service Worker Registration 🚀⚓ (Caching Engine)
-          if ('serviceWorker' in navigator) {
-              window.addEventListener('load', () => {
-                  navigator.serviceWorker.register('./service-worker.js')
-                      .then(reg => console.log('SchedSync SW: Registered ✅', reg.scope))
-                      .catch(err => console.error('SchedSync SW: Failed ❌', err));
-              });
-          }
-      })();
-  </script>  <script type="module" src="role-restriction.js"></script>
+      // 3. Service Worker Registration 🚀⚓ (Caching Engine)
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./service-worker.js')
+            .then(reg => console.log('SchedSync SW: Registered ✅', reg.scope))
+            .catch(err => console.error('SchedSync SW: Failed ❌', err));
+        });
+      }
+    })();
+  </script>
+  <script type="module" src="role-restriction.js"></script>
   <script type="module" src="homepage.js"></script>
 
   <link rel="stylesheet" href="header-styles.css" />
@@ -54,10 +55,6 @@
           <img src="images/HOME.png" alt="Home">
           <span>Home</span>
         </a>
-        <a href="newschedule.html" class="sidebar-link">
-          <img src="images/ADD_SCHED.png" alt="New Schedule">
-          <span>New Schedule</span>
-        </a>
         <a href="myschedule.html" class="sidebar-link">
           <img src="images/SCHED.png" alt="My Schedule">
           <span>My Schedule</span>
@@ -79,7 +76,7 @@
           <span>Events</span>
         </a>
         <a href="curriculumpage.html" class="sidebar-link">
-          <img src="images/CURRICULUM.png" alt="Curriculum">
+          <img src="images/SCHED.png" alt="Curriculum" style="filter: hue-rotate(180deg);">
           <span>Curriculum</span>
         </a>
         <!-- ADMIN ONLY 🛡️ -->
@@ -93,7 +90,8 @@
     </aside>
 
     <div class="main-content-wrapper">
-      <div id="debug-status" style="position:fixed; bottom:80px; left:10px; background:rgba(0,0,0,0.8); color:white; padding:5px; font-size:10px; z-index:9999; border-radius:5px; pointer-events:none;">
+      <div id="debug-status"
+        style="position:fixed; bottom:80px; left:10px; background:rgba(0,0,0,0.8); color:white; padding:5px; font-size:10px; z-index:9999; border-radius:5px; pointer-events:none;">
         Status: Initializing...
       </div>
       <header class="header">
@@ -126,7 +124,8 @@
           <div class="user-profile-btn" id="userProfile">
             <span class="burger-icon">☰</span>
             <div class="user-name">User</div>
-            <div class="user-avatar" id="headerAvatar" style="background-color: #e2e8f0; border: 2px solid black; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+            <div class="user-avatar" id="headerAvatar"
+              style="background-color: #e2e8f0; border: 2px solid black; overflow: hidden; display: flex; align-items: center; justify-content: center;">
               <img src="images/default_shark.jpg" alt="User" style="width: 100%; height: 100%; object-fit: cover;">
             </div>
           </div>
@@ -146,13 +145,14 @@
           </div>
 
           <!-- ANNOUNCEMENT CAROUSEL (Compact Blue Theme) Carousel with NAV ARROWS 🎡⚓ -->
-          <div class="hero-carousel-container" id="heroCarousel" style="display: none;" role="region" aria-label="Announcements Carousel">
+          <div class="hero-carousel-container" id="heroCarousel" style="display: none;" role="region"
+            aria-label="Announcements Carousel">
             <div class="carousel-track" id="carouselTrack" aria-live="polite">
               <!-- Dynamic Slides Inject Here -->
             </div>
             <!-- Progress Indicators -->
             <div class="carousel-indicators" id="carouselIndicators"></div>
-            
+
             <!-- Navigation Arrows 🎡⚓ -->
             <button class="carousel-nav-btn prev" id="prevSlide" aria-label="Previous Slide">❮</button>
             <button class="carousel-nav-btn next" id="nextSlide" aria-label="Next Slide">❯</button>
@@ -167,13 +167,18 @@
                   <h2 class="widget-title">Campus Insights</h2>
                 </div>
               </div>
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 20px;">
+              <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 20px;">
                 <div style="background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 16px; padding: 20px;">
-                  <h3 style="font-size: 14px; font-weight: 800; color: #64748b; margin-bottom: 15px; text-transform: uppercase; text-align: center;">Room Usage by Floor</h3>
+                  <h3
+                    style="font-size: 14px; font-weight: 800; color: #64748b; margin-bottom: 15px; text-transform: uppercase; text-align: center;">
+                    Room Usage by Floor</h3>
                   <canvas id="roomUsageChart"></canvas>
                 </div>
                 <div style="background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 16px; padding: 20px;">
-                  <h3 style="font-size: 14px; font-weight: 800; color: #64748b; margin-bottom: 15px; text-transform: uppercase; text-align: center;">Peak Scheduling Hours</h3>
+                  <h3
+                    style="font-size: 14px; font-weight: 800; color: #64748b; margin-bottom: 15px; text-transform: uppercase; text-align: center;">
+                    Peak Scheduling Hours</h3>
                   <canvas id="peakHoursChart"></canvas>
                 </div>
               </div>
@@ -247,7 +252,7 @@
                 <img src="images/SCHED.png" alt="Drafts">
                 <h2 class="widget-title">Draft Schedules</h2>
               </div>
-              <button class="add-btn" onclick="window.location.href='newschedule.html'">+</button>
+              <button class="add-btn" onclick="window.location.href='sectionspage.html'">+</button>
             </div>
             <div id="drafts-list">
               <div class="widget-empty">Loading drafts...</div>
@@ -261,36 +266,33 @@
   <script type="module" src="ui-effects.js"></script>
   <!-- ?? MOBILE BOTTOM NAVIGATION BAR ? -->
   <nav class="mobile-bottom-nav" id="mobileBottomNav">
-    <a href="homepage.html"    class="mob-nav-item" data-page="homepage">
+    <a href="homepage.html" class="mob-nav-item active" data-page="homepage">
       <img src="images/HOME.png" alt="Home"><span>Home</span>
     </a>
-    <a href="newschedule.html" class="mob-nav-item" data-page="newschedule">
-      <img src="images/ADD_SCHED.png" alt="New Schedule"><span>New Sched</span>
-    </a>
-    <a href="myschedule.html"  class="mob-nav-item" data-page="myschedule">
+    <a href="myschedule.html" class="mob-nav-item" data-page="myschedule">
       <img src="images/SCHED.png" alt="My Schedule"><span>My Sched</span>
     </a>
     <a href="facultypage.html" class="mob-nav-item" data-page="facultypage">
       <img src="images/FACULTY.png" alt="Faculty"><span>Faculty</span>
     </a>
-    <a href="campuspage.html"  class="mob-nav-item" data-page="campuspage">
+    <a href="campuspage.html" class="mob-nav-item" data-page="campuspage">
       <img src="images/CAMPUS_ONE.png" alt="Campus"><span>Campus</span>
     </a>
     <a href="sectionspage.html" class="mob-nav-item" data-page="sections">
       <img src="images/SCHED.png" alt="Sections" style="filter: invert(1) brightness(2);">
       <span>Sections</span>
     </a>
-    <a href="event.html"       class="mob-nav-item" data-page="event">
+    <a href="event.html" class="mob-nav-item" data-page="event">
       <img src="images/EVENT_MODE.png" alt="Events"><span>Events</span>
     </a>
-    <a href="curriculumpage.html"       class="mob-nav-item" data-page="curriculumpage">
-      <img src="images/CURRICULUM.png" alt="Curriculum"><span>Curriculum</span>
+    <a href="curriculumpage.html" class="mob-nav-item" data-page="curriculumpage">
+      <img src="images/SCHED.png" alt="Curriculum" style="filter: hue-rotate(180deg);"><span>Curriculum</span>
     </a>
-    <!-- ADMIN ONLY � shown via JS -->
-    <a href="audit_logs.html"  class="mob-nav-item admin-only" data-page="audit_logs" style="display:none">
-      <img src="images/SCHED.png" alt="Audit Logs"><span>Audit</span>
+    <!-- ADMIN ONLY 🛡️ shown via JS -->
+    <a href="audit_logs.html" class="mob-nav-item admin-only" data-page="audit_logs" style="display:none">
+      <img src="images/SCHED.png" alt="Audit Logs" style="filter: hue-rotate(180deg);"><span>Audit</span>
     </a>
-    </nav>
+  </nav>
 </body>
 
 </html>

@@ -21,9 +21,9 @@ function injectHiderStyle() {
     const style = document.createElement('style');
     style.id = 'role-flicker-prevention';
     style.textContent = `
-        div[onclick*="newschedule.html"]:not(.teacher-card), 
+        div[onclick*="sectionspage.html"]:not(.teacher-card), 
         .card[data-title*="New Schedule"]:not(.teacher-card),
-        .sidebar-icon[onclick*="newschedule.html"]:not(.teacher-card),
+        .sidebar-icon[onclick*="sectionspage.html"]:not(.teacher-card),
         .create-event-group,
         #openCreateEvent,
         .dg-event-actions,
@@ -91,6 +91,16 @@ function applyRestrictions(role, hasPermission) {
     if (adminLinks) {
         adminLinks.style.display = (role === 'admin') ? 'block' : 'none';
     }
+
+    // Toggle .admin-only class elements (like in mobile bottom nav)
+    document.querySelectorAll('.admin-only').forEach(el => {
+        if (role === 'admin') {
+            // Keep flex for mob-nav-item, block for others
+            el.style.display = el.classList.contains('mob-nav-item') ? 'flex' : 'block';
+        } else {
+            el.style.display = 'none';
+        }
+    });
 }
 
 function sweep() {
@@ -98,7 +108,7 @@ function sweep() {
     if (role === 'admin') return;
 
     // 1. Hide Editor elements
-    document.querySelectorAll('div[onclick*="newschedule.html"], div[onclick*="editpage.html"]').forEach(el => {
+    document.querySelectorAll('div[onclick*="sectionspage.html"], div[onclick*="editpage.html"]').forEach(el => {
         if (el.style.display !== 'none') el.dataset.roleHidden = 'true';
         el.style.display = 'none';
     });

@@ -61,7 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const userData = udoc.data();
           role = userData.role || 'student';
           hasPerm = userData.editPermission === true;
-          
+
           // 🛡️ Enhanced Greeting: Use fullName if available ⚓
           if (userData.fullName) greetingName = userData.fullName;
 
@@ -178,11 +178,11 @@ async function initPushNotifications(user) {
 
     // 2. Get Token (VAPID Key is public for SchedSync)
     const vapidKey = "BOM8u_Hl9V7y0vGZ7nL_W6PZ_UvR_O_9Z7_V_W_V_G_Z_N_L_W_6_P_Z_U_v_R_O_9_Z_7_V_W";
-    
+
     // Check if placeholder is used
     if (vapidKey.startsWith("BOM8u_Hl9V7")) {
-        console.warn("SchedSync: Push Notifications disabled (Placeholder VAPID Key in use).");
-        return;
+      console.warn("SchedSync: Push Notifications disabled (Placeholder VAPID Key in use).");
+      return;
     }
 
     const token = await getToken(messaging, { vapidKey });
@@ -213,13 +213,13 @@ async function initPushNotifications(user) {
 // Add this to your init functions in homepage.js
 // This ensures they show up immediately
 function updateDebug(msg) {
-    const el = document.getElementById('debug-status');
-    if(el) {
-        el.textContent = 'Status: ' + msg;
-        if (msg.includes('Loaded')) {
-            setTimeout(() => { el.style.display = 'none'; }, 2000);
-        }
+  const el = document.getElementById('debug-status');
+  if (el) {
+    el.textContent = 'Status: ' + msg;
+    if (msg.includes('Loaded')) {
+      setTimeout(() => { el.style.display = 'none'; }, 2000);
     }
+  }
 }
 
 function initAnnouncements(role) {
@@ -254,7 +254,7 @@ function initAnnouncements(role) {
     clearTimeout(emergencyTimeout);
     updateDebug('Announcements Loaded');
     list.innerHTML = '';
-    
+
     if (snap.empty) {
       list.innerHTML = `
         <div class="widget-empty">
@@ -383,7 +383,7 @@ function initDraftSchedules(uid, role, hasPerm) {
 
   unsubDrafts = onSnapshot(q, (snap) => {
     list.innerHTML = '';
-    
+
     if (snap.empty) {
       list.innerHTML = `
         <div class="widget-empty">
@@ -656,7 +656,7 @@ function initHeroCarousel(announcements) {
   indicators.innerHTML = '';
 
   // Filter latest 3 announcements 🎡
-  const latestItems = announcements.slice(0, 3); 
+  const latestItems = announcements.slice(0, 3);
 
   const slidesToCreate = [...latestItems];
 
@@ -668,12 +668,12 @@ function initHeroCarousel(announcements) {
 
   slidesToCreate.forEach((ann, index) => {
     const isUrgent = (ann.title || "").toUpperCase().includes("URGENT") || ann.isUrgent === true;
-    
+
     // Unique visuals based on index 🎡✨
     const colors = [
-        { bg: 'linear-gradient(135deg, #005BAB, #003B95)', tag: '#FFD200', tagText: '#002044' },
-        { bg: 'linear-gradient(135deg, #0f172a, #334155)', tag: '#38bdf8', tagText: '#0f172a' },
-        { bg: 'linear-gradient(135deg, #991b1b, #7f1d1d)', tag: '#fecaca', tagText: '#7f1d1d' }
+      { bg: 'linear-gradient(135deg, #005BAB, #003B95)', tag: '#FFD200', tagText: '#002044' },
+      { bg: 'linear-gradient(135deg, #0f172a, #334155)', tag: '#38bdf8', tagText: '#0f172a' },
+      { bg: 'linear-gradient(135deg, #991b1b, #7f1d1d)', tag: '#fecaca', tagText: '#7f1d1d' }
     ];
     const theme = colors[index % 3];
 
@@ -681,7 +681,7 @@ function initHeroCarousel(announcements) {
     const slide = document.createElement('div');
     slide.className = `carousel-slide announcement-slide ${isUrgent ? 'urgent' : ''}`;
     slide.style.background = theme.bg;
-    
+
     slide.innerHTML = `
       <div class="slide-tag" style="background: ${isUrgent ? '#ef4444' : theme.tag}; color: ${isUrgent ? '#fff' : theme.tagText};">
         ${isUrgent ? '⚠️ Urgent' : '✨ Announcement'}

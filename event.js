@@ -144,11 +144,13 @@ function renderEvents(events) {
     // ADMIN ACTIONS
     if (isAdmin()) {
       const actions = document.createElement("div");
-      actions.className = "absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2";
+      actions.className = "absolute right-4 top-1/2 -translate-y-1/2 flex gap-2 z-10 sm:opacity-0 group-hover:opacity-100 transition-opacity";
 
       const editBtn = document.createElement("button");
-      editBtn.className = "p-2 bg-indigo-500 text-white rounded-xl border-2 border-black shadow-[3px_3px_0px_black] hover:scale-110 active:scale-95 transition-transform";
-      editBtn.innerHTML = "✏️";
+      editBtn.className = "p-2 bg-[#005BAB] text-white rounded-full border-2 border-black shadow-[3px_3px_0px_black] hover:scale-110 active:scale-95 transition-transform flex items-center justify-center";
+      editBtn.style.width = "40px";
+      editBtn.style.height = "40px";
+      editBtn.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>`;
       editBtn.onclick = (e) => {
         e.stopPropagation();
         if (window.renderEventModal) window.renderEventModal(event);
@@ -185,7 +187,7 @@ function showEventDetails(event) {
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead>
-                                <tr class="bg-black text-white text-[11px] uppercase font-black tracking-widest">
+                                <tr class="bg-[#005BAB] text-white text-[11px] uppercase font-black tracking-widest">
                                     <th class="p-4 border-r border-white/10">Time</th>
                                     <th class="p-4 border-r border-white/10">Module</th>
                                     <th class="p-4 border-r border-white/10">Section</th>
@@ -255,7 +257,7 @@ function showEventDetails(event) {
             ${displacementMarkup}
 
             <div class="mt-8 flex justify-end">
-                <button class="px-8 py-3 bg-black text-white rounded-2xl font-black hover:scale-105 active:scale-95 transition-transform" onclick="this.closest('.fixed').remove()">Close</button>
+                <button class="px-8 py-3 bg-[#005BAB] text-white rounded-2xl font-black hover:scale-105 active:scale-95 transition-transform border-3 border-black shadow-[4px_4px_0px_black]" onclick="this.closest('.fixed').remove()">Close</button>
             </div>
         </div>
     `;

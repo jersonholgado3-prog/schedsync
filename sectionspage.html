@@ -23,6 +23,9 @@
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="campuspage_styles.css" />
+  <link rel="stylesheet" href="confirm-modal.css" />
+  <link rel="stylesheet" href="toast.css" />
+  <link rel="stylesheet" href="newschedule_styles.css" />
   <style>
     .section-card {
       background: white;
@@ -39,22 +42,26 @@
       text-align: center;
       gap: 10px;
     }
+
     .section-card:hover {
       transform: translate(-2px, -2px);
       box-shadow: 6px 6px 0px black;
       background: #f8fafc;
     }
+
     .dark .section-card {
       background: #1e293b;
       border-color: #334155;
       box-shadow: 4px 4px 0px #000;
       color: white;
     }
+
     .section-name {
       font-weight: 900;
       font-size: 1.1rem;
       text-transform: uppercase;
     }
+
     .section-strand {
       font-size: 0.8rem;
       background: #FFD200;
@@ -63,6 +70,7 @@
       border-radius: 4px;
       border: 1.5px solid black;
     }
+
     .add-section-btn {
       background: #005BAB;
       color: white;
@@ -74,13 +82,526 @@
       cursor: pointer;
       transition: all 0.2s;
     }
+
     .add-section-btn:hover {
       transform: translate(-2px, -2px);
       box-shadow: 6px 6px 0px black;
     }
+
+    /* Grade Group Styles */
+    .grade-group {
+      margin-bottom: 1.5rem;
+      background: #f1f5f9;
+      border: 3px solid black;
+      border-radius: 20px;
+      padding: 12px;
+    }
+
+    .dark .grade-group {
+      background: #0f172a;
+      border-color: #334155;
+    }
+
+    .grade-header {
+      font-size: 1.5rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      color: #005BAB;
+      padding: 0 10px;
+    }
+
+    .dark .grade-header {
+      color: #38bdf8;
+    }
+
+    .grade-header::after {
+      content: '▼';
+      font-size: 1rem;
+      transition: transform 0.3s;
+    }
+
+    .grade-group.collapsed .grade-header::after {
+      transform: rotate(-90deg);
+    }
+
+    .grade-group.collapsed .sections-grid-inner {
+      display: none;
+    }
+
+    /* Multi-select Styles */
+    .selection-bar {
+      display: none;
+      align-items: center;
+      gap: 15px;
+      background: white;
+      border: 3px solid black;
+      border-radius: 15px;
+      padding: 8px 15px;
+      box-shadow: 4px 4px 0px black;
+      transition: all 0.2s;
+    }
+    .selection-bar.active {
+      display: flex !important;
+    }
+    .dark .selection-bar {
+      background: #1e293b;
+      border-color: #334155;
+      box-shadow: 4px 4px 0px black;
+    }
+    .selection-count {
+      font-weight: 900;
+      font-size: 1.1rem;
+      color: #005BAB;
+    }
+    .dark .selection-count {
+      color: #38bdf8;
+    }
+    .checkbox-wrapper {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 5;
+    }
+    .section-checkbox, .grade-checkbox {
+      width: 26px;
+      height: 26px;
+      border: 3px solid black;
+      border-radius: 50% !important;
+      cursor: pointer;
+      appearance: none !important;
+      -webkit-appearance: none !important;
+      background-color: white !important;
+      transition: all 0.2s;
+      display: block;
+      position: relative;
+    }
+    .section-checkbox:checked, .grade-checkbox:checked {
+      background-color: #005BAB !important;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E") !important;
+      background-size: 18px !important;
+      background-repeat: no-repeat !important;
+      background-position: center !important;
+      border-color: black !important;
+    }
+    .section-card.selected {
+      border-color: #005BAB;
+      background: #f0f9ff;
+      transform: scale(0.98);
+    }
+    .dark .section-card.selected {
+      background: #0c4a6e;
+      border-color: #38bdf8;
+    }
+
+    /* --- PREMIUM SCHEDULE MODAL ANGAS STYLES 🚀 --- */
+    #scheduleModal .bg-white {
+      background-color: var(--modal-bg) !important;
+      color: var(--modal-text) !important;
+      max-width: 700px !important;
+    }
+
+    .form-label {
+      font-size: 0.85rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748b;
+      margin-bottom: 0.75rem;
+      margin-left: 0.5rem;
+    }
+
+    .dark .form-label {
+      color: #94a3b8;
+    }
+
+    /* Schedule Type Toggle ⚡ */
+    .schedule-type-toggle {
+      display: flex;
+      background: #f1f5f9;
+      border: 3px solid black;
+      border-radius: 18px;
+      padding: 6px;
+      position: relative;
+      gap: 5px;
+    }
+
+    .dark .schedule-type-toggle {
+      background: #1e293b;
+    }
+
+    .type-btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      background: transparent;
+      font-weight: 900;
+      text-transform: uppercase;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border-radius: 12px;
+      transition: all 0.2s;
+      position: relative;
+      z-index: 1;
+      color: #64748b;
+    }
+
+    .type-btn.active {
+      background: #005BAB;
+      color: white;
+      box-shadow: 4px 4px 0px black;
+    }
+
+    /* Form Inputs ⌨️ */
+    .modal-input-wrapper input {
+      width: 100%;
+      background: var(--input-bg);
+      border: 3px solid black;
+      padding: 14px 20px;
+      border-radius: 18px;
+      font-weight: 700;
+      color: var(--input-text);
+      transition: all 0.2s;
+      outline: none;
+    }
+
+    .modal-input-wrapper input:focus {
+      border-color: #005BAB;
+      box-shadow: 4px 4px 0px #005BAB;
+    }
+
+    .modal-input-wrapper input[readonly] {
+      background: #f8fafc;
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    .dark .modal-input-wrapper input[readonly] {
+      background: #0f172a;
+    }
+
+    /* Day Selection Chips 🗓️ */
+    .day-selector-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      background: #f8fafc;
+      border: 3px solid black;
+      padding: 15px;
+      border-radius: 20px;
+    }
+
+    .dark .day-selector-group {
+      background: #111827;
+    }
+
+    .quick-select-btn, .day-chip {
+      padding: 10px 20px;
+      border: 2px solid black;
+      border-radius: 12px;
+      background: white;
+      font-weight: 800;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 3px 3px 0px black;
+    }
+
+    .dark .quick-select-btn, .dark .day-chip {
+      background: #1e293b;
+      color: white;
+    }
+
+    .quick-select-btn:hover, .day-chip:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 4px 4px 0px black;
+    }
+
+    .quick-select-btn.active, .day-chip.active {
+      background: #005BAB !important;
+      color: white !important;
+      transform: translate(2px, 2px);
+      box-shadow: none !important;
+    }
+
+    .save-sched-btn {
+      width: 100%;
+      background: #005BAB;
+      color: white;
+      border: 3px solid black;
+      padding: 20px;
+      border-radius: 20px;
+      font-weight: 900;
+      font-size: 1.25rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      box-shadow: 6px 6px 0px black;
+      transition: all 0.2s;
+      cursor: pointer;
+      margin-top: 1.5rem;
+    }
+
+    .save-sched-btn:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 8px 8px 0px black;
+    }
+
+    .save-sched-btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0px black;
+    }
+
+    /* ══════════════════════════════════════════════════
+       NEO-BRUTALIST CLOCK PICKER ⚡
+    ══════════════════════════════════════════════════ */
+
+    .time-picker-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(12px) saturate(180%);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 50000;
+      opacity: 0;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .time-picker-overlay.show {
+      display: flex;
+      opacity: 1;
+    }
+
+    .time-picker-modal {
+      background: #ffffff;
+      width: 420px;
+      border-radius: 40px;
+      padding: 35px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border: 5px solid #000;
+      box-shadow: 20px 20px 0px #000;
+      transform: scale(0.8) translateY(40px);
+      transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+    }
+
+    .time-picker-overlay.show .time-picker-modal {
+      transform: scale(1) translateY(0);
+    }
+
+    .time-picker-header {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .header-label {
+      font-size: 14px;
+      color: #64748b;
+      font-weight: 950;
+      margin-bottom: 25px;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      width: 100%;
+    }
+
+    .time-display-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      width: 100%;
+    }
+
+    .time-box {
+      width: 100px;
+      height: 100px;
+      background: #f1f5f9;
+      border-radius: 24px;
+      font-size: 52px;
+      font-weight: 950;
+      color: #000;
+      cursor: text;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 5px solid #000;
+      text-align: center;
+      outline: none;
+      font-family: 'Outfit', sans-serif;
+      line-height: 90px;
+      padding: 0;
+      caret-color: #005BAB;
+      box-shadow: 4px 4px 0px #000;
+    }
+    .time-box.active {
+      border-color: #005BAB;
+      background: #ffffff;
+      transform: scale(1.08) rotate(-2deg);
+      box-shadow: 8px 8px 0px #000;
+      color: #005BAB;
+    }
+
+    .time-colon {
+      font-size: 40px;
+      font-weight: 950;
+      color: black;
+    }
+
+    .period-selector {
+      display: flex;
+      border: 5px solid #000;
+      border-radius: 25px;
+      overflow: hidden;
+      margin-left: 15px;
+      background: #000;
+      width: 100px;
+      height: 50px;
+      box-shadow: 4px 4px 0px #000;
+    }
+    .period-option {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 950;
+      color: #ffffff;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      background: #1e293b;
+    }
+    .period-option.active {
+      background: #FFD200;
+      color: #000;
+    }
+    .period-option:not(:last-child) {
+      border-right: 5px solid #000;
+    }
+
+    .clock-dial-container {
+      width: 270px;
+      height: 270px;
+      background: #f8fafc;
+      border-radius: 50%;
+      position: relative;
+      margin: 0;
+      cursor: crosshair;
+      user-select: none;
+      box-sizing: border-box;
+    }
+    .dial-outer-wrapper {
+      padding: 0;
+      border: 5px solid #000;
+      border-radius: 50%;
+      margin: 35px auto;
+      box-shadow: inset 0px 0px 20px rgba(0,0,0,0.05), 10px 10px 0px rgba(0,0,0,0.05);
+    }
+
+    .dial-center {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 12px; height: 12px;
+      background: black;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 3;
+    }
+
+    .dial-number {
+      position: absolute;
+      width: 40px; height: 40px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 16px;
+      font-weight: 800;
+      color: #64748b;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .dial-number.active { 
+      color: #ffffff; 
+      font-weight: 950; 
+      z-index: 10;
+      opacity: 1 !important;
+    }
+
+    #clockSVG {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 2;
+    }
+    #svgHandLine {
+      stroke: #005BAB;
+      stroke-width: 6;
+      stroke-linecap: round;
+    }
+    #svgIndicatorCircle {
+      fill: #005BAB;
+      stroke: #000;
+      stroke-width: 4;
+      r: 26;
+      filter: drop-shadow(4px 4px 0px rgba(0,0,0,0.2));
+    }
+    #svgIndicatorText {
+      fill: white;
+      font-weight: 950;
+      font-size: 16px;
+      text-anchor: middle;
+      dominant-baseline: central;
+    }
+
+    .time-picker-footer {
+      display: flex;
+      width: 100%;
+      gap: 15px;
+      margin-top: 10px;
+    }
+    .footer-btn {
+      flex: 1;
+      padding: 15px;
+      border: 5px solid black;
+      border-radius: 20px;
+      background: white;
+      color: black;
+      font-weight: 950;
+      font-size: 18px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 6px 6px 0px black;
+    }
+    .footer-btn:hover {
+      transform: translate(-4px, -4px);
+      box-shadow: 10px 10px 0px black;
+    }
+    #timePickerOK {
+      background: #005BAB;
+      color: white;
+    }
+    #timePickerOK:hover {
+      background: #004a8b;
+    }
+    .footer-btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0px black;
+    }
+
   </style>
 </head>
-
 <body class="bg-white text-black font-bold">
   <div class="container">
     <aside class="sidebar">
@@ -91,10 +612,6 @@
         <a href="homepage.html" class="sidebar-link">
           <img src="images/HOME.png" alt="Home">
           <span>Home</span>
-        </a>
-        <a href="newschedule.html" class="sidebar-link">
-          <img src="images/ADD_SCHED.png" alt="New Schedule">
-          <span>New Schedule</span>
         </a>
         <a href="myschedule.html" class="sidebar-link">
           <img src="images/SCHED.png" alt="My Schedule">
@@ -109,7 +626,7 @@
           <span>Campus</span>
         </a>
         <a href="sectionspage.html" class="sidebar-link active">
-          <img src="images/SCHED.png" alt="Sections" style="filter: invert(1) brightness(2);">
+          <img src="images/SCHED.png" alt="Sections">
           <span>Sections</span>
         </a>
         <a href="event.html" class="sidebar-link">
@@ -117,9 +634,10 @@
           <span>Events</span>
         </a>
         <a href="curriculumpage.html" class="sidebar-link">
-          <img src="images/CURRICULUM.png" alt="Curriculum">
+          <img src="images/SCHED.png" alt="Curriculum" style="filter: hue-rotate(180deg);">
           <span>Curriculum</span>
         </a>
+        <!-- ADMIN ONLY 🛡️ -->
         <div id="adminSidebarLinks" style="display: none;">
           <a href="audit_logs.html" class="sidebar-link">
             <img src="images/SCHED.png" alt="Audit" style="filter: hue-rotate(180deg);">
@@ -133,18 +651,21 @@
       <header class="header">
         <div class="left-header">
           <div class="hamburger-btn">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round">
               <line x1="3" y1="12" x2="21" y2="12"></line>
               <line x1="3" y1="6" x2="21" y2="6"></line>
               <line x1="3" y1="18" x2="21" y2="18"></line>
             </svg>
           </div>
           <div class="logo-container" onclick="window.location.href='homepage.html'">
-            <img src="images/BANNER.png" class="logo-img" alt="SchedSync Logo" style="max-height: 100%; width: 100%; object-fit: contain;">
+            <img src="images/BANNER.png" class="logo-img" alt="SchedSync Logo"
+              style="max-height: 100%; width: 100%; object-fit: contain;">
           </div>
           <div class="search-wrapper">
             <img src="images/SEARCH.png" class="search-icon" alt="Search">
-            <input type="text" id="sectionSearch" class="search-button" placeholder="Search sections" aria-label="Search">
+            <input type="text" id="sectionSearch" class="search-button" placeholder="Search sections"
+              aria-label="Search">
           </div>
         </div>
         <div class="page-title">Sections</div>
@@ -162,13 +683,29 @@
       </header>
 
       <div class="main-layout">
-        <main class="flex-1 space-y-10 p-8">
+        <main class="flex-1 space-y-4 p-6">
           <section>
             <div class="flex justify-between items-center mb-6">
               <h2 class="text-2xl">Academic Sections</h2>
-              <button id="addSectionBtn" class="add-section-btn admin-only" style="display: none;">+ Add Section</button>
+              <div class="flex items-center gap-4">
+                <!-- Multi-select Action Bar -->
+                <div id="selectionBar" class="selection-bar">
+                  <div class="selection-count"><span id="selectedCount">0</span> Selected</div>
+                  <div class="flex gap-2">
+                    <button id="genEmailsBtn" class="bg-emerald-500 text-white border-2 border-black px-3 py-1.5 rounded-lg font-bold hover:bg-emerald-600 transition-colors text-sm">Gen Emails</button>
+                    <button id="multiDeleteBtn" class="bg-red-500 text-white border-2 border-black px-3 py-1.5 rounded-lg font-bold hover:bg-red-600 transition-colors text-sm">Delete</button>
+                    <button id="multiSchedBtn" class="bg-[#005BAB] text-white border-2 border-black px-3 py-1.5 rounded-lg font-bold hover:bg-blue-700 transition-colors text-sm">Create Sched</button>
+                    <button id="cancelSelectionBtn" class="bg-slate-200 text-black border-2 border-black px-3 py-1.5 rounded-lg font-bold hover:bg-slate-300 transition-colors text-sm">Cancel</button>
+                  </div>
+                </div>
+                <button id="clearAllBtn"
+                  class="bg-red-500 text-white border-[3px] border-black rounded-xl px-5 py-2.5 font-bold shadow-[4px_4px_0px_black] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_black] transition-all admin-only"
+                  style="display: none;">Clear All</button>
+                <button id="addSectionBtn" class="add-section-btn admin-only" style="display: none;">+ Add
+                  Section</button>
+              </div>
             </div>
-            
+
             <div id="sections-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
               <!-- Sections will be injected here -->
               <div class="loading-state col-span-full text-center py-10 opacity-50">Loading sections...</div>
@@ -180,48 +717,191 @@
   </div>
 
   <!-- MODAL FOR ADDING/EDITING SECTION -->
-  <div id="sectionModal" class="modal fixed inset-0 bg-black/60 z-[10000] hidden items-center justify-center">
-    <div class="bg-white dark:bg-slate-800 border-4 border-black p-8 rounded-2xl w-96 shadow-[8px_8px_0px_#000] relative">
-      <span id="closeModal" class="absolute top-4 right-4 text-2xl cursor-pointer">×</span>
-      <h2 id="modalTitle" class="text-2xl mb-6">Add New Section</h2>
-      <form id="sectionForm" class="space-y-4">
+  <div id="sectionModal"
+    class="modal fixed inset-0 bg-[var(--modal-overlay)] backdrop-blur-md z-[10000] hidden items-center justify-center p-4">
+    <div
+      class="bg-[var(--modal-bg)] border-[3px] border-black p-8 rounded-[2rem] w-full max-w-md shadow-[8px_8px_0px_#1a243d] dark:shadow-[8px_8px_0px_black] relative transform transition-all duration-300">
+      <span id="closeModal"
+        class="absolute top-6 right-6 text-3xl cursor-pointer hover:rotate-90 transition-transform text-slate-400">&times;</span>
+
+      <div class="mb-8">
+        <h2 id="modalTitle"
+          class="text-3xl font-black tracking-tight text-[var(--modal-text)] uppercase leading-none mb-2">Add New
+          Section</h2>
+        <div class="h-1.5 w-20 bg-[#005BAB] rounded-full"></div>
+      </div>
+
+      <form id="sectionForm" class="space-y-6">
         <input type="hidden" id="sectionId">
-        <div>
-          <label class="block mb-1 text-sm">Section Name</label>
-          <input type="text" id="sectionName" class="w-full border-2 border-black p-2 rounded-lg" placeholder="e.g. ABM 1201" required>
+
+        <div id="sectionCountGroup" class="space-y-2">
+          <label
+            class="block text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1">Number of
+            Sections</label>
+          <input type="number" id="sectionCount"
+            class="w-full bg-[var(--input-bg)] border-[2px] border-black p-4 rounded-2xl focus:ring-4 focus:ring-blue-500/20 outline-none transition-all font-bold text-[var(--input-text)]"
+            value="1" min="1" max="20" required>
         </div>
-        <div>
-          <label class="block mb-1 text-sm">Strand / Program</label>
-          <select id="sectionStrand" class="w-full border-2 border-black p-2 rounded-lg" required>
-            <option value="ABM">ABM</option>
-            <option value="STEM">STEM</option>
-            <option value="HUMSS">HUMSS</option>
-            <option value="ICT">ICT</option>
-            <option value="MAWD">MAWD</option>
-            <option value="BSAIS">BSAIS</option>
-            <option value="BSCS">BSCS</option>
-            <option value="BSIT">BSIT</option>
-            <option value="BSHM">BSHM</option>
-            <option value="BSTM">BSTM</option>
-          </select>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <label
+              class="block text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1">Program</label>
+            <select id="sectionStrand"
+              class="w-full bg-[var(--input-bg)] border-[2px] border-black p-4 rounded-2xl outline-none font-bold text-[var(--input-text)] appearance-none cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+              required>
+              <option value="ABM">ABM</option>
+              <option value="STEM">STEM</option>
+              <option value="HUMSS">HUMSS</option>
+              <option value="ICT">ICT</option>
+              <option value="MAWD">MAWD</option>
+              <option value="BSAIS">BSAIS</option>
+              <option value="BSCS">BSCS</option>
+              <option value="BSIT">BSIT</option>
+              <option value="BSHM">BSHM</option>
+              <option value="BSTM">BSTM</option>
+            </select>
+          </div>
+
+          <div class="space-y-2">
+            <label
+              class="block text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1">Grade</label>
+            <select id="sectionGrade"
+              class="w-full bg-[var(--input-bg)] border-[2px] border-black p-4 rounded-2xl outline-none font-bold text-[var(--input-text)] appearance-none cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+              required>
+              <option value="11">Grade 11</option>
+              <option value="12">Grade 12</option>
+              <option value="1st Year">1st Year</option>
+              <option value="2nd Year">2nd Year</option>
+              <option value="3rd Year">3rd Year</option>
+              <option value="4th Year">4th Year</option>
+            </select>
+          </div>
         </div>
-        <div>
-          <label class="block mb-1 text-sm">Grade Level</label>
-          <select id="sectionGrade" class="w-full border-2 border-black p-2 rounded-lg" required>
-            <option value="11">Grade 11</option>
-            <option value="12">Grade 12</option>
-            <option value="1st Year">1st Year</option>
-            <option value="2nd Year">2nd Year</option>
-            <option value="3rd Year">3rd Year</option>
-            <option value="4th Year">4th Year</option>
-          </select>
+
+        <div class="pt-4 space-y-3">
+          <button type="submit"
+            class="w-full bg-[#005BAB] text-white border-[3px] border-black p-4 rounded-2xl shadow-[5px_5px_0px_black] font-black text-lg uppercase hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[8px_8px_0px_black] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all">
+            SAVE SECTION
+          </button>
+
+          <button type="button" id="deleteSectionBtn"
+            class="w-full bg-white dark:bg-slate-900 text-red-500 border-[2px] border-red-500/20 hover:border-red-500 p-3 rounded-2xl font-black text-sm uppercase transition-all hidden">
+            DELETE SECTION
+          </button>
         </div>
-        <button type="submit" class="w-full bg-[#005BAB] text-white border-2 border-black p-3 rounded-lg shadow-[4px_4px_0px_#000] font-bold">SAVE SECTION</button>
-        <button type="button" id="deleteSectionBtn" class="w-full bg-red-500 text-white border-2 border-black p-2 rounded-lg font-bold hidden">DELETE SECTION</button>
       </form>
     </div>
   </div>
 
+  <!-- MODAL FOR CREATING SCHEDULE -->
+  <div id="scheduleModal"
+    class="modal fixed inset-0 bg-[var(--modal-overlay)] backdrop-blur-md z-[10000] hidden items-center justify-center p-4">
+    <div
+      class="bg-white border-[3.5px] border-black p-10 rounded-[2.5rem] w-full max-w-2xl shadow-[15px_15px_0px_black] relative transform transition-all duration-300 max-h-[90vh] overflow-y-auto">
+      <span id="closeScheduleModal"
+        class="absolute top-8 right-8 text-4xl font-black cursor-pointer hover:rotate-90 transition-transform text-slate-400 hover:text-red-500">&times;</span>
+
+      <div class="mb-10">
+        <h2 class="text-4xl font-black tracking-tighter text-[var(--modal-text)] uppercase leading-none mb-3">Schedule Info</h2>
+        <div class="h-2 w-24 bg-[#FFD200] rounded-full"></div>
+      </div>
+
+      <form id="scheduleForm" class="space-y-8">
+        <!-- Row 1: Category -->
+        <div class="space-y-3">
+          <label class="form-label">Schedule Type</label>
+          <div class="schedule-type-toggle" id="scheduleTypeToggle" data-type="regular">
+            <button type="button" class="type-btn active" data-type="regular">Regular</button>
+            <button type="button" class="type-btn" data-type="exam">Exam</button>
+          </div>
+        </div>
+
+        <!-- Row 2: Identification & Time -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-3 md:col-span-2">
+            <label class="form-label">Schedule Name</label>
+            <div class="modal-input-wrapper">
+              <input type="text" id="scheduleNameInput" placeholder="Enter schedule name">
+            </div>
+          </div>
+          <div class="space-y-3">
+            <label class="form-label">Start Time</label>
+            <div class="modal-input-wrapper">
+              <input id="startTimeInput" type="time" required>
+            </div>
+          </div>
+          <div class="space-y-3">
+            <label class="form-label">End Time</label>
+            <div class="modal-input-wrapper">
+              <input id="endTimeInput" type="time" required>
+            </div>
+          </div>        </div>
+
+        <!-- Row 3: Quick Select Days -->
+        <div class="space-y-3">
+          <label class="form-label">Quick Select Days</label>
+          <div class="day-selector-group" id="quickSelectGroup">
+            <button type="button" class="quick-select-btn active" data-days="Mon-Fri">Mon-Fri</button>
+            <button type="button" class="quick-select-btn" data-days="Mon-Sat">Mon-Sat</button>
+            <button type="button" class="quick-select-btn" data-days="MWF">MWF</button>
+            <button type="button" class="quick-select-btn" data-days="TThS">TThS</button>
+          </div>
+        </div>
+
+        <!-- Row 4: Individual Day Select -->
+        <div class="space-y-3">
+          <label class="form-label">Select Days Individually</label>
+          <div class="day-selector-group" id="individualDaysGroup">
+            <button type="button" class="day-chip active" data-day="Monday">Monday</button>
+            <button type="button" class="day-chip active" data-day="Tuesday">Tuesday</button>
+            <button type="button" class="day-chip active" data-day="Wednesday">Wednesday</button>
+            <button type="button" class="day-chip active" data-day="Thursday">Thursday</button>
+            <button type="button" class="day-chip active" data-day="Friday">Friday</button>
+            <button type="button" class="day-chip" data-day="Saturday">Saturday</button>
+            <button type="button" class="day-chip" data-day="Sunday">Sunday</button>
+          </div>
+        </div>
+
+        <button type="submit" class="save-sched-btn">
+          SAVE SCHEDULE
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="role-restriction.js"></script>
   <script type="module" src="sectionspage.js"></script>
+  <script type="module" src="ui-effects.js"></script>
+  <script type="module" src="realtime-notifications.js"></script>
+  <nav class="mobile-bottom-nav" id="mobileBottomNav">
+    <a href="homepage.html" class="mob-nav-item" data-page="homepage">
+      <img src="images/HOME.png" alt="Home"><span>Home</span>
+    </a>
+    <a href="myschedule.html" class="mob-nav-item" data-page="myschedule">
+      <img src="images/SCHED.png" alt="My Schedule"><span>My Sched</span>
+    </a>
+    <a href="facultypage.html" class="mob-nav-item" data-page="facultypage">
+      <img src="images/FACULTY.png" alt="Faculty"><span>Faculty</span>
+    </a>
+    <a href="campuspage.html" class="mob-nav-item" data-page="campuspage">
+      <img src="images/CAMPUS_ONE.png" alt="Campus"><span>Campus</span>
+    </a>
+    <a href="sectionspage.html" class="mob-nav-item active" data-page="sections">
+      <img src="images/SCHED.png" alt="Sections">
+      <span>Sections</span>
+    </a>
+    <a href="event.html" class="mob-nav-item" data-page="event">
+      <img src="images/EVENT_MODE.png" alt="Events"><span>Events</span>
+    </a>
+    <a href="curriculumpage.html" class="mob-nav-item" data-page="curriculumpage">
+      <img src="images/SCHED.png" alt="Curriculum" style="filter: hue-rotate(180deg);"><span>Curriculum</span>
+    </a>
+    <!-- ADMIN ONLY 🛡️ shown via JS -->
+    <a href="audit_logs.html" class="mob-nav-item admin-only" data-page="audit_logs" style="display:none">
+      <img src="images/SCHED.png" alt="Audit Logs" style="filter: hue-rotate(180deg);"><span>Audit</span>
+    </a>
+  </nav>
 </body>
+
 </html>

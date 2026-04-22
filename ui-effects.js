@@ -119,10 +119,14 @@ const injectGlobalTransitions = () => {
         .professional-mode .create-event-plus-circle,
         .professional-mode .dg-modal,
         .professional-mode .event-modal-content,
+        .professional-mode .modal > div,
+        .professional-mode .maangas-confirm-box,
         .professional-mode .schedule-type-toggle,
         .professional-mode .panel,
         .professional-mode .table-scroll,
         .professional-mode .pill,
+        .professional-mode input,
+        .professional-mode select,
         .professional-mode .comment-entry {
             box-shadow: none !important;
             border-radius: 12px !important;
@@ -431,14 +435,14 @@ const injectGlobalTransitions = () => {
         .sidebar {
             transition: width 0.6s cubic-bezier(0.19, 1, 0.22, 1), background-color 0.4s ease !important;
             border-top-right-radius: 40px !important;
-            overflow: hidden !important;
-            background: linear-gradient(to bottom, #FFD200 115px, #002044 115px) !important;
+            overflow-y: auto !important; overflow-x: hidden !important; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+            background: linear-gradient(to bottom, #FFD200 115px, var(--sidebar-bg) 115px) !important;
         }
 
         .sidebar.collapsed {
             width: 80px !important;
             border-top-right-radius: 40px !important;
-            background: linear-gradient(to bottom, #FFD200 100px, #002044 100px) !important;
+            background: linear-gradient(to bottom, #FFD200 100px, var(--sidebar-bg) 100px) !important;
         }
 
         .sidebar.collapsed .sidebar-link span {
@@ -510,7 +514,7 @@ const injectGlobalTransitions = () => {
 
         /* ENSURE MAANGAS SIDEBAR STYLE GLOBALLY ⚓⚓⚓ */
         .sidebar {
-            background: linear-gradient(to bottom, #FFD200 115px, #002044 115px) !important;
+            background: linear-gradient(to bottom, #FFD200 115px, var(--sidebar-bg) 115px) !important;
             border-right: none !important;
         }
 
@@ -535,13 +539,13 @@ const injectGlobalTransitions = () => {
 
         .sidebar-link.active {
             background-color: white !important;
-            color: #002044 !important;
+            color: var(--sidebar-bg) !important;
             border-radius: 35px 0 0 35px !important;
             box-shadow: 0 4px 15px rgba(255, 210, 0, 0.3) !important;
         }
 
         .sidebar-link.active span {
-            color: #002044 !important;
+            color: var(--sidebar-bg) !important;
             font-weight: 700 !important;
         }
 

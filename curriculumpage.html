@@ -1,34 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#005BAB">
   <script>
-      (function () {
-          const theme = localStorage.getItem("theme");
-          if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-              document.documentElement.classList.add("dark");
-          }
-          const uiMode = localStorage.getItem("uiMode");
-          const userRole = localStorage.getItem("userRole");
-          const mode = uiMode || ((userRole === 'teacher' || userRole === 'admin') ? 'professional' : 'student');
-          if (mode === 'professional') {
-              document.documentElement.classList.add("professional-mode");
-          }
-      })();
+    (function () {
+      const theme = localStorage.getItem("theme");
+      if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+        document.documentElement.classList.add("dark");
+      }
+      const uiMode = localStorage.getItem("uiMode");
+      const userRole = localStorage.getItem("userRole");
+      const mode = uiMode || ((userRole === 'teacher' || userRole === 'admin') ? 'professional' : 'student');
+      if (mode === 'professional') {
+        document.documentElement.classList.add("professional-mode");
+      }
+    })();
   </script>
   <script type="module" src="role-restriction.js"></script>
   <script type="module" src="curriculumpage.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- Tailwind CSS CDN ⚡ Required for Modal UI -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
   <link rel="stylesheet" href="header-styles.css" />
   <link rel="stylesheet" href="skeleton.css" />
   <link rel="stylesheet" href="curriculumpage_styles.css" />
-  <title>SchedSync - Curriculum</title>
+  <title>SchedSync - Curriculum Management</title>
 </head>
-<body>
+
+<body class="bg-white text-black font-bold overflow-x-hidden">
   <div class="container">
     <aside class="sidebar">
       <div class="sidebar-header" onclick="window.location.href='homepage.html'">
@@ -36,33 +40,38 @@
       </div>
       <nav class="sidebar-menu">
         <a href="homepage.html" class="sidebar-link">
-          <img src="images/HOME.png" alt="Home"><span>Home</span>
-        </a>
-        <a href="newschedule.html" class="sidebar-link">
-          <img src="images/ADD_SCHED.png" alt="New Schedule"><span>New Schedule</span>
+          <img src="images/HOME.png" alt="Home">
+          <span>Home</span>
         </a>
         <a href="myschedule.html" class="sidebar-link">
-          <img src="images/SCHED.png" alt="My Schedule"><span>My Schedule</span>
+          <img src="images/SCHED.png" alt="My Schedule">
+          <span>My Schedule</span>
         </a>
         <a href="facultypage.html" class="sidebar-link">
-          <img src="images/FACULTY.png" alt="Faculty"><span>Faculty</span>
+          <img src="images/FACULTY.png" alt="Faculty">
+          <span>Faculty</span>
         </a>
         <a href="campuspage.html" class="sidebar-link">
-          <img src="images/CAMPUS_ONE.png" alt="Campus"><span>Campus</span>
+          <img src="images/CAMPUS_ONE.png" alt="Campus">
+          <span>Campus</span>
         </a>
         <a href="sectionspage.html" class="sidebar-link">
-          <img src="images/SCHED.png" alt="Sections" style="filter: invert(1) brightness(2);">
+          <img src="images/SCHED.png" alt="Sections">
           <span>Sections</span>
         </a>
         <a href="event.html" class="sidebar-link">
-          <img src="images/EVENT_MODE.png" alt="Events"><span>Events</span>
+          <img src="images/EVENT_MODE.png" alt="Events">
+          <span>Events</span>
         </a>
         <a href="curriculumpage.html" class="sidebar-link active">
-          <img src="images/CURRICULUM.png" alt="Curriculum"><span>Curriculum</span>
+          <img src="images/SCHED.png" alt="Curriculum" style="filter: hue-rotate(180deg);">
+          <span>Curriculum</span>
         </a>
+        <!-- ADMIN ONLY 🛡️ -->
         <div id="adminSidebarLinks" style="display: none;">
           <a href="audit_logs.html" class="sidebar-link">
-            <img src="images/SCHED.png" alt="Audit" style="filter: hue-rotate(180deg);"><span>Audit Logs</span>
+            <img src="images/SCHED.png" alt="Audit" style="filter: hue-rotate(180deg);">
+            <span>Audit Logs</span>
           </a>
         </div>
       </nav>
@@ -80,7 +89,8 @@
             </svg>
           </div>
           <div class="logo-container" onclick="window.location.href='homepage.html'">
-            <img src="images/BANNER.png" class="logo-img" alt="SchedSync Logo" style="max-height: 100%; width: 100%; object-fit: contain;">
+            <img src="images/BANNER.png" class="logo-img" alt="SchedSync Logo"
+              style="max-height: 100%; width: 100%; object-fit: contain;">
           </div>
           <div class="search-wrapper">
             <img src="images/SEARCH.png" class="search-icon" alt="Search">
@@ -101,45 +111,83 @@
         </div>
       </header>
 
-      <main class="dashboard-container">
-        
-        <div class="top-controls">
-           <button id="addSubjectBtn" class="add-btn admin-only" style="display: none;">+ Add Subject</button>
-           <button id="migrateDataBtn" class="migrate-btn admin-only" style="display: none;">Migrate Static Data</button>
-           <label for="pdfUpload" class="add-btn admin-only" style="display: none; cursor: pointer; background: #10b981;">
-             + Attach Curriculum PDF
-             <input type="file" id="pdfUpload" accept=".pdf" style="display: none;">
-           </label>
-           <button id="clearAllBtn" class="delete-btn admin-only" style="display: none; background: #ef4444; color: white;">Clear All</button>
+      <main class="dashboard-container p-6">
+        <div class="top-controls flex flex-wrap gap-4 mb-8">
+          <button id="addSubjectBtn"
+            class="bg-[#005BAB] text-white border-[3px] border-black rounded-xl px-5 py-2.5 font-bold shadow-[4px_4px_0px_black] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_black] transition-all admin-only"
+            style="display: none;">+ Add Subject</button>
+          <button id="migrateDataBtn"
+            class="bg-[#FFD200] text-black border-[3px] border-black rounded-xl px-5 py-2.5 font-bold shadow-[4px_4px_0px_black] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_black] transition-all admin-only"
+            style="display: none;">Migrate Static Data</button>
+          <label for="pdfUpload"
+            class="bg-[#10b981] text-white border-[3px] border-black rounded-xl px-5 py-2.5 font-bold shadow-[4px_4px_0px_black] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_black] transition-all admin-only"
+            style="display: none; cursor: pointer;">
+            + Attach Curriculum PDF(s)
+            <input type="file" id="pdfUpload" accept=".pdf" multiple style="display: none;">
+          </label>
+          <button id="clearAllBtn"
+            class="bg-red-500 text-white border-[3px] border-black rounded-xl px-5 py-2.5 font-bold shadow-[4px_4px_0px_black] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_black] transition-all admin-only"
+            style="display: none;">Clear All</button>
         </div>
 
-        <div class="curriculum-grid" id="curriculumGrid">
-           <!-- Dynamic cards injected here -->
+        <div class="curriculum-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="curriculumGrid">
+          <!-- Dynamic cards injected here -->
+          <div class="col-span-full text-center py-20 opacity-40">No curriculum data available. Attach a PDF to get
+            started.</div>
         </div>
-
       </main>
     </div> <!-- closes main-content-wrapper -->
   </div> <!-- closes container -->
 
-  <!-- MODALS -->
-  <div id="subjectModal" class="modal" style="display: none;">
-    <div class="modal-content">
-      <span class="close-modal" id="closeModalBtn">&times;</span>
-      <h2 id="modalTitle">Manage Subject</h2>
-      <form id="subjectForm">
+  <!-- MODAL FOR SUBJECTS -->
+  <div id="subjectModal"
+    class="modal fixed inset-0 bg-[var(--modal-overlay)] backdrop-blur-md z-[10000] hidden items-center justify-center p-4">
+    <div
+      class="bg-[var(--modal-bg)] border-[3px] border-black p-8 rounded-[2rem] w-full max-w-md shadow-[8px_8px_0px_#1a243d] dark:shadow-[8px_8px_0px_black] relative transform transition-all duration-300">
+      <span id="closeModalBtn"
+        class="absolute top-6 right-6 text-3xl cursor-pointer hover:rotate-90 transition-transform text-slate-400">&times;</span>
+
+      <div class="mb-8">
+        <h2 id="modalTitle"
+          class="text-3xl font-black tracking-tight text-[var(--modal-text)] uppercase leading-none mb-2">Manage Subject
+        </h2>
+        <div class="h-1.5 w-20 bg-[#005BAB] rounded-full"></div>
+      </div>
+
+      <form id="subjectForm" class="space-y-6">
         <input type="hidden" id="subjectId">
         <input type="hidden" id="courseId">
         <input type="hidden" id="termName">
-        <div class="form-group">
-          <label for="subjectName">Subject Name</label>
-          <input type="text" id="subjectName" required>
+
+        <div class="space-y-2">
+          <label
+            class="block text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1">Subject
+            Name</label>
+          <input type="text" id="subjectName"
+            class="w-full bg-[var(--input-bg)] border-[2px] border-black p-4 rounded-2xl focus:ring-4 focus:ring-blue-500/20 outline-none transition-all font-bold placeholder:opacity-30 text-[var(--input-text)]"
+            placeholder="e.g. Data Structures" required>
         </div>
-        <div class="form-group">
-          <label for="subjectCategory">Category / Strand (Optional)</label>
-          <input type="text" id="subjectCategory" placeholder="e.g. Major, Core, etc.">
+
+        <div class="space-y-2">
+          <label
+            class="block text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1">Category /
+            Strand</label>
+          <input type="text" id="subjectCategory"
+            class="w-full bg-[var(--input-bg)] border-[2px] border-black p-4 rounded-2xl outline-none font-bold text-[var(--input-text)] placeholder:opacity-30"
+            placeholder="e.g. Major, Core, etc.">
         </div>
-        <button type="submit" class="submit-btn" id="saveSubjectBtn">Save Subject</button>
-        <button type="button" class="delete-btn" id="deleteSubjectBtn" style="display: none; background: #ef4444; color: white;">Delete Subject</button>
+
+        <div class="pt-4 space-y-3">
+          <button type="submit" id="saveSubjectBtn"
+            class="w-full bg-[#005BAB] text-white border-[3px] border-black p-4 rounded-2xl shadow-[5px_5px_0px_black] font-black text-lg uppercase hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[8px_8px_0px_black] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all">
+            SAVE SUBJECT
+          </button>
+
+          <button type="button" id="deleteSubjectBtn"
+            class="w-full bg-white dark:bg-slate-900 text-red-500 border-[2px] border-red-500/20 hover:border-red-500 p-3 rounded-2xl font-black text-sm uppercase transition-all hidden">
+            DELETE SUBJECT
+          </button>
+        </div>
       </form>
     </div>
   </div>
@@ -147,31 +195,33 @@
   <script type="module" src="ui-effects.js"></script>
 
   <nav class="mobile-bottom-nav" id="mobileBottomNav">
-    <a href="homepage.html"    class="mob-nav-item" data-page="homepage">
+    <a href="homepage.html" class="mob-nav-item" data-page="homepage">
       <img src="images/HOME.png" alt="Home"><span>Home</span>
     </a>
-    <a href="newschedule.html" class="mob-nav-item" data-page="newschedule">
-      <img src="images/ADD_SCHED.png" alt="New Schedule"><span>New Sched</span>
-    </a>
-    <a href="myschedule.html"  class="mob-nav-item" data-page="myschedule">
+    <a href="myschedule.html" class="mob-nav-item" data-page="myschedule">
       <img src="images/SCHED.png" alt="My Schedule"><span>My Sched</span>
     </a>
     <a href="facultypage.html" class="mob-nav-item" data-page="facultypage">
       <img src="images/FACULTY.png" alt="Faculty"><span>Faculty</span>
     </a>
-    <a href="campuspage.html"  class="mob-nav-item" data-page="campuspage">
+    <a href="campuspage.html" class="mob-nav-item" data-page="campuspage">
       <img src="images/CAMPUS_ONE.png" alt="Campus"><span>Campus</span>
     </a>
     <a href="sectionspage.html" class="mob-nav-item" data-page="sections">
-      <img src="images/SCHED.png" alt="Sections" style="filter: invert(1) brightness(2);">
+      <img src="images/SCHED.png" alt="Sections">
       <span>Sections</span>
     </a>
-    <a href="curriculumpage.html" class="mob-nav-item active" data-page="curriculumpage">
-      <img src="images/CURRICULUM.png" alt="Curriculum"><span>Curriculum</span>
+    <a href="event.html" class="mob-nav-item" data-page="event">
+      <img src="images/EVENT_MODE.png" alt="Events"><span>Events</span>
     </a>
-    <a href="audit_logs.html"  class="mob-nav-item admin-only" data-page="audit_logs" style="display:none">
-      <img src="images/SCHED.png" alt="Audit Logs"><span>Audit</span>
+    <a href="curriculumpage.html" class="mob-nav-item active" data-page="curriculumpage">
+      <img src="images/SCHED.png" alt="Curriculum" style="filter: hue-rotate(180deg);"><span>Curriculum</span>
+    </a>
+    <!-- ADMIN ONLY 🛡️ shown via JS -->
+    <a href="audit_logs.html" class="mob-nav-item admin-only" data-page="audit_logs" style="display:none">
+      <img src="images/SCHED.png" alt="Audit Logs" style="filter: hue-rotate(180deg);"><span>Audit</span>
     </a>
   </nav>
 </body>
+
 </html>

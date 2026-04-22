@@ -53,8 +53,16 @@ body {
     z-index: 1001;
     border: none !important;
     border-top-right-radius: 40px !important;
-    overflow: hidden !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    /* HIDE SCROLLBAR BUT KEEP SCROLLING 🛡️ */
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
     flex-shrink: 0;
+}
+
+.sidebar::-webkit-scrollbar {
+    display: none !important;
 }
 
 .sidebar-header {
@@ -63,9 +71,17 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    border-top-right-radius: 40px;
+    border-top-right-radius: 0 !important;
     cursor: pointer;
-    margin-bottom: 2rem;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1000 !important;
+    margin-bottom: -1px !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: auto !important;
+    min-width: 100% !important;
+    align-self: stretch !important;
 }
 
 .sidebar-header img {
@@ -162,7 +178,7 @@ body {
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
         border-radius: 0 40px 40px 0 !important;
         display: flex !important;
-        background: linear-gradient(to bottom, #FFD200 150px, #002044 150px) !important;
+        background-color: #002044 !important;
         pointer-events: auto !important;
     }
 
@@ -202,6 +218,17 @@ body {
     .sidebar-header {
         display: flex !important;
         padding: 2rem !important;
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 1000 !important;
+        background-color: #FFD200 !important;
+        margin-bottom: -1px !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: auto !important;
+        min-width: 100% !important;
+        align-self: stretch !important;
+        border-top-right-radius: 0 !important;
     }
 
     .sidebar-menu {
@@ -1263,13 +1290,13 @@ td {
 @media (max-width: 768px), (max-width: 950px) and (orientation: landscape) {
     .panel, #commentPanel {
         position: fixed !important;
-        top: 50% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) scale(0.9) !important;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.9);
         width: 92% !important;
         max-width: 450px !important;
         max-height: 85vh !important;
-        z-index: 6000 !important;
+        z-index: 8000 !important;
         margin: 0 !important;
         pointer-events: none !important;
         opacity: 0 !important;
@@ -1279,7 +1306,7 @@ td {
     .panel.open, #commentPanel.open {
         opacity: 1 !important;
         visibility: visible !important;
-        transform: translate(-50%, -50%) scale(1) !important;
+        transform: translate(-50%, -50%) scale(1);
         pointer-events: auto !important;
         box-shadow: 6px 6px 0px black, 0 0 0 200vw rgba(0,0,0,0.6) !important;
     }

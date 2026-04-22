@@ -7,11 +7,8 @@
   <title>SchedSync - Login</title>
   <script>
     (function () {
-      // 1. Theme Lock 🌙
-      const theme = localStorage.getItem("theme");
-      if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-        document.documentElement.classList.add("dark");
-      }
+      // 1. Theme Lock 🌙 - Always Light for Login
+      document.documentElement.classList.remove("dark");
 
       // 2. UI Mode Lock 👔
       const uiMode = localStorage.getItem("uiMode");
@@ -31,7 +28,7 @@
     </header>
 
     <main class="login-container">
-      <h2>Login</h2>
+      <h2>Login now</h2>
 
       <div id="notification" class="notification"></div>
 

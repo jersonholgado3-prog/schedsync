@@ -51,7 +51,7 @@ body {
     overflow: hidden;
     padding: 0.5rem;
     gap: 0.5rem;
-    border: 3px solid black;
+    border: 2px solid black;
     border-radius: 20px;
     box-sizing: border-box;
     cursor: pointer;
@@ -157,10 +157,10 @@ body {
     height: 45px;
     cursor: pointer;
     padding: 8px;
-    border: 3px solid black;
+    border: 2px solid black;
     border-radius: 12px;
     background-color: white;
-    box-shadow: 3px 3px 0px black;
+    box-shadow: 2px 2px 0px black;
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -177,7 +177,7 @@ body {
     height: 70px;
     align-items: center;
     padding: 0 1.25rem;
-    border: 3px solid black;
+    border: 2px solid black;
     border-radius: 20px;
     cursor: pointer;
     background-color: white;
@@ -233,7 +233,7 @@ body {
     z-index: 5000 !important;
     border: none !important;
     border-top-right-radius: 40px !important;
-    overflow: hidden !important;
+    overflow-y: auto !important; overflow-x: hidden !important; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
     flex-shrink: 0;
 }
 
@@ -389,7 +389,7 @@ body {
 /* Event Card */
 .event-card {
     display: flex;
-    border: 3px solid black;
+    border: 2px solid black;
     border-radius: 30px;
     padding: 1.25rem;
     margin-bottom: 1.5rem;
@@ -756,17 +756,17 @@ body {
 
 
 .create-event-page {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
     background: var(--dg-overlay);
     backdrop-filter: var(--dg-glass);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 2000;
+    z-index: 9999;
     animation: dg-fade 0.3s ease-out;
 }
 
@@ -782,15 +782,24 @@ body {
 
 .dg-modal {
     background: var(--dg-bg);
-    border: 3px solid #000;
+    border: 2px solid #000;
     border-radius: 32px;
     width: 95%;
     max-width: 520px;
-    overflow: hidden;
+    max-height: 90vh;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     box-shadow: 8px 8px 0px #000;
     animation: dg-slide 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dg-modal::-webkit-scrollbar {
+    width: 6px;
+}
+.dg-modal::-webkit-scrollbar-thumb {
+    background: #000;
+    border-radius: 10px;
 }
 
 @keyframes dg-slide {
@@ -815,17 +824,18 @@ body {
 }
 
 .dg-title {
-    font-size: 1.5rem;
-    font-weight: 800;
+    font-size: 1.4rem;
+    font-weight: 850;
     letter-spacing: -0.02em;
     color: var(--dg-text-bright);
+    line-height: 1.2;
 }
 
 .dg-close-btn {
     width: 38px;
     height: 38px;
     border-radius: 12px;
-    border: 3px solid #000;
+    border: 2px solid #000;
     background: var(--dg-card-bg);
     color: var(--dg-text-bright);
     display: flex;
@@ -845,7 +855,7 @@ body {
 }
 
 .dg-body {
-    padding: 2.5rem;
+    padding: 1.5rem;
 }
 
 /* Type Selection */
@@ -907,16 +917,16 @@ body {
 }
 
 .dg-label {
-    font-size: 0.85rem;
-    font-weight: 600;
+    font-size: 0.75rem;
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #6366f1;
+    letter-spacing: 0.12em;
+    color: #4f46e5;
 }
 
 .dg-input {
     background: var(--dg-input-bg);
-    border: 3px solid #000;
+    border: 2px solid #000;
     border-radius: 16px;
     padding: 0.9rem 1.25rem;
     color: var(--dg-text-bright);
@@ -939,17 +949,17 @@ body {
 }
 
 .dg-btn {
-    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    background: #4f46e5;
     color: #fff;
-    border: 3px solid #000;
-    border-radius: 18px;
-    padding: 1.1rem;
-    font-size: 1.1rem;
-    font-weight: 700;
+    border: 2px solid #000;
+    border-radius: 20px;
+    padding: 1rem;
+    font-size: 1rem;
+    font-weight: 800;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.2s;
     box-shadow: 4px 4px 0px #000;
-    margin-top: 1rem;
+    margin-top: 0.5rem;
 }
 
 .dg-btn:hover {
@@ -986,7 +996,7 @@ body {
 
 .dg-resolution-card {
     background: var(--dg-card-bg);
-    border: 3px solid #000;
+    border: 2px solid #000;
     border-radius: 20px;
     padding: 1.5rem;
     margin-bottom: 1.25rem;
@@ -1209,6 +1219,7 @@ body {
 
 .dg-dial-num.active {
     color: var(--dg-accent);
+    opacity: 0;
 }
 
 .dg-dial-hand {
@@ -1216,7 +1227,7 @@ body {
     bottom: 50%;
     left: 50%;
     width: 2px;
-    height: 75px;
+    height: 81px;
     background: var(--dg-accent);
     transform-origin: bottom center;
     pointer-events: none;
@@ -1507,12 +1518,43 @@ body {
         justify-content: center;
         width: 45px;
         height: 45px;
-        border: 3px solid black;
+        border: 2px solid black;
         border-radius: 12px;
         background: white;
-        box-shadow: 3px 3px 0px black;
+        box-shadow: 2px 2px 0px black;
         cursor: pointer;
-        z-index: 1002;
+        z-index: 100;
+    }
+
+    /* Mobile Modal Tweaks 📱⚓ */
+    .create-event-page {
+        z-index: 10000 !important;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.4) !important;
+    }
+
+    .dg-modal {
+        margin-top: 0 !important;
+        border-radius: 24px !important;
+        max-height: 92vh !important;
+    }
+
+    .dg-header {
+        padding: 1rem 1.25rem !important;
+    }
+
+    .dg-body {
+        padding: 1.25rem !important;
+    }
+
+    .dg-row {
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem !important;
+    }
+
+    .dg-btn {
+        padding: 0.8rem !important;
+        font-size: 0.95rem !important;
     }
 
     .hamburger-btn:active {
@@ -1529,7 +1571,7 @@ body {
     .logo-container {
         width: 140px !important;
         height: 45px !important;
-        box-shadow: 3px 3px 0px black !important;
+        box-shadow: 2px 2px 0px black !important;
     }
 
     .logo-container img {
@@ -1575,7 +1617,7 @@ body {
         height: 45px !important;
         width: 45px !important;
         border-radius: 12px !important;
-        box-shadow: 3px 3px 0px black !important;
+        box-shadow: 2px 2px 0px black !important;
         margin-left: 0 !important;
     }
 
@@ -1615,7 +1657,7 @@ body {
     position: relative !important;
     z-index: 1000 !important;
     background-color: #fff !important;
-    border: 3px solid black !important;
+    border: 2px solid black !important;
     border-radius: 20px !important;
     box-shadow: 6px 6px 0px black !important;
     margin: 1.5rem 1.5rem 0 1.5rem !important;
@@ -1639,7 +1681,7 @@ body {
 .logo-container {
     width: 250px !important;
     height: 65px !important;
-    border: 3px solid black !important;
+    border: 2px solid black !important;
     border-radius: 15px !important;
     background-color: white !important;
     box-shadow: 4px 4px 0px black !important;
@@ -1709,7 +1751,7 @@ body {
     align-items: center !important;
     gap: 0.75rem !important;
     padding: 0.5rem 1rem !important;
-    border: 3px solid black !important;
+    border: 2px solid black !important;
     border-radius: 50px !important;
     background-color: white !important;
     box-shadow: 4px 4px 0px black !important;
@@ -1737,7 +1779,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 3px solid black;
+    border: 2px solid black;
     border-radius: 12px;
     background-color: white;
     box-shadow: 4px 4px 0px black;
@@ -1811,6 +1853,25 @@ body {
     .user-section {
         max-width: none !important;
     }
+}
+
+/* Ensure Edit Event (Pencil) is visible on mobile 📱⚓ */
+@media (max-width: 1024px) {
+  .event-card .absolute.right-4.opacity-0,
+  .event-card div.absolute.right-4 {
+    opacity: 1 !important;
+    visibility: visible !important;
+    position: relative !important;
+    transform: none !important;
+    top: auto !important;
+    right: auto !important;
+    margin-top: 10px !important;
+    justify-content: flex-end !important;
+  }
+  
+  .event-card > div.flex {
+     flex-wrap: wrap !important;
+  }
 }
 
 /* Consolidating redundant CSS ... done! */

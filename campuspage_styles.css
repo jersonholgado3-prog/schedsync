@@ -22,7 +22,6 @@
     min-width: 0;
     height: 100vh;
     overflow-y: auto;
-    padding-left: 200px; /* Desktop Sidebar Space 📐 */
 }
 
 @media (max-width: 768px), (max-width: 950px) and (orientation: landscape) {
@@ -224,15 +223,23 @@
     flex-direction: column;
     width: 200px;
     height: 100vh;
-    background: linear-gradient(to bottom, #FFD200 150px, #002044 150px);
+    background-color: #002044 !important;
     position: fixed;
     top: 0;
     left: 0;
     z-index: 1001;
     border: none !important;
     border-top-right-radius: 40px !important;
-    overflow: hidden !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    /* HIDE SCROLLBAR BUT KEEP SCROLLING 🛡️ */
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
     flex-shrink: 0;
+}
+
+.sidebar::-webkit-scrollbar {
+    display: none !important;
 }
 
 .sidebar-header {
@@ -241,9 +248,18 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    border-top-right-radius: 40px;
+    left: 0 !important;
+    right: 0 !important;
+    width: auto !important;
+    min-width: 100% !important;
+    align-self: stretch !important;
+    flex-shrink: 0 !important;
+    border-top-right-radius: 0 !important;
     cursor: pointer;
-    margin-bottom: 2rem;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1000 !important;
+    margin-bottom: -1px !important;
 }
 
 .sidebar-header img {
@@ -258,6 +274,7 @@
     flex-direction: column;
     gap: 0.5rem;
     padding: 0;
+    margin-top: 2rem !important; /* ADDED MARGIN HERE 🛡️ */
 }
 
 .sidebar-link {
@@ -330,8 +347,8 @@
     .main-content-wrapper {
         margin-left: 0 !important;
         width: 100% !important;
-        padding: 1rem !important;
-        padding-top: 80px !important;
+        padding: 0.5rem !important; /* Optimized for maximum space 📐 */
+        padding-top: 75px !important;
         padding-bottom: 80px !important;
         height: auto !important;
     }
@@ -394,6 +411,13 @@
         max-width: none !important;
     }
 
+    .campus-card {
+        padding: 1rem !important; /* Tightened padding to maximize room grid 📐 */
+        border-radius: 24px !important;
+        box-shadow: 4px 4px 0px black !important;
+        border-width: 2px !important;
+    }
+
     .modal-input {
         height: 50px !important;
     }
@@ -426,7 +450,7 @@
         font-size: 0.6rem !important;
         padding: 2px 6px !important;
     }
-}
+
 
 
 
@@ -434,9 +458,10 @@
     background: #f8fafc;
     border: 3px solid black;
     border-radius: 32px;
-    padding: 2.5rem;
+    padding: 3rem 2.5rem; /* Increased vertical padding 📐 */
     box-shadow: 8px 8px 0px black;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 100%;
 }
 
 .professional-mode .campus-card {
@@ -1081,5 +1106,39 @@
 
 .dark .modal-btn-save:hover {
     background-color: #2563eb !important;
+}
+
+/* --- PREMIUM ADD ROOM FAB 🚀⚓ --- */
+.add-room-fab {
+    background-color: #005BAB !important; /* Royal Blue */
+    color: white !important;
+    border: 3px solid black !important;
+    border-radius: 50% !important;
+    box-shadow: 4px 4px 0px black !important;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    cursor: pointer !important;
+    z-index: 200 !important;
+}
+
+.add-room-fab:hover {
+    transform: scale(1.1) rotate(90deg) !important;
+    background-color: #004481 !important;
+    box-shadow: 6px 6px 0px black !important;
+}
+
+.add-room-fab:active {
+    transform: translate(2px, 2px) scale(0.95) !important;
+    box-shadow: 2px 2px 0px black !important;
+}
+
+/* Dark Mode Override for FAB */
+.dark .add-room-fab {
+    background-color: #3b82f6 !important;
+    border-color: white !important;
+    box-shadow: 4px 4px 0px #000 !important;
+}
+
+.dark .add-room-fab:hover {
+    background-color: #60a5fa !important;
 }
 

@@ -40,42 +40,42 @@
                 <img src="images/LOGO.png" alt="Logo">
             </div>
             <nav class="sidebar-menu">
-                <a href="homepage.html" class="sidebar-link">
-                    <img src="images/HOME.png" alt="Home">
-                    <span>Home</span>
-                </a>
-                <a href="newschedule.html" class="sidebar-link">
-                    <img src="images/ADD_SCHED.png" alt="New Schedule">
-                    <span>New Schedule</span>
-                </a>
-                <a href="myschedule.html" class="sidebar-link">
-                    <img src="images/SCHED.png" alt="My Schedule">
-                    <span>My Schedule</span>
-                </a>
-                <a href="facultypage.html" class="sidebar-link">
-                    <img src="images/FACULTY.png" alt="Faculty">
-                    <span>Faculty</span>
-                </a>
-                <a href="campuspage.html" class="sidebar-link active">
-                    <img src="images/CAMPUS_ONE.png" alt="Campus">
-                    <span>Campus</span>
-                </a>
-                <a href="event.html" class="sidebar-link">
-                    <img src="images/EVENT_MODE.png" alt="Events">
-                    <span>Events</span>
-                </a>
+        <a href="homepage.html" class="sidebar-link">
+          <img src="images/HOME.png" alt="Home">
+          <span>Home</span>
+        </a>
+        <a href="myschedule.html" class="sidebar-link">
+          <img src="images/SCHED.png" alt="My Schedule">
+          <span>My Schedule</span>
+        </a>
+        <a href="facultypage.html" class="sidebar-link">
+          <img src="images/FACULTY.png" alt="Faculty">
+          <span>Faculty</span>
+        </a>
+        <a href="campuspage.html" class="sidebar-link active">
+          <img src="images/CAMPUS_ONE.png" alt="Campus">
+          <span>Campus</span>
+        </a>
+        <a href="sectionspage.html" class="sidebar-link">
+          <img src="images/SCHED.png" alt="Sections" style="filter: invert(1) brightness(2);">
+          <span>Sections</span>
+        </a>
+        <a href="event.html" class="sidebar-link">
+          <img src="images/EVENT_MODE.png" alt="Events">
+          <span>Events</span>
+        </a>
         <a href="curriculumpage.html" class="sidebar-link">
-          <img src="images/CURRICULUM.png" alt="Curriculum">
+          <img src="images/SCHED.png" alt="Curriculum" style="filter: hue-rotate(180deg);">
           <span>Curriculum</span>
         </a>
-                <!-- ADMIN ONLY 🛡️ -->
-                <div id="adminSidebarLinks" style="display: none;">
-                  <a href="audit_logs.html" class="sidebar-link">
-                    <img src="images/SCHED.png" alt="Audit" style="filter: hue-rotate(180deg);">
-                    <span>Audit Logs</span>
-                  </a>
-                </div>
-            </nav>
+        <!-- ADMIN ONLY 🛡️ -->
+        <div id="adminSidebarLinks" style="display: none;">
+          <a href="audit_logs.html" class="sidebar-link">
+            <img src="images/SCHED.png" alt="Audit" style="filter: hue-rotate(180deg);">
+            <span>Audit Logs</span>
+          </a>
+        </div>
+      </nav>
         </aside>
 
         <div class="main-content-wrapper">
@@ -174,32 +174,33 @@
     <script type="module" src="roomprofile.js"></script>
   <!-- ?? MOBILE BOTTOM NAVIGATION BAR ? -->
   <nav class="mobile-bottom-nav" id="mobileBottomNav">
-    <a href="homepage.html"    class="mob-nav-item" data-page="homepage">
+    <a href="homepage.html" class="mob-nav-item" data-page="homepage">
       <img src="images/HOME.png" alt="Home"><span>Home</span>
     </a>
-    <a href="newschedule.html" class="mob-nav-item" data-page="newschedule">
-      <img src="images/ADD_SCHED.png" alt="New Schedule"><span>New Sched</span>
-    </a>
-    <a href="myschedule.html"  class="mob-nav-item" data-page="myschedule">
+    <a href="myschedule.html" class="mob-nav-item" data-page="myschedule">
       <img src="images/SCHED.png" alt="My Schedule"><span>My Sched</span>
     </a>
     <a href="facultypage.html" class="mob-nav-item" data-page="facultypage">
       <img src="images/FACULTY.png" alt="Faculty"><span>Faculty</span>
     </a>
-    <a href="campuspage.html"  class="mob-nav-item" data-page="campuspage">
+    <a href="campuspage.html" class="mob-nav-item active" data-page="campuspage">
       <img src="images/CAMPUS_ONE.png" alt="Campus"><span>Campus</span>
     </a>
-    <a href="event.html"       class="mob-nav-item" data-page="event">
+    <a href="sectionspage.html" class="mob-nav-item" data-page="sections">
+      <img src="images/SCHED.png" alt="Sections" style="filter: invert(1) brightness(2);">
+      <span>Sections</span>
+    </a>
+    <a href="event.html" class="mob-nav-item" data-page="event">
       <img src="images/EVENT_MODE.png" alt="Events"><span>Events</span>
     </a>
-    <a href="curriculumpage.html"       class="mob-nav-item" data-page="curriculumpage">
-      <img src="images/CURRICULUM.png" alt="Curriculum"><span>Curriculum</span>
+    <a href="curriculumpage.html" class="mob-nav-item" data-page="curriculumpage">
+      <img src="images/SCHED.png" alt="Curriculum" style="filter: hue-rotate(180deg);"><span>Curriculum</span>
     </a>
-    <!-- ADMIN ONLY � shown via JS -->
-    <a href="audit_logs.html"  class="mob-nav-item admin-only" data-page="audit_logs" style="display:none">
-      <img src="images/SCHED.png" alt="Audit Logs"><span>Audit</span>
+    <!-- ADMIN ONLY 🛡️ shown via JS -->
+    <a href="audit_logs.html" class="mob-nav-item admin-only" data-page="audit_logs" style="display:none">
+      <img src="images/SCHED.png" alt="Audit Logs" style="filter: hue-rotate(180deg);"><span>Audit</span>
     </a>
-    </nav>
+  </nav>
 </body>
 
 </html>

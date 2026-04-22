@@ -43,6 +43,7 @@ function pushToHistory() {
 let currentUser = null;
 let currentUserRole = null;
 let comments = []; // Global store
+let isSaving = false; // 🔒 Prevents double-clicks/duplicate saves
 
 
 
@@ -810,6 +811,7 @@ async function hasBlueprintConflict(newBlock, excludeId) {
 /* ───────── LOAD TABLE ───────── */
 // 🔄 Dynamic Curriculum Data 🎓
 let dynamicSubjects = [];
+let dynamicSubjects_raw = []; // 📦 Stores full course docs (with terms) for hierarchical dropdowns
 
 /* ───────── LOAD TABLE ───────── */
 async function load() {
@@ -819,24 +821,25 @@ async function load() {
     // --- Load Dynamic Curriculum ---
     const courseQ = query(collection(db, "courses"));
     const courseSnap = await getDocs(courseQ);
-    
-    dynamicSubjects = [];
-    courseSnap.forEach(d => {
-        const data = d.data();
-        if (data.terms) {
-            Object.values(data.terms).forEach(subjects => {
-                subjects.forEach(name => {
-                    // Flatten into the expected format
-                    dynamicSubjects.push({ 
-                        id: `course_${d.id}_${name}`, 
-                        name: name, 
-                        category: data.name // Using course name as category
-                    });
-                });
-            });
-        }
-    });
 
+    dynamicSubjects = [];
+    dynamicSubjects_raw = [];
+    courseSnap.forEach(d => {
+      const data = d.data();
+      dynamicSubjects_raw.push({ id: d.id, ...data });
+      if (data.terms) {
+        Object.values(data.terms).forEach(subjects => {
+          subjects.forEach(name => {
+            // Flatten into the expected format
+            dynamicSubjects.push({
+              id: `course_${d.id}_${name}`,
+              name: name,
+              category: data.name // Using course name as category
+            });
+          });
+        });
+      }
+    });
     // Fallback if no courses found, check legacy
     if (dynamicSubjects.length === 0) {
         const curQ = query(collection(db, "curriculums"));
@@ -1113,35 +1116,48 @@ function getSubjectOptions(query) {
 
   let options = [];
 
-  // 1. Dynamic Subjects from Firestore 🚀
-  if (dynamicSubjects.length > 0) {
-    // Prioritize subjects for the current strand/category
-    if (strand) {
-      const majorSubjects = dynamicSubjects.filter(s => s.category === strand.toUpperCase());
-      if (majorSubjects.length > 0) {
-        options.push({ name: `${strand.toUpperCase()} MAJOR SUBJECTS`, isHeader: true });
-        options.push(...majorSubjects.map(s => s.name));
-      }
-    }
-
-    // Core and Applied from dynamic data
-    const coreApplied = dynamicSubjects.filter(s => s.category === "CORE" || s.category === "APPLIED");
-    if (coreApplied.length > 0) {
-      options.push({ name: "CORE & APPLIED SUBJECTS", isHeader: true });
-      options.push(...[...new Set(coreApplied.map(s => s.name))]);
-    }
-
-    // Others (any category that isn't the current strand, core, or applied)
-    const others = dynamicSubjects.filter(s => s.category !== strand?.toUpperCase() && s.category !== "CORE" && s.category !== "APPLIED");
-    if (others.length > 0) {
-        const otherCats = [...new Set(others.map(s => s.category))];
-        otherCats.forEach(cat => {
-            options.push({ name: `${cat} SUBJECTS`, isHeader: true });
-            options.push(...others.filter(s => s.category === cat).map(s => s.name));
+    // 1. Dynamic Subjects from Firestore 🚀
+    if (dynamicSubjects.length > 0) {
+        // Find the course document that matches the strand (flexible matching)
+        // If strand is "ICT", it should match course "ICT" or "ITM" or "TVL"
+        let matchingCourse = dynamicSubjects_raw.find(c => {
+            const courseName = c.name.toUpperCase();
+            const strandName = strand ? strand.toUpperCase() : "";
+            return courseName === strandName || 
+                   (strandName === "ICT" && (courseName.includes("ICT") || courseName.includes("ITM"))) ||
+                   courseName.includes(strandName);
         });
-    }
-  } else {
-    // Fallback to static if dynamic is empty (optional, but good for safety)
+        
+        if (matchingCourse && matchingCourse.terms) {
+            const termNames = Object.keys(matchingCourse.terms).sort();
+            termNames.forEach(term => {
+                const termSubjects = matchingCourse.terms[term];
+                if (termSubjects && termSubjects.length > 0) {
+                    options.push({ name: `${matchingCourse.name.toUpperCase()} - ${term.toUpperCase()}`, isHeader: true });
+                    options.push(...termSubjects);
+                }
+            });
+        } else {
+            // FALLBACK: If no specific strand match found, show all other major subjects grouped by course
+            const otherCourses = dynamicSubjects_raw.filter(c => c.name !== "CORE" && c.name !== "APPLIED");
+            otherCourses.forEach(c => {
+                if (c.terms) {
+                    Object.keys(c.terms).forEach(term => {
+                        options.push({ name: `${c.name.toUpperCase()} - ${term.toUpperCase()}`, isHeader: true });
+                        options.push(...c.terms[term]);
+                    });
+                }
+            });
+        }
+
+        // Always show Core and Applied as they are universal
+        const coreApplied = dynamicSubjects.filter(s => s.category === "CORE" || s.category === "APPLIED");
+        if (coreApplied.length > 0) {
+            options.push({ name: "CORE & APPLIED SUBJECTS", isHeader: true });
+            options.push(...[...new Set(coreApplied.map(s => s.name))]);
+        }
+    } else {
+    // Fallback to static if dynamic is empty
     if (strand && SUBJECT_DATA[strand]) {
       options.push({ name: `${strand} MAJOR SUBJECTS`, isHeader: true });
       options.push(...SUBJECT_DATA[strand]);
@@ -1297,10 +1313,6 @@ function getRoomOptions(query) {
   return options;
 }
 
-// ------------------------------------------
-// ------------------------------------------
-
-// ------------------------------------------
 
 function renderTable() {
   if (!tbody || !colgroup || !theadTr) {
@@ -1476,7 +1488,6 @@ function renderTable() {
 
           // Calculate RowSpan based on how many MATRIX intervals this class covers
           let spanCount = 0;
-          let covered = 0;
           const currentIdx = matrixIntervals.findIndex(m => m.start === interval.start);
 
           if (currentIdx !== -1) {
@@ -1516,8 +1527,6 @@ function renderTable() {
               td.style.setProperty('color', '#000000', 'important');
               td.style.setProperty('border-right', '1px solid #000', 'important'); td.style.setProperty('border-bottom', '1px solid #000', 'important');
               td.style.setProperty('border-radius', '0', 'important');
-            } else {
-              // Default styling is now handled by the .occupied class in CSS 🦈💙
             }
 
             if (currentUserRole !== 'student') td.setAttribute('draggable', 'true');
@@ -1532,8 +1541,6 @@ function renderTable() {
               td.style.setProperty('color', '#000000', 'important');
               td.style.setProperty('border-right', '1px solid #000', 'important'); td.style.setProperty('border-bottom', '1px solid #000', 'important');
               td.style.setProperty('border-radius', '0', 'important');
-            } else {
-              // Default styling is now handled by the .vacant-marked class in CSS 🦈💙
             }
 
             if (currentUserRole !== 'student') td.setAttribute('draggable', 'true');
@@ -1560,8 +1567,7 @@ function renderTable() {
             return;
           }
 
-          // For everyone else (Admins, Permitted Teachers, Students), open the Edit/Info panel
-          // They can access comments via the badge or the button inside the panel.
+          // For everyone else
           openPanel(s.id, day, clickBlock);
         };
 
@@ -1639,7 +1645,6 @@ function openPanel(id, day, block) {
   allCells.forEach(td => td.classList.remove('active-cell'));
 
   // Find the clicked cell cleanly using data attributes 🎯
-  // Use filter because querySelector with brackets can be sensitive to spaces
   const targetCell = Array.from(document.querySelectorAll('td')).find(td =>
     td.dataset.schedId === id &&
     normalizeDay(td.dataset.day) === normalizeDay(day) &&
@@ -1659,6 +1664,13 @@ function openPanel(id, day, block) {
 
   // Use class for SMOOTH DRAWING 🚀🦈
   panel.classList.add("open");
+
+  // Force center on mobile/landscape to fix "Lower Right" bug ⚓🛡️
+  if (window.innerWidth <= 768 || (window.innerWidth <= 950 && window.innerHeight < window.innerWidth)) {
+    panel.style.left = '50%';
+    panel.style.top = '45%'; 
+    panel.style.transform = 'translate(-50%, -45%) scale(1)';
+  }
   
   // Hide recommendations by default when opening 🛡️⚓
   const suggArea = document.getElementById('conflictSuggestionsArea');
@@ -1695,8 +1707,6 @@ function openPanel(id, day, block) {
   document.getElementById("end").value = `${String(end12).padStart(2, "0")}:${endTime.split(":")[1]}`;
   document.getElementById("endAMPM").value = endAMPM;
 
-  document.getElementById("endAMPM").value = endAMPM;
-
   // Color Handling
   const savedColor = c?.color || "";
   const colorSelect = document.getElementById("colorSelect");
@@ -1712,8 +1722,6 @@ function openPanel(id, day, block) {
     colorPicker.style.display = "block";
     colorPicker.value = savedColor;
   }
-
-
 
   // Handle Student Read-Only Mode
   if (currentUserRole === "student") {
@@ -1923,10 +1931,6 @@ async function findAvailableTeachers(day, timeBlock, excludeSchedId, subjectName
   return available.slice(0, 5);
 }
 
-/**
- * Central Conflict Detection Engine 🛡️⚖️
- * Checks for Teacher, Room, and Section overlaps across ALL schedules.
- */
 async function checkConflicts(newBlock, excludeId) {
   const results = {
     hasConflict: false,
@@ -1961,203 +1965,182 @@ async function checkConflicts(newBlock, excludeId) {
 
 /* ───────── SAVE ───────── */
 async function saveClass() {
-  pushToHistory(); // Capture state before modification ⚓
-  if (currentUserRole === 'teacher' && localStorage.getItem('editPermission') !== 'true') {
-    if (window.requestEditPermission) window.requestEditPermission();
-    else alert("Please request permission to edit!");
-    return;
-  }
-  const ref = doc(db, "schedules", selected.id);
-  const sched = schedules.find(s => s.id === selected.id);
-
-  // --- CAPTURE ORIGINAL STATE 📸 ---
-  const originalBlock = (sched.classes || []).find(cl => cl.day === selected.day && cl.timeBlock === selected.block);
-
-  /* ───────── VALIDATE TIME ───────── */
-  // Fix: Format correctly with a space so toMin can parse it po! 🕰️⚓
-  const startRaw = document.getElementById("start").value;
-  const startAMPM = document.getElementById("startAMPM").value;
-  const endRaw = document.getElementById("end").value;
-  const endAMPM = document.getElementById("endAMPM").value;
-
-  const startMin = toMin(`${startRaw} ${startAMPM}`);
-  const endMin = toMin(`${endRaw} ${endAMPM}`);
-  const newParsed = { start: startMin, end: endMin };
-
-  if (endMin > 1080 || endMin <= startMin) {
-    showToast("Class must end by 6:00 PM and after the start time 🦈🕔", "error");
+  if (isSaving) {
+    showToast("Save in progress, please wait... ⏳", "info");
     return;
   }
 
+  const saveBtn = document.querySelector('button[onclick="saveClass()"]');
+  const originalBtnText = saveBtn ? saveBtn.innerHTML : "";
 
-  let allClasses = sched.classes || [];
-  let updated = allClasses.filter(
-    c => !(c.day === selected.day && c.timeBlock === selected.block)
-  );
-
-  const overlappingBlocks = [];
-  const nonOverlappingBlocks = [];
-
-  updated.forEach(c => {
-    if (c.day === selected.day) {
-      const cParsed = parseBlock(c.timeBlock);
-      if (overlaps(newParsed, cParsed)) overlappingBlocks.push(c);
-      else nonOverlappingBlocks.push(c);
+  try {
+    isSaving = true;
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = "Saving...";
     }
-  });
 
-  const otherDayBlocks = updated.filter(c => c.day !== selected.day);
+    pushToHistory(); // Capture state before modification ⚓
+    if (currentUserRole === 'teacher' && localStorage.getItem('editPermission') !== 'true') {
+      if (window.requestEditPermission) window.requestEditPermission();
+      else alert("Please request permission to edit!");
+      return;
+    }
+    const ref = doc(db, "schedules", selected.id);
+    const sched = schedules.find(s => s.id === selected.id);
 
-  let mergedSubject = (document.getElementById("subject").value || "").trim().toUpperCase();
-  let mergedTeacher = (document.getElementById("teacher").value || "").trim().toUpperCase() || "NA";
-  let mergedRoom = (document.getElementById("room").value || "").trim() || "NA";
-  let mergedColor = document.getElementById("colorSelect").value === "custom"
-    ? document.getElementById("colorPicker").value
-    : document.getElementById("colorSelect").value;
+    // --- CAPTURE ORIGINAL STATE 📸 ---
+    const originalBlock = (sched.classes || []).find(cl => cl.day === selected.day && cl.timeBlock === selected.block);
 
-  // 🛡️ RE-VALIDATE VACANT STATE 🦈
-  // Fix: Only treat as empty if the user cleared the field AND it wasn't already marked vacant.
-  // If it was already marked vacant, and they typed nothing, we keep it vacant.
-  // BUT: If they typed something, mergedSubject will be truthy, and we skip this.
-  if (!mergedSubject && originalBlock && originalBlock.subject === "MARKED_VACANT") {
+    /* ───────── VALIDATE TIME ───────── */
+    const startRaw = document.getElementById("start").value;
+    const startAMPM = document.getElementById("startAMPM").value;
+    const endRaw = document.getElementById("end").value;
+    const endAMPM = document.getElementById("endAMPM").value;
+
+    const startMin = toMin(`${startRaw} ${startAMPM}`);
+    const endMin = toMin(`${endRaw} ${endAMPM}`);
+    const newParsed = { start: startMin, end: endMin };
+
+    if (endMin > 1080 || endMin <= startMin) {
+      showToast("Class must end by 6:00 PM and after the start time 🦈🕔", "error");
+      return;
+    }
+
+    let allClasses = sched.classes || [];
+    let updated = allClasses.filter(
+      c => !(c.day === selected.day && c.timeBlock === selected.block)
+    );
+
+    const overlappingBlocks = [];
+    const nonOverlappingBlocks = [];
+
+    updated.forEach(c => {
+      if (c.day === selected.day) {
+        const cParsed = parseBlock(c.timeBlock);
+        if (overlaps(newParsed, cParsed)) overlappingBlocks.push(c);
+        else nonOverlappingBlocks.push(c);
+      }
+    });
+
+    const otherDayBlocks = updated.filter(c => c.day !== selected.day);
+
+    let mergedSubject = (document.getElementById("subject").value || "").trim().toUpperCase();
+    let mergedTeacher = (document.getElementById("teacher").value || "").trim().toUpperCase() || "NA";
+    let mergedRoom = (document.getElementById("room").value || "").trim() || "NA";
+    let mergedColor = document.getElementById("colorSelect").value === "custom"
+      ? document.getElementById("colorPicker").value
+      : document.getElementById("colorSelect").value;
+
+    if (!mergedSubject && originalBlock && originalBlock.subject === "MARKED_VACANT") {
       mergedSubject = "MARKED_VACANT";
-  }
+    }
 
-  // IF SUBJECT IS STILL EMPTY -> WE CLEAR THE SLOT 👻
-  if (!mergedSubject) {
+    // IF SUBJECT IS STILL EMPTY -> WE CLEAR THE SLOT 👻
+    if (!mergedSubject) {
+      sched.classes = updated;
+      closePanel();
+      renderTable();
+
+      await updateDoc(ref, { classes: updated });
+      showToast("Slot cleared!", "success");
+      return;
+    }
+
+    let minStart = newParsed.start;
+    let maxEnd = newParsed.end;
+
+    if (overlappingBlocks.length > 0) {
+      overlappingBlocks.forEach(c => {
+        const cParsed = parseBlock(c.timeBlock);
+        minStart = Math.min(minStart, cParsed.start);
+        maxEnd = Math.max(maxEnd, cParsed.end);
+
+        if (!mergedSubject || mergedSubject === "VACANT" || mergedSubject === "MARKED_VACANT") {
+          if (c.subject && c.subject !== "VACANT" && c.subject !== "MARKED_VACANT") {
+            mergedSubject = c.subject;
+            mergedTeacher = c.teacher;
+            mergedRoom = c.room;
+            if (c.color) mergedColor = c.color;
+          }
+        }
+      });
+    }
+
+    const mergedBlock = {
+      day: selected.day,
+      timeBlock: `${toTime(startMin)}-${toTime(endMin)}`,
+      subject: mergedSubject,
+      teacher: mergedTeacher,
+      room: mergedRoom,
+      color: mergedColor
+    };
+
+    updated = [...nonOverlappingBlocks, ...otherDayBlocks, mergedBlock];
+
+    if (mergedSubject !== "VACANT" && mergedSubject !== "MARKED_VACANT") {
+      showToast("Checking for conflicts... ⚖️", "info");
+      const conflicts = await checkConflicts(mergedBlock, selected.id);
+      if (conflicts.hasConflict) {
+        showConflictRecommendations(mergedBlock);
+
+        let msg = "⚠️ ATTENTION: Conflicts Detected!\n\n";
+        if (conflicts.room) msg += `📍 Room: ${conflicts.room}\n`;
+        if (conflicts.teacher) msg += `👨‍🏫 Teacher: ${conflicts.teacher}\n`;
+        if (conflicts.blueprint) msg += `📦 Section: ${conflicts.blueprint}\n`;
+        msg += "\nDo you want to FORCE SAVE this schedule anyway?\n(See SMART RECOMMENDATIONS below)";
+
+        const proceed = await showConfirm(msg);
+
+        if (!proceed) return;
+      }
+    }
+
+    // Animation
+    const panelEl = document.getElementById("panel");
+    const subjectEl = document.getElementById("subject");
+    const targetCell = document.querySelector(
+      `td[data-sched-id="${selected.id}"][data-day="${selected.day}"][data-block="${selected.block}"]`
+    );
+
+    if (panelEl && targetCell) {
+      const flyer = document.createElement("div");
+      flyer.classList.add("flying-element");
+      flyer.textContent = subjectEl.value || "Saved";
+      document.body.appendChild(flyer);
+
+      const startRect = panelEl.getBoundingClientRect();
+      const endRect = targetCell.getBoundingClientRect();
+
+      const startX = startRect.left + startRect.width / 2 - flyer.offsetWidth / 2;
+      const startY = startRect.top + startRect.height / 2 - flyer.offsetHeight / 2;
+      flyer.style.left = `${startX}px`;
+      flyer.style.top = `${startY}px`;
+
+      const endX = endRect.left + endRect.width / 2 - flyer.offsetWidth / 2;
+      const endY = endRect.top + endRect.height / 2 - flyer.offsetHeight / 2;
+
+      const animation = flyer.animate([
+        { transform: 'translate(0, 0) scale(1)', opacity: 1, offset: 0 },
+        { transform: `translate(${endX - startX}px, ${endY - startY}px) scale(0.4)`, opacity: 1, offset: 0.6 },
+        { transform: `translate(${endX - startX}px, ${endY - startY}px) scale(1.6)`, opacity: 1, offset: 0.75 },
+        { transform: `translate(${endX - startX}px, ${endY - startY}px) scale(0.9)`, opacity: 0.8, offset: 0.9 },
+        { transform: `translate(${endX - startX}px, ${endY - startY}px) scale(0.1)`, opacity: 0, offset: 1 }
+      ], { duration: 650, easing: 'ease-out' });
+
+      await animation.finished;
+      flyer.remove();
+    }
+
     sched.classes = updated;
     closePanel();
     renderTable();
 
-    try {
-      await updateDoc(ref, { classes: updated });
-      showToast("Slot cleared!", "success");
-    } catch (err) {
-      console.error("Clear failed", err);
+    if (typeof updateRoomSelectionOccupancies === 'function') {
+      updateRoomSelectionOccupancies();
     }
-    return;
-  }
 
-  let minStart = newParsed.start;
-  let maxEnd = newParsed.end;
-
-  if (overlappingBlocks.length > 0) {
-    overlappingBlocks.forEach(c => {
-      const cParsed = parseBlock(c.timeBlock);
-      minStart = Math.min(minStart, cParsed.start);
-      maxEnd = Math.max(maxEnd, cParsed.end);
-      
-      // 🕵️ Only inherit if the user hasn't provided anything yet ⚓
-      if (!mergedSubject || mergedSubject === "VACANT" || mergedSubject === "MARKED_VACANT") {
-        if (c.subject && c.subject !== "VACANT" && c.subject !== "MARKED_VACANT") {
-          mergedSubject = c.subject;
-          mergedTeacher = c.teacher;
-          mergedRoom = c.room;
-          if (c.color) mergedColor = c.color;
-        }
-      }
-    });
-  }
-
-  // 🛡️ GLOBAL CONFLICT DETECTION ⚖️
-  showToast("Checking for conflicts... ⚖️", "info");
-
-  const conflictResults = await checkConflicts({
-    day: selected.day,
-    timeBlock: `${toTime(startMin)}-${toTime(endMin)}`,
-    subject: mergedSubject, // 🔑 PASS SUBJECT TO AVOID GUARD BYPASS
-    room: mergedRoom,
-    teacher: mergedTeacher
-  }, selected.id);
-
-  if (conflictResults.hasConflict) {
-    let msg = "Cannot save! ";
-    if (conflictResults.room) msg += conflictResults.room;
-    if (conflictResults.teacher) msg += (conflictResults.room ? " & " : "") + conflictResults.teacher;
-
-    showToast(msg, "error");
-    return;
-  }
-
-  const mergedBlock = {
-    day: selected.day,
-    timeBlock: `${toTime(startMin)}-${toTime(endMin)}`,
-    subject: mergedSubject,
-    teacher: mergedTeacher,
-    room: mergedRoom,
-    color: mergedColor
-  };
-
-
-
-  updated = [...nonOverlappingBlocks, ...otherDayBlocks, mergedBlock];
-
-  if (mergedSubject !== "VACANT" && mergedSubject !== "MARKED_VACANT") {
-    // --- UNIFIED CONFLICT DETECTION 🛡️⚓ ---
-    const conflicts = await checkConflicts(mergedBlock, selected.id);
-    if (conflicts.hasConflict) {
-      // Show Recommendations 🕵️⚓
-      showConflictRecommendations(mergedBlock);
-
-      let msg = "⚠️ ATTENTION: Conflicts Detected!\n\n";
-      if (conflicts.room) msg += `📍 Room: ${conflicts.room}\n`;
-      if (conflicts.teacher) msg += `👨‍🏫 Teacher: ${conflicts.teacher}\n`;
-      if (conflicts.blueprint) msg += `📦 Section: ${conflicts.blueprint}\n`;
-      msg += "\nDo you want to FORCE SAVE this schedule anyway?\n(See SMART RECOMMENDATIONS below)";
-
-      const proceed = await showConfirm(msg);
-
-      if (!proceed) return;
-    }
-  }
-
-  // Animation
-  const panelEl = document.getElementById("panel");
-  const subjectEl = document.getElementById("subject");
-  const targetCell = document.querySelector(
-    `td[data-sched-id="${selected.id}"][data-day="${selected.day}"][data-block="${selected.block}"]`
-  );
-
-  if (panelEl && targetCell) {
-    const flyer = document.createElement("div");
-    flyer.classList.add("flying-element");
-    flyer.textContent = subjectEl.value || "Saved";
-    document.body.appendChild(flyer);
-
-    const startRect = panelEl.getBoundingClientRect();
-    const endRect = targetCell.getBoundingClientRect();
-
-    const startX = startRect.left + startRect.width / 2 - flyer.offsetWidth / 2;
-    const startY = startRect.top + startRect.height / 2 - flyer.offsetHeight / 2;
-    flyer.style.left = `${startX}px`;
-    flyer.style.top = `${startY}px`;
-
-    const endX = endRect.left + endRect.width / 2 - flyer.offsetWidth / 2;
-    const endY = endRect.top + endRect.height / 2 - flyer.offsetHeight / 2;
-
-    const animation = flyer.animate([
-      { transform: 'translate(0, 0) scale(1)', opacity: 1, offset: 0 },
-      { transform: `translate(${endX - startX}px, ${endY - startY}px) scale(0.4)`, opacity: 1, offset: 0.6 },
-      { transform: `translate(${endX - startX}px, ${endY - startY}px) scale(1.6)`, opacity: 1, offset: 0.75 },
-      { transform: `translate(${endX - startX}px, ${endY - startY}px) scale(0.9)`, opacity: 0.8, offset: 0.9 },
-      { transform: `translate(${endX - startX}px, ${endY - startY}px) scale(0.1)`, opacity: 0, offset: 1 }
-    ], { duration: 650, easing: 'ease-out' });
-
-    await animation.finished;
-    flyer.remove();
-  }
-
-  sched.classes = updated;
-  closePanel();
-  renderTable();
-  
-  // Refresh occupancies to reflect latest changes 📊⚓
-  if (typeof updateRoomSelectionOccupancies === 'function') {
-    updateRoomSelectionOccupancies();
-  }
-
-  // --- LOG HISTORY 📜🕰️ ---
-  try {
+    // --- LOG HISTORY 📜🕰️ ---
     const historyEntry = {
       user: currentUser.displayName || currentUser.email || "Anonymous",
       userId: currentUser.uid,
@@ -2167,7 +2150,6 @@ async function saveClass() {
 
     const detailLog = [];
     if (originalBlock) {
-
       if ((originalBlock.subject || "").toUpperCase() !== (mergedBlock.subject || "").toUpperCase()) detailLog.push(`Subject: ${originalBlock.subject || 'Empty'} ➔ ${mergedBlock.subject}`);
       if ((originalBlock.teacher || "").toUpperCase() !== (mergedBlock.teacher || "").toUpperCase()) detailLog.push(`Teacher: ${originalBlock.teacher || 'NA'} ➔ ${mergedBlock.teacher}`);
       if (originalBlock.room !== mergedBlock.room) detailLog.push(`Room: ${originalBlock.room || 'NA'} ➔ ${mergedBlock.room}`);
@@ -2180,7 +2162,6 @@ async function saveClass() {
       const newTime = mergedBlock.timeBlock;
       if (oldTime !== newTime) detailLog.push(`Time: ${oldTime} ➔ ${newTime}`);
     } else {
-
       detailLog.push(`New Schedule Added:`);
       detailLog.push(`Subject: ${mergedBlock.subject}`);
       detailLog.push(`Teacher: ${mergedBlock.teacher}`);
@@ -2197,14 +2178,10 @@ async function saveClass() {
     });
     showToast("Schedule updated!", "success");
 
-    // Clear Suggestions 🧹⚓
     const suggArea = document.getElementById('conflictSuggestionsArea');
     if (suggArea) suggArea.style.display = 'none';
 
-    // Clear Session 🛡️⚓
     localStorage.removeItem('activeEditSession');
-
-    // Hide Back to Edit Button 💈⚓
     document.querySelectorAll('.back-to-edit-btn').forEach(btn => btn.style.display = 'none');
 
     // --- AUDIT LOG 📜 ---
@@ -2224,6 +2201,12 @@ async function saveClass() {
     showToast("Save failed, reloading...", "error");
     isLoaded = false;
     load();
+  } finally {
+    isSaving = false;
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = originalBtnText;
+    }
   }
 }
 
@@ -2250,7 +2233,6 @@ async function showConflictRecommendations(block) {
         pill.onclick = () => {
           document.getElementById('room').value = room;
           showToast(`Applying Room: ${room}...`, "info");
-          // Re-trigger save logic to auto-resolve 🚀⚓
           if (window.saveClass) window.saveClass();
         };
         roomSugg.appendChild(pill);
@@ -2269,7 +2251,6 @@ async function showConflictRecommendations(block) {
         pill.onclick = () => {
           document.getElementById('teacher').value = t;
           showToast(`Assigning Teacher: ${t}...`, "info");
-          // Re-trigger save logic to auto-resolve 🚀⚓
           if (window.saveClass) window.saveClass();
         };
         teacherSugg.appendChild(pill);
@@ -2290,7 +2271,6 @@ function closePanel() {
   if (overlay) overlay.style.display = "none";
   document.querySelectorAll('td').forEach(td => td.classList.remove('active-cell'));
 
-  // Hide recommendations 🕵️⚓
   const suggArea = document.getElementById('conflictSuggestionsArea');
   if (suggArea) suggArea.style.display = 'none';
 }
@@ -2317,7 +2297,6 @@ function deleteClass(targetEl = null) {
   const sched = schedules.find(s => s.id === selected.id);
   if (!sched) return;
 
-  // Retrieve current class data for the confirm message and logs ⚓
   const currentClass = (sched.classes || []).find(x => x.day === selected.day && x.timeBlock === selected.block);
   const subjectName = currentClass?.subject || "VACANT";
 
@@ -2352,7 +2331,6 @@ function deleteClass(targetEl = null) {
       flyer.className = "trash-flying-element";
       flyer.textContent = subjectName || "Deleting...";
 
-      // Premium Maangas Style
       flyer.style.background = "#ef4444";
       flyer.style.color = "white";
       flyer.style.boxShadow = "0 8px 25px rgba(239, 68, 68, 0.6)";
@@ -2375,7 +2353,6 @@ function deleteClass(targetEl = null) {
       const endX = endRect.left + endRect.width / 2 - flyer.offsetWidth / 2;
       const endY = endRect.top + endRect.height / 2 - flyer.offsetHeight / 2;
 
-      // 🧊 GLASS SHATTER EFFECT 💥
       const shatterCell = cells[0];
       shatterCell.classList.add('shattering');
 
@@ -2403,14 +2380,14 @@ function deleteClass(targetEl = null) {
         setTimeout(() => shard.remove(), 700);
       }
 
-      const dx = endX - startX;
-      const dy = endY - startY;
-      const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+      const dxFinal = endX - startX;
+      const dyFinal = endY - startY;
+      const angle = Math.atan2(dyFinal, dxFinal) * (180 / Math.PI);
 
       flyer.animate([
         { transform: `translate(0, 0) scale(1) rotate(0deg)`, opacity: 1 },
-        { transform: `translate(${dx * 0.4}px, ${dy * 0.4}px) scaleX(1.4) scaleY(0.7) rotate(${angle}deg)`, opacity: 1, offset: 0.4 },
-        { transform: `translate(${dx}px, ${dy}px) scale(0) rotate(${angle + 720}deg)`, opacity: 0 }
+        { transform: `translate(${dxFinal * 0.4}px, ${dyFinal * 0.4}px) scaleX(1.4) scaleY(0.7) rotate(${angle}deg)`, opacity: 1, offset: 0.4 },
+        { transform: `translate(${dxFinal}px, ${dyFinal}px) scale(0) rotate(${angle + 720}deg)`, opacity: 0 }
       ], {
         duration: 500,
         easing: 'cubic-bezier(0.4, 0, 0.2, 1)'
@@ -2450,7 +2427,6 @@ function deleteClass(targetEl = null) {
           sched.classes = updatedClasses;
           closePanel();
           renderTable();
-          // Refresh occupancies 📊⚓
           if (typeof updateRoomSelectionOccupancies === 'function') {
             updateRoomSelectionOccupancies();
           }
@@ -2515,8 +2491,6 @@ function deleteClass(targetEl = null) {
 }
 
 
-
-
 async function save() {
   if (currentUserRole === 'teacher' && localStorage.getItem('editPermission') !== 'true') {
     if (window.requestEditPermission) window.requestEditPermission();
@@ -2542,14 +2516,11 @@ async function save() {
     };
 
     if (isOverride && s.id === "TEMP_SYNC") {
-      // It's a NEW temporary override! 🦈⚓🛡️
-      console.log("SchedSync DEBUG: Saving as NEW temporary override document...");
       savePayload.scheduleName = s.scheduleName || "Temporary Override";
       savePayload.originalId = s.originalId || null;
       savePayload.section = s.section || "General";
       await addDoc(collection(db, "schedules"), savePayload);
     } else {
-      // Normal update
       await updateDoc(doc(db, "schedules", s.id), savePayload);
     }
   }
@@ -2562,22 +2533,17 @@ async function save() {
       message: `Success! The schedule for "${schedName}" is now officially published.`,
       sender: currentUser.displayName || currentUser.email || "System",
       createdAt: serverTimestamp(),
-      isAnnouncement: true, // Homepage Widget Only 🛡️
+      isAnnouncement: true, 
     });
 
-    // --- AUDIT LOG 📜 ---
-    logAction("PUBLISH_SCHEDULE", `Published schedule: ${s.scheduleName || 'Untitled'}`, {
-      scheduleId: s.id,
-      section: s.section
+    logAction("PUBLISH_SCHEDULE", `Published schedule: ${schedName}`, {
+      scheduleId: schedules[0].id,
+      section: schedules[0].section
     });
   }
 
-  // Clear Session 🛡️⚓
   localStorage.removeItem('activeEditSession');
-
-  // Hide Back to Edit Button 💈⚓
   document.querySelectorAll('.back-to-edit-btn').forEach(btn => btn.style.display = 'none');
-
   window.location.href = 'myschedule.html';
 }
 
@@ -2592,7 +2558,6 @@ function downloadSchedule(id, format = null, isBatch = false) {
     return;
   }
 
-  // Ensure libraries are loaded
   if (format === 'pdf' && !window.html2pdf) {
     const script = document.createElement('script');
     script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
@@ -2615,7 +2580,6 @@ function downloadSchedule(id, format = null, isBatch = false) {
     return;
   }
 
-  // STI THEMED LIVE PAPER CAPTURE 📑
   const overlay = document.createElement('div');
   overlay.id = "export-modal";
   overlay.style.cssText = `
@@ -2635,7 +2599,6 @@ function downloadSchedule(id, format = null, isBatch = false) {
         </div>
       </div>
       <div id="paper-container" style="background: white; color: #111; width: 1123px; padding: 50px; border-radius: 4px; box-shadow: 0 20px 50px rgba(0,0,0,0.4); transform: scale(0.65); transform-origin: top center; opacity: 1;">
-          <!-- CONTENT INJECTED -->
       </div>
       <style>
         @keyframes sti-progress { 0% { transform: translateX(-100%); } 50% { transform: translateX(0); } 100% { transform: translateX(100%); } }
@@ -2645,8 +2608,6 @@ function downloadSchedule(id, format = null, isBatch = false) {
   document.body.appendChild(overlay);
 
   const paper = overlay.querySelector('#paper-container');
-  // FORCE LIGHT MODE THEME 📑✨
-  // User requested "gawin mo nlng kagaya sa lightmode"
   const bgColor = "#ffffff";
   const textColor = "#000000";
   const borderColor = "#005BAB";
@@ -2658,7 +2619,6 @@ function downloadSchedule(id, format = null, isBatch = false) {
   paper.style.color = textColor;
   paper.style.fontFamily = "'Inter', 'Segoe UI', sans-serif";
 
-  // 1. Calculate Matrix Intervals
   const daySet = new Set();
   (sched.selectedDays || []).forEach(d => { if (d) daySet.add(d); });
   (sched.classes || []).forEach(c => { if (c && c.day) daySet.add(c.day); });
@@ -2669,7 +2629,7 @@ function downloadSchedule(id, format = null, isBatch = false) {
 
   const timePoints = new Set();
   const START_MIN_EXPORT = 450;
-  const END_MIN_EXPORT = 1080; // 6:00 PM 🦈
+  const END_MIN_EXPORT = 1080;
   const INTERVAL_EXPORT = 90;
 
   for (let m = START_MIN_EXPORT; m <= END_MIN_EXPORT; m += INTERVAL_EXPORT) timePoints.add(m);
@@ -2715,8 +2675,6 @@ function downloadSchedule(id, format = null, isBatch = false) {
   let tableContent = "";
   matrixIntervals.forEach((interval, i) => {
     let rowHtml = `<tr style="min-height: 80px;">`;
-
-    // Time Cell
     rowHtml += `<td style="background: ${headerBg}; color: ${borderColor}; font-weight: 950; font-size: 14px; text-align: center; border: 1.5px solid ${gridColor}; padding: 15px; min-width: 140px;">${interval.label}</td>`;
 
     localDays.forEach(day => {
@@ -2751,18 +2709,15 @@ function downloadSchedule(id, format = null, isBatch = false) {
 
         if (c.subject === "MARKED_VACANT") {
           const isDefault = !c.color || c.color === '#bfdbfe' || c.color === '#93c5fd';
-          const bgColor = isDefault ? "#93c5fd" : c.color;
-          const textColor = isDefault ? "#1e3a8a" : "#000000";
-
-          style += `background: ${bgColor} !important; color: ${textColor} !important; border-bottom: 1.5px solid #94a3b8 !important; border-right: 1.5px solid #94a3b8 !important; box-shadow: inset 6px 0 0 rgba(0,0,0,0.2) !important; border-radius: 0 !important;`;
+          const bgColorCell = isDefault ? "#93c5fd" : c.color;
+          const textColorCell = isDefault ? "#1e3a8a" : "#000000";
+          style += `background: ${bgColorCell} !important; color: ${textColorCell} !important; border-bottom: 1.5px solid #94a3b8 !important; border-right: 1.5px solid #94a3b8 !important; box-shadow: inset 6px 0 0 rgba(0,0,0,0.2) !important; border-radius: 0 !important;`;
           content = `<div style="font-size: 10px; letter-spacing: 1.5px; font-weight: 700;">VACANT</div>`;
         } else if (c.subject && c.subject !== "VACANT") {
           const isDefaultBlue = !c.color || c.color === '#bfdbfe' || c.color === '#93c5fd';
-          const bgColor = isDefaultBlue ? "#93c5fd" : c.color;
-          const textColor = isDefaultBlue ? "#1e3a8a" : "#000000";
-
-          style += `background: ${bgColor} !important; color: ${textColor} !important; border-bottom: 1.5px solid #94a3b8 !important; border-right: 1.5px solid #94a3b8 !important; box-shadow: inset 6px 0 0 rgba(0,0,0,0.2) !important; border-radius: 0 !important;`;
-
+          const bgColorCell = isDefaultBlue ? "#93c5fd" : c.color;
+          const textColorCell = isDefaultBlue ? "#1e3a8a" : "#000000";
+          style += `background: ${bgColorCell} !important; color: ${textColorCell} !important; border-bottom: 1.5px solid #94a3b8 !important; border-right: 1.5px solid #94a3b8 !important; box-shadow: inset 6px 0 0 rgba(0,0,0,0.2) !important; border-radius: 0 !important;`;
           content = `
             <div style="font-weight: 750; font-size: 15px; line-height: 1.1; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.2px;">${c.subject}</div>
             <div style="font-size: 11px; font-weight: 600; opacity: 0.8; margin-bottom: 4px;">${c.teacher}</div>
@@ -2772,14 +2727,11 @@ function downloadSchedule(id, format = null, isBatch = false) {
           `;
         }
       } else {
-        // Force White for empty cells 🦈
         style += `background: #ffffff; border-right: 1.5px solid #94a3b8; border-bottom: 1.5px solid #94a3b8;`;
         content = "";
       }
-
       rowHtml += `<td ${rowspanAttr} style="${style}">${content}</td>`;
     });
-
     rowHtml += `</tr>`;
     tableContent += rowHtml;
   });
@@ -2806,7 +2758,6 @@ function downloadSchedule(id, format = null, isBatch = false) {
         <div style="font-size: 16px; opacity: 0.9;">Exporting minimalistic ${format.toUpperCase()}...</div>
       `;
 
-
     try {
       if (format === 'pdf') {
         const opt = {
@@ -2822,88 +2773,28 @@ function downloadSchedule(id, format = null, isBatch = false) {
         link.download = `${sched.section || 'Schedule'}_Export.png`;
         link.href = canvas.toDataURL("image/png");
         link.click();
-      }
-
-      if (format !== 'excel') {
-        overlay.remove();
-        showToast(`Schedule saved!`, "success");
-      }
-    } catch (err) {
-      console.error("Export Error:", err);
-      overlay.remove();
-      showToast("Download failed", "error");
-    }
-
-    if (format === 'excel') {
-      try {
+      } else if (format === 'excel') {
         const wb = XLSX.utils.book_new();
-        const wsData = [];
-
-        // Document Headers
-        wsData.push(["STI COLLEGE SANTA MARIA"]);
-        wsData.push(["OFFICIAL CLASS SCHEDULE"]);
-        wsData.push([`SECTION: ${sched.section || "N/A"}`]);
-        wsData.push(["ACADEMIC YEAR 2025-2026"]);
-        wsData.push([]); // Spacer
-
-        const daySet = new Set();
-        (sched.selectedDays || []).forEach(d => { if (d) daySet.add(d); });
-        (sched.classes || []).forEach(c => { if (c && c.day) daySet.add(c.day); });
-        let localDays = Array.from(daySet);
-        if (localDays.length === 0) localDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-        const ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-        localDays.sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b));
-
-        // Grid Column Headers
-        const headerRow = ["TIME BLOCK", ...localDays];
-        wsData.push(headerRow);
-
-        // Build Schedule Matrix
-        const timePoints = new Set();
-        const START_MIN_EXPORT = 450;
-        const END_MIN_EXPORT = 1080;
-        const INTERVAL_EXPORT = 90;
-        for (let m = START_MIN_EXPORT; m <= END_MIN_EXPORT; m += INTERVAL_EXPORT) timePoints.add(m);
-        (sched.classes || []).forEach(c => {
-          const block = parseBlock(c.timeBlock);
-          if (block) {
-            timePoints.add(block.start);
-            timePoints.add(block.end);
-          }
-        });
-        const sortedPoints = Array.from(timePoints).sort((a, b) => a - b);
-        const matrixIntervals = [];
-        for (let i = 0; i < sortedPoints.length - 1; i++) {
-          const start = sortedPoints[i];
-          const end = sortedPoints[i + 1];
-          if (start >= END_MIN_EXPORT) break;
-          matrixIntervals.push({
-            start: start,
-            end: end,
-            label: `${to12(toTime(start))} - ${to12(toTime(end))}`
-          });
-        }
+        const wsData = [
+          ["STI COLLEGE SANTA MARIA"],
+          ["OFFICIAL CLASS SCHEDULE"],
+          [`SECTION: ${sched.section || "N/A"}`],
+          ["ACADEMIC YEAR 2025-2026"],
+          [],
+          ["TIME BLOCK", ...localDays]
+        ];
 
         matrixIntervals.forEach(interval => {
           const row = [interval.label];
           localDays.forEach(day => {
-            // Find class matching day and time interval
             const classItem = (sched.classes || []).find(c => {
-              const classDays = Array.isArray(c.day) ? c.day : [c.day];
-              const dayMatch = classDays.some(d => normalizeDay(d) === normalizeDay(day));
+              const dayMatch = normalizeDay(c.day) === normalizeDay(day);
               if (!dayMatch) return false;
-
               const block = parseBlock(c.timeBlock);
-              if (!block) return false;
-
-              // Overlap check: block spans this interval if:
-              // class start < interval end AND class end > interval start
-              return block.start < interval.end && block.end > interval.start;
+              return block && block.start < interval.end && block.end > interval.start;
             });
-
             if (classItem && classItem.subject !== "VACANT" && classItem.subject !== "MARKED_VACANT") {
-              const cleanRoom = (classItem.room || "").replace(/\s*\|?\s*\d{1,3}%\s*(?:OCCUPIED)?$/i, "").trim();
-              row.push(`${classItem.subject}\n${classItem.teacher}\nRoom ${cleanRoom}`);
+              row.push(`${classItem.subject}\n${classItem.teacher}\nRoom ${classItem.room}`);
             } else {
               row.push("");
             }
@@ -2911,132 +2802,17 @@ function downloadSchedule(id, format = null, isBatch = false) {
           wsData.push(row);
         });
 
-        // 4. Footer
-        wsData.push([]);
-        wsData.push(["GENERATED VIA SCHEDSYNC ENGINE"]);
-
         const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-        // Define Merges
-        ws['!merges'] = [
-          { s: { r: 0, c: 0 }, e: { r: 0, c: localDays.length } }, // Header 1
-          { s: { r: 1, c: 0 }, e: { r: 1, c: localDays.length } }, // Header 2
-          { s: { r: 2, c: 0 }, e: { r: 2, c: localDays.length } }, // Section
-          { s: { r: 3, c: 0 }, e: { r: 3, c: localDays.length } }, // AY
-          { s: { r: wsData.length - 1, c: 0 }, e: { r: wsData.length - 1, c: localDays.length } } // Footer
-        ];
-
-        // Apply Styling
-        const range = XLSX.utils.decode_range(ws['!ref']);
-        const STI_BLUE = "005BAB";
-        const STI_YELLOW = "FFD200";
-        const BORDER_COLOR = "000000";
-
-        for (let R = range.s.r; R <= range.e.r; ++R) {
-          for (let C = range.s.c; C <= range.e.c; ++C) {
-            const cell_ref = XLSX.utils.encode_cell({ r: R, c: C });
-            if (!ws[cell_ref]) ws[cell_ref] = { t: 's', v: '' };
-
-            ws[cell_ref].s = {
-              alignment: { vertical: "center", horizontal: "center", wrapText: true },
-              font: { name: "Inter", sz: 10, color: { rgb: "000000" } }
-            };
-
-            // Main Title
-            if (R === 0) {
-              ws[cell_ref].s.font = { name: "Inter", sz: 14, bold: true, color: { rgb: STI_BLUE } };
-            }
-            // Class Schedule Title
-            if (R === 1) {
-              ws[cell_ref].s.font = { name: "Inter", sz: 24, bold: true, color: { rgb: "000000" } };
-            }
-            // Section Highlight
-            if (R === 2) {
-              ws[cell_ref].s.fill = { fgColor: { rgb: STI_YELLOW } };
-              ws[cell_ref].s.font = { name: "Inter", sz: 12, bold: true };
-            }
-            // AY
-            if (R === 3) {
-              ws[cell_ref].s.font = { name: "Inter", sz: 10, bold: true, color: { rgb: "64748b" } };
-            }
-
-            // Grid Headers (Row 5 is the headers)
-            if (R === 5) {
-              ws[cell_ref].s.fill = { fgColor: { rgb: STI_BLUE } };
-              ws[cell_ref].s.font = { name: "Inter", sz: 11, bold: true, color: { rgb: "FFFFFF" } };
-              ws[cell_ref].s.border = {
-                top: { style: "medium", color: { rgb: BORDER_COLOR } },
-                bottom: { style: "thick", color: { rgb: BORDER_COLOR } },
-                left: { style: "medium", color: { rgb: BORDER_COLOR } },
-                right: { style: "medium", color: { rgb: BORDER_COLOR } }
-              };
-            }
-
-            // Time Block Column (Col 0)
-            if (R > 5 && C === 0 && R < wsData.length - 2) {
-              ws[cell_ref].s.font.bold = true;
-              ws[cell_ref].s.fill = { fgColor: { rgb: "F1F5F9" } };
-              ws[cell_ref].s.border = {
-                left: { style: "medium", color: { rgb: BORDER_COLOR } },
-                right: { style: "medium", color: { rgb: BORDER_COLOR } },
-                bottom: { style: "thin", color: { rgb: "cbd5e1" } }
-              };
-            }
-
-            // Data Cells
-            if (R > 5 && C > 0 && R < wsData.length - 2) {
-              const interval = matrixIntervals[R - 6];
-              const day = localDays[C - 1];
-              const classItem = (sched.classes || []).find(c => {
-                const classDays = Array.isArray(c.day) ? c.day : [c.day];
-                const dayMatch = classDays.some(d => normalizeDay(d) === normalizeDay(day));
-                if (!dayMatch) return false;
-                const block = parseBlock(c.timeBlock);
-                return block && block.start < interval.end && block.end > interval.start;
-              });
-
-              ws[cell_ref].s.border = {
-                bottom: { style: "thin", color: { rgb: "cbd5e1" } },
-                right: { style: "thin", color: { rgb: "cbd5e1" } }
-              };
-
-              if (classItem && classItem.subject !== "VACANT" && classItem.subject !== "MARKED_VACANT") {
-                const hexColor = (classItem.color || "#BFDBFE").replace("#", "");
-                ws[cell_ref].s.fill = { fgColor: { rgb: hexColor } };
-                ws[cell_ref].s.font.bold = true;
-                ws[cell_ref].s.font.sz = 11;
-                // Add right border if it's the last column
-                if (C === range.e.c) {
-                  ws[cell_ref].s.border.right = { style: "medium", color: { rgb: BORDER_COLOR } };
-                }
-              }
-            }
-
-            // Footer Styling
-            if (R === wsData.length - 1) {
-              ws[cell_ref].s.font = { name: "Inter", sz: 9, italic: true, color: { rgb: "94a3b8" } };
-            }
-          }
-        }
-
-        // Column and Row sizing
-        ws['!cols'] = [{ wch: 25 }, ...localDays.map(() => ({ wch: 40 }))];
-        ws['!rows'] = wsData.map((r, i) => {
-          if (i < 4) return { hpt: 40 };
-          if (i === 1) return { hpt: 60 };
-          if (i > 5 && i < wsData.length - 2) return { hpt: 85 };
-          return { hpt: 30 };
-        });
-
         XLSX.utils.book_append_sheet(wb, ws, "Schedule");
         XLSX.writeFile(wb, `${sched.section || 'Schedule'}_Export.xlsx`);
-        overlay.remove();
-        showToast("Excel document saved", "success");
-      } catch (err) {
-        console.error("EXCEL EXPORT ERROR:", err);
-        overlay.remove();
-        showToast("Excel export failed!", "error");
       }
+
+      overlay.remove();
+      showToast(`Schedule saved!`, "success");
+    } catch (err) {
+      console.error("Export Error:", err);
+      overlay.remove();
+      showToast("Download failed", "error");
     }
   }, 1200);
 }
@@ -3047,18 +2823,10 @@ function downloadAll() {
     return;
   }
   showDownloadFormatSelector((format) => {
-    const count = schedules.length;
-    showToast(`🚀 Launching ${count} ${format.toUpperCase()} downloads...`, "success");
-
     schedules.forEach((s, index) => {
       setTimeout(() => {
         downloadSchedule(s.id, format, true);
-        if (index === count - 1) {
-          setTimeout(() => {
-            showToast("✅ All downloads complete!", "success");
-          }, 1500);
-        }
-      }, index * 600); // 600ms stagger for safety
+      }, index * 600);
     });
   });
 }
@@ -3075,70 +2843,29 @@ function showDownloadFormatSelector(callback) {
 
   overlay.innerHTML = `
     <div class="export-card-container" style="background: white; border: 5px solid black; padding: 45px; border-radius: 32px; box-shadow: 15px 15px 0px #000; text-align: center; max-width: 750px; width: 95%; transform: scale(0.9); transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative;">
-      
       <button class="close-modal-btn" style="position: absolute; top: 20px; right: 20px; background: #f1f5f9; border: 3px solid black; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; transition: all 0.2s; box-shadow: 3px 3px 0px black;">×</button>
-
       <div style="margin-bottom: 35px;">
         <h2 style="color: #005BAB; font-size: 32px; font-weight: 950; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 2px;">Export Schedule</h2>
         <p style="font-size: 16px; color: #64748b; font-weight: 700;">Select your export format below.</p>
       </div>
-
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 25px;">
-        
-        <!-- PDF OPTION -->
         <div class="format-option pdf-btn" style="background: #fef2f2; border: 4px solid black; padding: 30px 20px; border-radius: 20px; cursor: pointer; transition: all 0.3s; box-shadow: 6px 6px 0px black; position: relative; overflow: hidden;">
           <div style="font-size: 45px; margin-bottom: 15px;">📑</div>
           <div style="font-weight: 900; color: #991b1b; font-size: 14px; text-transform: uppercase;">PDF Document</div>
-          <div style="font-size: 11px; color: #ef4444; font-weight: 700; margin-top: 5px;">Best for Printing</div>
-          <div class="hover-glow" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, rgba(239, 68, 68, 0.1) 0%, transparent 70%); opacity: 0; transition: opacity 0.3s;"></div>
         </div>
-
-        <!-- IMAGE OPTION -->
         <div class="format-option img-btn" style="background: #eff6ff; border: 4px solid black; padding: 30px 20px; border-radius: 20px; cursor: pointer; transition: all 0.3s; box-shadow: 6px 6px 0px black; position: relative; overflow: hidden;">
           <div style="font-size: 45px; margin-bottom: 15px;">🖼️</div>
           <div style="font-weight: 900; color: #1e40af; font-size: 14px; text-transform: uppercase;">Image (PNG)</div>
-          <div style="font-size: 11px; color: #3b82f6; font-weight: 700; margin-top: 5px;">Perfect for Shares</div>
-          <div class="hover-glow" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, rgba(59, 130, 246, 0.1) 0%, transparent 70%); opacity: 0; transition: opacity 0.3s;"></div>
         </div>
-
-        <!-- EXCEL OPTION -->
         <div class="format-option xls-btn" style="background: #f0fdf4; border: 4px solid black; padding: 30px 20px; border-radius: 20px; cursor: pointer; transition: all 0.3s; box-shadow: 6px 6px 0px black; position: relative; overflow: hidden;">
           <div style="font-size: 45px; margin-bottom: 15px;">📊</div>
           <div style="font-weight: 900; color: #166534; font-size: 14px; text-transform: uppercase;">Excel Spreadsheet</div>
-          <div style="font-size: 11px; color: #22c55e; font-weight: 700; margin-top: 5px;">Editable & Styled</div>
-          <div class="hover-glow" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, rgba(34, 197, 94, 0.1) 0%, transparent 70%); opacity: 0; transition: opacity 0.3s;"></div>
         </div>
-
-      </div>
-
-      <div style="margin-top: 35px; font-size: 12px; color: #94a3b8; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">
-        Powered by SchedSync Engine
       </div>
     </div>
-
-    <style>
-      .format-option:hover {
-        transform: translate(-4px, -4px);
-        box-shadow: 10px 10px 0px black;
-      }
-      .format-option:hover .hover-glow {
-        opacity: 1;
-      }
-      .format-option:active {
-        transform: translate(2px, 2px);
-        box-shadow: 2px 2px 0px black;
-      }
-      .close-modal-btn:hover {
-        background: #ef4444;
-        color: white;
-        transform: scale(1.1);
-      }
-    </style>
   `;
 
   document.body.appendChild(overlay);
-
-  // Animate Entrance
   requestAnimationFrame(() => {
     overlay.style.opacity = "1";
     overlay.querySelector('.export-card-container').style.transform = "scale(1)";
@@ -3160,7 +2887,6 @@ function showDownloadFormatSelector(callback) {
 function copyDayInSection(schedId, day) {
   if (currentUserRole === 'teacher' && localStorage.getItem('editPermission') !== 'true') {
     if (window.requestEditPermission) window.requestEditPermission();
-    else alert("Please request permission to copy!");
     return;
   }
 
@@ -3173,76 +2899,14 @@ function copyDayInSection(schedId, day) {
     return;
   }
 
-  // 1. ANIMATION: "Suck" into the clipboard
-  const copyBtn = document.querySelector(`span[onclick="copyDayInSection('${schedId}', '${day}')"]`);
-
-  if (copyBtn) {
-    // Pulse the button when clicked
-    copyBtn.classList.remove('maangas-button-active');
-    void copyBtn.offsetWidth; // Trigger reflow
-    copyBtn.classList.add('maangas-button-active');
-
-    const btnRect = copyBtn.getBoundingClientRect();
-    const btnX = btnRect.left + btnRect.width / 2;
-    const btnY = btnRect.top + btnRect.height / 2;
-
-    const cells = document.querySelectorAll(`td[data-sched-id="${schedId}"][data-day="${day}"]`);
-
-    cells.forEach((cell, i) => {
-      if (cell.classList.contains('inactive') || cell.classList.contains('vacant-empty')) return;
-      if (!cell.textContent.trim()) return;
-
-      const rect = cell.getBoundingClientRect();
-      const clone = cell.cloneNode(true);
-
-      // Style the clone for flight
-      clone.classList.add("flying-clone");
-      clone.style.position = 'fixed';
-      clone.style.left = `${rect.left}px`;
-      clone.style.top = `${rect.top}px`;
-      clone.style.width = `${rect.width}px`;
-      clone.style.height = `${rect.height}px`;
-      clone.style.zIndex = '9999';
-      clone.style.pointerEvents = 'none';
-      clone.style.opacity = '1';
-      clone.style.transform = 'scale(1)';
-      clone.style.transition = 'all 1.5s cubic-bezier(0.19, 1, 0.22, 1)'; // 1.5s duration
-      clone.style.backgroundColor = '#60a5fa'; // Blue
-      clone.style.color = 'white';
-      clone.style.display = 'flex';
-      clone.style.alignItems = 'center';
-      clone.style.justifyContent = 'center';
-      clone.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)';
-
-      document.body.appendChild(clone);
-
-      // Trigger animation with STAGGER
-      setTimeout(() => {
-        clone.style.left = `${btnX}px`;
-        clone.style.top = `${btnY}px`;
-        clone.style.width = '20px'; // Shrink
-        clone.style.height = '20px';
-        clone.style.transform = 'scale(0.1) rotate(360deg)';
-        clone.style.opacity = '0';
-        clone.style.borderRadius = '50%';
-      }, i * 350); // 350ms delay per item
-
-      // Cleanup
-      setTimeout(() => clone.remove(), 1800 + (i * 350));
-    });
-  }
-
   copiedDayClasses = JSON.parse(JSON.stringify(dayClasses));
   copiedDayName = day;
   showToast(`📋 Copied ${dayClasses.length} classes!`, "success");
-
-  setTimeout(renderTable, 100);
 }
 
 async function pasteDayToSection(schedId, targetDay) {
   if (currentUserRole === 'teacher' && localStorage.getItem('editPermission') !== 'true') {
     if (window.requestEditPermission) window.requestEditPermission();
-    else alert("Please request permission to paste!");
     return;
   }
 
@@ -3254,111 +2918,20 @@ async function pasteDayToSection(schedId, targetDay) {
   const sched = schedules.find(s => s.id === schedId);
   if (!sched) return;
 
-  // Use our safe confirm
   showConfirm(`Paste classes into ${sched.section} ${targetDay}?`, async () => {
-    pushToHistory(); // Capture state before paste ⚓
-
-    // 1. ANIMATION: "Spit" from the clipboard (Inbox button)
-    const pasteBtn = document.querySelector(`span[onclick="pasteDayToSection('${schedId}', '${targetDay}')"]`);
-
-    if (pasteBtn) {
-      // Pulse button
-      pasteBtn.classList.add('maangas-button-active');
-      setTimeout(() => pasteBtn.classList.remove('maangas-button-active'), 400);
-
-      const btnRect = pasteBtn.getBoundingClientRect();
-      const btnX = btnRect.left + btnRect.width / 2;
-      const btnY = btnRect.top + btnRect.height / 2;
-
-      const targetColumnCells = document.querySelectorAll(`td[data-sched-id="${schedId}"][data-day="${targetDay}"]`);
-
-      // Create a promise to wait for all animations
-      const animationPromises = copiedDayClasses.map((cls, index) => {
-        return new Promise(resolve => {
-          const bp = parseBlock(cls.timeBlock);
-          // 🔑 ROBUST MATCHING: Find cell that STARTS at the same minute ⚓
-          const targetCell = Array.from(targetColumnCells).find(td => parseInt(td.dataset.start) === bp.start);
-
-          if (targetCell) {
-            const cellRect = targetCell.getBoundingClientRect();
-
-            // Create the projectile
-            const projectile = document.createElement("div");
-            projectile.classList.add("paste-projectile");
-            projectile.textContent = cls.subject.substring(0, 3);
-            projectile.style.position = 'fixed';
-            projectile.style.left = `${btnX}px`;
-            projectile.style.top = `${btnY}px`;
-            projectile.style.zIndex = '9999';
-            projectile.style.background = '#3b82f6';
-            projectile.style.color = 'white';
-            projectile.style.padding = '4px 8px';
-            projectile.style.fontSize = '12px';
-            projectile.style.fontWeight = '800';
-            projectile.style.borderRadius = '99px';
-            projectile.style.boxShadow = '0 0 10px #3b82f6';
-            projectile.style.transform = 'scale(0) rotate(0deg)';
-            projectile.style.opacity = '1';
-            projectile.style.transition = 'all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)'; // Slower, bouncier flight
-
-            document.body.appendChild(projectile);
-
-            // Launch with SIGNIFICANT delay for "isa-isa" feel (200ms stagger)
-            setTimeout(() => {
-              projectile.style.left = `${cellRect.left + cellRect.width / 2 - 20}px`;
-              projectile.style.top = `${cellRect.top + cellRect.height / 2 - 10}px`;
-              projectile.style.transform = 'scale(1) rotate(360deg)';
-            }, index * 200);
-
-            // Impact & Resolve
-            setTimeout(() => {
-              projectile.remove();
-
-              // 🔑 INSTANT CONTENT POPULATION
-              // We manually inject the HTML here so it appears "one by one"
-              // before the final table render
-              targetCell.innerHTML = `<strong>${cls.subject}</strong><br>${cls.teacher}, ${cls.room}`;
-              targetCell.classList.remove('inactive', 'vacant-empty');
-              targetCell.classList.add('occupied', 'maangas-cell-hit');
-              targetCell.style.backgroundColor = '#bfdbfe';
-
-              setTimeout(() => {
-                targetCell.classList.remove('maangas-cell-hit');
-                targetCell.style.backgroundColor = '';
-                resolve(); // Resolved this item
-              }, 500);
-            }, 800 + (index * 200)); // Flight duration + stagger
-          } else {
-            resolve(); // No target, resolve immediately
-          }
-        });
-      });
-
-      // Wait for ALL animations to finish
-      await Promise.all(animationPromises);
-    } else {
-      // Fallback delay if button not found by selector
-      await new Promise(r => setTimeout(r, 600));
-    }
+    pushToHistory(); 
 
     const newClasses = copiedDayClasses.map(c => ({
       ...c,
       day: targetDay
     })).filter(nc => {
-      // 6:00 PM LIMIT VALIDATION
       const bp = parseBlock(nc.timeBlock);
       return bp.end <= 1080;
     });
 
-    if (newClasses.length < copiedDayClasses.length) {
-      showToast("Some classes were skipped because they exceed 6:00 PM 🦈🕔", "warning");
-    }
-
     let updated = [...(sched.classes || [])];
     for (const nc of newClasses) {
       const ncBlock = parseBlock(nc.timeBlock);
-      // 🛡️ Remove ANY existing classes that OVERLAP with the pasted block ⚓
-      // This handles cases where a 90m block covers two 45m blocks or vice versa.
       updated = updated.filter(c => !(c.day === targetDay && overlaps(parseBlock(c.timeBlock), ncBlock)));
       updated.push(nc);
     }
@@ -3386,69 +2959,11 @@ async function clearDayInSection(schedId, day) {
   const sched = schedules.find(s => s.id === schedId);
   if (!sched) return;
 
-  // Use Maangas Safe Confirm
   showConfirm(`Clear all classes for ${day} in ${sched.section}?`, async () => {
-    pushToHistory(); // Capture state before clear ⚓
-
-    // ANIMATION: "Implosion" / "Black Hole"
-    const trashBtn = document.querySelector(`span[onclick="clearDayInSection('${schedId}', '${day}')"]`);
-    if (trashBtn) {
-      trashBtn.style.color = '#ef4444';
-      trashBtn.style.transform = 'scale(1.5) rotate(15deg)';
-      trashBtn.style.transition = 'all 0.3s ease';
-
-      const cells = document.querySelectorAll(`td[data-sched-id="${schedId}"][data-day="${day}"]`);
-      const rect = trashBtn.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-
-      cells.forEach((cell, i) => {
-        if (!cell.textContent.trim() || cell.classList.contains('inactive')) return;
-
-        // Create flying clone
-        const clone = cell.cloneNode(true);
-        const cellRect = cell.getBoundingClientRect();
-
-        clone.style.position = 'fixed';
-        clone.style.left = `${cellRect.left}px`;
-        clone.style.top = `${cellRect.top}px`;
-        clone.style.width = `${cellRect.width}px`;
-        clone.style.height = `${cellRect.height}px`;
-        clone.style.backgroundColor = '#fecaca'; // Light red
-        clone.style.zIndex = '9999';
-        clone.style.transition = 'all 0.5s cubic-bezier(0.6, -0.28, 0.735, 0.045)'; // Suck in effect
-        clone.classList.add('flying-trash');
-
-        document.body.appendChild(clone);
-
-        // Hide original immediately to prevent visual dupes
-        cell.style.opacity = '0';
-
-        // Suck into trash can
-        setTimeout(() => {
-          clone.style.left = `${centerX}px`;
-          clone.style.top = `${centerY}px`;
-          clone.style.transform = 'scale(0) rotate(180deg)';
-          clone.style.opacity = '0';
-        }, i * 50); // Fast ripple
-
-        setTimeout(() => clone.remove(), 600);
-      });
-
-      // Pulse the trash can
-      setTimeout(() => {
-        trashBtn.style.transform = 'scale(1)';
-        trashBtn.style.color = '';
-      }, 600);
-    }
-
-    // Wait for animation
-    await new Promise(r => setTimeout(r, 600));
-
+    pushToHistory(); 
     const updated = (sched.classes || []).filter(c => c.day !== day);
     sched.classes = updated;
     renderTable();
-    // Refresh occupancies 📊⚓
     if (typeof updateRoomSelectionOccupancies === 'function') {
       updateRoomSelectionOccupancies();
     }
@@ -3474,22 +2989,17 @@ async function clearSection(schedId) {
   if (!sched) return;
 
   const confirmed = await showConfirm("WIPE SECTION", `WIPE EVERYTHING in ${sched.section}? This cannot be undone! 🛡️⚡`);
-  
   if (confirmed) {
-    pushToHistory(); // Capture state before wipe ⚓
+    pushToHistory(); 
     sched.classes = [];
     renderTable();
-    // Refresh occupancies 📊⚓
     if (typeof updateRoomSelectionOccupancies === 'function') {
       updateRoomSelectionOccupancies();
     }
-
     try {
       const ref = doc(db, "schedules", sched.id);
       await updateDoc(ref, { classes: [] });
       showToast(`🔥 Wiped ${sched.section} grid!`, "success");
-      
-      // --- AUDIT LOG 📜 ---
       logAction("CLEAR_SECTION", `Wiped entire grid for section: ${sched.section}`, {
         scheduleId: sched.id,
         section: sched.section
@@ -3501,49 +3011,32 @@ async function clearSection(schedId) {
   }
 }
 
-
 window.copyDayInSection = copyDayInSection;
 window.pasteDayToSection = pasteDayToSection;
 window.clearDayInSection = clearDayInSection;
 window.clearSection = clearSection;
-window.copyDay = (day) => {
-  // Legacy support
-  if (schedules.length > 0) copyDayInSection(schedules[0].id, day);
-};
-window.pasteDay = (day) => {
-  // Legacy support
-  if (schedules.length > 0) pasteDayToSection(schedules[0].id, day);
-};
 window.downloadAll = downloadAll;
 window.downloadSchedule = downloadSchedule;
 window.closePanel = closePanel;
-window.openPanel = openPanel; // Exported for switcher 🔄
+window.openPanel = openPanel; 
 window.markAsVacant = markAsVacant;
 window.deleteClass = deleteClass;
-window.listenForComments = listenForComments; // Export for manual refresh 🔄
+window.listenForComments = listenForComments; 
 window.saveClass = saveClass;
 window.save = save;
 
-/* 🌙 DYNAMIC ATMOSPHERIC LOGIC */
 window.updateAtmosphere = function updateAtmosphere() {
   const now = new Date();
   const hour = now.getHours();
-  // DEBUG OVERRIDE: const hour = 19; // Force night
-
   const body = document.body;
   body.classList.remove('atm-golden', 'atm-night');
-
   if ((hour >= 19 || hour < 6) && document.documentElement.classList.contains('dark')) {
-    body.classList.add('atm-night'); // 7 PM - 6 AM! Only in Dark Mode!
+    body.classList.add('atm-night');
   }
-
-  // 🕵️‍♂️ FIND CURRENT CLASS
   const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   const currentDay = dayNames[now.getDay()];
   const currentTotalMin = now.getHours() * 60 + now.getMinutes();
-
   document.querySelectorAll('.current-pulse').forEach(el => el.classList.remove('current-pulse'));
-
   const cells = document.querySelectorAll(`td[data-day="${currentDay}"]`);
   cells.forEach(td => {
     const block = td.dataset.block;
@@ -3551,33 +3044,15 @@ window.updateAtmosphere = function updateAtmosphere() {
     const [startS, endS] = block.split("-");
     const startMin = toMin(startS);
     const endMin = toMin(endS);
-
     if (currentTotalMin >= startMin && currentTotalMin < endMin) {
       td.classList.add('current-pulse');
-      // Subtle Humming/Pulse Effect
-      if (!td.querySelector('.active-indicator')) {
-        const dot = document.createElement('div');
-        dot.className = 'active-indicator';
-        dot.style.cssText = "position:absolute;top:5px;right:5px;width:8px;height:8px;background:#3b82f6;border-radius:50%;box-shadow:0 0 10px #3b82f6;animation:pulseActive 1s infinite alternate;";
-        td.style.position = 'relative';
-        td.appendChild(dot);
-      }
-    } else {
-      const dot = td.querySelector('.active-indicator');
-      if (dot) dot.remove();
     }
   });
-}
+};
 
-// Update every minute
 setInterval(updateAtmosphere, 60000);
-document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(updateAtmosphere, 2000); // Small delay to let table render
-});
+document.addEventListener('DOMContentLoaded', () => { setTimeout(updateAtmosphere, 2000); });
 
-// load() is called in the DOMContentLoaded handler after user is authenticated
-
-/* ───────── WINDOW EXPORTS ───────── */
 window.handleColorSelect = function () {
   const select = document.getElementById("colorSelect");
   const picker = document.getElementById("colorPicker");
@@ -3592,7 +3067,6 @@ window.handleColorSelect = function () {
 };
 window.handleColorPicker = function () { };
 
-/* ───────── PERMISSION REQUEST LOGIC ───────── */
 
 /* ───────── PRESENCE TRACKING 🦈 ───────── */
 let presenceUnsub = null;
@@ -3601,7 +3075,7 @@ let commentUnsub = null; // Unsubscriber for comments 🔇
 
 async function initPresence() {
   const urlParams = new URLSearchParams(window.location.search);
-  const schedId = urlParams.get("id") || "global"; // Track by schedule or global
+  const schedId = urlParams.get("id") || "global"; 
 
   presenceDocRef = doc(db, "presence", `${schedId}_${currentUser.uid}`);
 
@@ -3610,7 +3084,6 @@ async function initPresence() {
       await updateDoc(presenceDocRef, {
         lastSeen: serverTimestamp()
       }).catch(async (e) => {
-        // Doc might not exist, create it
         await addDoc(collection(db, "presence"), {
           id: `${schedId}_${currentUser.uid}`,
           schedId: schedId,
@@ -3623,22 +3096,17 @@ async function initPresence() {
     } catch (e) { console.error("Presence error:", e); }
   };
 
-  // Initial heartbeat
   updateStatus();
-  setInterval(updateStatus, 30000); // 30s heartbeat
+  setInterval(updateStatus, 30000); 
 
-  // Listen for others
   const q = query(collection(db, "presence"), where("schedId", "==", schedId));
   presenceUnsub = onSnapshot(q, (snap) => {
     const indicator = document.getElementById('presence-indicator');
     if (!indicator) return;
-
     indicator.innerHTML = '';
     const now = Date.now();
-
     snap.forEach(d => {
       const data = d.data();
-      // Only show if seen in the last 2 minutes
       const lastSeen = data.lastSeen?.toMillis ? data.lastSeen.toMillis() : 0;
       if (now - lastSeen < 120000 && data.userId !== currentUser.uid) {
         const img = document.createElement('img');
@@ -3650,7 +3118,6 @@ async function initPresence() {
     });
   });
 
-  // Cleanup
   window.addEventListener('beforeunload', () => {
     if (presenceDocRef) deleteDoc(presenceDocRef);
   });
@@ -3659,8 +3126,6 @@ async function initPresence() {
 /* ───────── COMMENTING SYSTEM 💬 ───────── */
 
 window.openCommentPanel = async function (schedId, day, block, force = false) {
-
-
   const commentPanel = document.getElementById('commentPanel');
   const overlay = document.getElementById('panelOverlay');
   if (!commentPanel) {
@@ -3668,7 +3133,6 @@ window.openCommentPanel = async function (schedId, day, block, force = false) {
     return console.error("commentPanel not found");
   }
 
-  // Refresh data trigger 🔄
   if (force === 'refresh') {
     showToast("Refreshing comments...", "info");
     if (window.listenForComments) {
@@ -3678,16 +3142,12 @@ window.openCommentPanel = async function (schedId, day, block, force = false) {
     }
   }
 
-  // 1. Resilient Role Detection 🛡️
   let rawRole = currentUserRole || localStorage.getItem('userRole');
   let role = (rawRole || "").toLowerCase();
   let hasPermission = localStorage.getItem('editPermission') === 'true';
   const isAdmin = role === 'admin';
-
   const sched = (schedules || []).find(s => s.id === schedId);
   const isOwner = sched && (sched.userId === currentUser?.uid);
-
-  // Filter comments
   const normBlock = normalizeTimeBlock(block);
 
   const allCellComments = (comments || []).filter(c => {
@@ -3697,17 +3157,13 @@ window.openCommentPanel = async function (schedId, day, block, force = false) {
     return matchSched && matchDay && matchBlock;
   });
 
-
-
   const isParticipant = allCellComments.some(c => c.userId === currentUser?.uid);
   const hasVisibility = isAdmin || isOwner || isParticipant;
   const cellComments = hasVisibility ? allCellComments : [];
 
-  // 4. Mark as Seen 👀
   if (currentUser?.uid) {
     const unseen = cellComments.filter(c => !(c.seenBy || []).includes(currentUser.uid));
     if (unseen.length > 0) {
-
       const updates = unseen.map(c =>
         updateDoc(doc(db, "comments", c.docId), {
           seenBy: arrayUnion(currentUser.uid)
@@ -3717,13 +3173,11 @@ window.openCommentPanel = async function (schedId, day, block, force = false) {
     }
   }
 
-  // Early Return Logic (Skip if from Cell Click and no comments)
   if (force !== 'force' && force !== true) {
     if ((isAdmin || isOwner || hasPermission) && cellComments.length === 0) return false;
     if (role === 'student' && cellComments.length === 0) return false;
   }
 
-  // Populate UI
   const info = document.getElementById('commentCellInfo');
   if (info && block && block.includes("-")) {
     const parts = block.split("-");
@@ -3742,7 +3196,6 @@ window.openCommentPanel = async function (schedId, day, block, force = false) {
   commentPanel.dataset.day = day;
   commentPanel.dataset.block = block;
 
-  // Render List
   const list = document.getElementById('commentList');
   if (list) {
     list.innerHTML = '';
@@ -3762,31 +3215,15 @@ window.openCommentPanel = async function (schedId, day, block, force = false) {
       list.appendChild(entry);
     });
     if (cellComments.length === 0) list.innerHTML = '<div style="text-align:center; opacity:0.5; font-size:12px; padding:20px;">No comments yet</div>';
-
-    // Scroll to bottom 📜
-    setTimeout(() => {
-      list.scrollTop = list.scrollHeight;
-    }, 100);
+    setTimeout(() => { list.scrollTop = list.scrollHeight; }, 100);
   }
 
-  // --- TERMINOLOGY UPDATE (Comment Section) ⚓ ---
-  const tchRoomHeader = Array.from(commentPanel.querySelectorAll('div')).find(div => div.textContent.includes('Teacher & Room'));
-  if (sched?.scheduleType === 'exam') {
-    if (tchRoomHeader) tchRoomHeader.textContent = "Proctor & Room";
-    if (document.getElementById('commentTchRoomInfo') && cls) {
-      document.getElementById('commentTchRoomInfo').textContent = `${cls.teacher}, ${cls.room}`;
-    }
-  } else {
-    if (tchRoomHeader) tchRoomHeader.textContent = "Teacher & Room";
-  }
-
-  // Controls
   const inputArea = document.getElementById('commentInputArea');
-  const submitBtn = commentPanel.querySelector('.comment-submit');
+  const submitBtn = document.querySelector('.comment-submit');
   const inputLabel = document.getElementById('commentInputLabel');
-  const backBtn = commentPanel.querySelector('.back-to-edit-btn');
+  const backBtn = document.querySelector('.back-to-edit-btn');
 
-  if (isAdmin) {
+  if (isAdmin || isOwner || hasPermission) {
     if (inputArea) inputArea.style.display = 'block';
     if (submitBtn) submitBtn.style.display = 'block';
     if (inputLabel) inputLabel.textContent = cellComments.length > 0 ? "Post a Reply" : "Your Comment";
@@ -3802,11 +3239,14 @@ window.openCommentPanel = async function (schedId, day, block, force = false) {
     if (backBtn) backBtn.style.display = (isOwner || hasPermission) ? 'inline-block' : 'none';
   }
 
-  // Show 🚀🦈
   commentPanel.classList.add('open');
-  commentPanel.style.zIndex = '10001';
+  if (overlay) overlay.style.display = 'block';
 
-  return true;
+  if (window.innerWidth <= 768 || (window.innerWidth <= 950 && window.innerHeight < window.innerWidth)) {
+    commentPanel.style.left = '50%';
+    commentPanel.style.top = '45%';
+    commentPanel.style.transform = 'translate(-50%, -45%) scale(1)';
+  }
 };
 
 window.switchToComments = function () {
@@ -3815,9 +3255,6 @@ window.switchToComments = function () {
   const sid = editPanel.dataset.schedId;
   const day = editPanel.dataset.day;
   const block = editPanel.dataset.block;
-
-
-
   if (window.closePanel) window.closePanel();
   window.openCommentPanel(sid, day, block, 'force');
 };
@@ -3828,7 +3265,6 @@ window.switchToEdit = function () {
   const sid = commentPanel.dataset.schedId;
   const day = commentPanel.dataset.day;
   const block = commentPanel.dataset.block;
-
   window.closeCommentPanel();
   if (window.openPanel) window.openPanel(sid, day, block);
 };
@@ -3860,7 +3296,7 @@ window.submitComment = async function () {
       userRole: currentUserRole,
       text: text,
       createdAt: serverTimestamp(),
-      seenBy: [currentUser.uid] // Start with the author ✍️
+      seenBy: [currentUser.uid] 
     });
 
     showToast("Comment posted!", "success");
@@ -3874,29 +3310,95 @@ window.submitComment = async function () {
 
 function listenForComments() {
   if (commentUnsub) {
-
     commentUnsub();
     commentUnsub = null;
   }
-
   const urlParams = new URLSearchParams(window.location.search);
   const schedId = urlParams.get("id");
-
-
   let q = collection(db, "comments");
   if (schedId) q = query(collection(db, "comments"), where("schedId", "==", schedId));
 
   commentUnsub = onSnapshot(q, (snap) => {
     comments = [];
     snap.forEach(d => {
-      comments.push({ ...d.data(), docId: d.id }); // Capture docId 🆔
+      comments.push({ ...d.data(), docId: d.id });
     });
-
-    renderTable(); // Refresh table to show bubbles
+    renderTable(); 
   });
 }
 
-/* ───────── CONFLICT DETECTION ENGINE ⚖️⚓ ───────── */
+function initDraggablePanel(panelId) {
+  const panel = document.getElementById(panelId);
+  if (!panel) return;
+  const handle = panel.querySelector('div');
+  if (!handle) return;
 
+  handle.style.cursor = 'grab';
+  handle.style.userSelect = 'none';
+  handle.classList.add('drag-handle'); 
 
+  let isDragging = false;
+  let startX, startY;
+  let initialX, initialY;
 
+  const moveHandler = (e) => {
+    if (!isDragging) return;
+    if (e.cancelable) e.preventDefault();
+    const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+    const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+    const dx = clientX - startX;
+    const dy = clientY - startY;
+    let newX = initialX + dx;
+    let newY = initialY + dy;
+    const viewportW = window.innerWidth;
+    const viewportH = window.innerHeight;
+    newX = Math.max(40, Math.min(viewportW - 40, newX));
+    newY = Math.max(40, Math.min(viewportH - 40, newY));
+    panel.style.left = `${newX}px`;
+    panel.style.top = `${newY}px`;
+    panel.style.transform = 'translate(-50%, -50%)'; 
+  };
+
+  const startHandler = (e) => {
+    const isMobileUI = window.innerWidth <= 768 || (window.innerWidth <= 950 && window.innerHeight < window.innerWidth);
+    if (!isMobileUI) return;
+    if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.closest('button')) return;
+    isDragging = true;
+    handle.style.cursor = 'grabbing';
+    const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+    const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+    startX = clientX;
+    startY = clientY;
+    const rect = panel.getBoundingClientRect();
+    initialX = rect.left + rect.width / 2;
+    initialY = rect.top + rect.height / 2;
+    panel.style.transition = 'none'; 
+    panel.style.left = `${initialX}px`;
+    panel.style.top = `${initialY}px`;
+    panel.style.transform = 'translate(-50%, -50%)';
+  };
+
+  const endHandler = () => {
+    if (!isDragging) return;
+    isDragging = false;
+    handle.style.cursor = 'grab';
+    panel.style.transition = ''; 
+  };
+
+  handle.addEventListener('mousedown', startHandler);
+  window.addEventListener('mousemove', moveHandler, { passive: false });
+  window.addEventListener('mouseup', endHandler);
+  handle.addEventListener('touchstart', startHandler, { passive: false });
+  window.addEventListener('touchmove', moveHandler, { passive: false });
+  window.addEventListener('touchend', endHandler);
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    initDraggablePanel('panel');
+    initDraggablePanel('commentPanel');
+  });
+} else {
+  initDraggablePanel('panel');
+  initDraggablePanel('commentPanel');
+}

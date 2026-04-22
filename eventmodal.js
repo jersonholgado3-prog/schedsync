@@ -151,62 +151,33 @@ function parseBlockInMins(block) {
 
 async function checkRoomConflicts(db, roomName, day, timeBlock) {
   try {
-    // Fetch Section Names
+    // 1. Fetch Section Names once
     const sectionSnap = await getDocs(collection(db, "sections"));
     const sectionMap = {};
     sectionSnap.forEach(s => {
       sectionMap[s.id] = s.data().name;
     });
 
-    const q = query(collection(db, "schedules"));
+    // 2. Only check published schedules to reduce data usage
+    const q = query(collection(db, "schedules"), where("status", "==", "published"));
     const snap = await getDocs(q);
 
     let conflicts = [];
 
     for (const doc of snap.docs) {
-      if (doc.id === "DEFAULT_SECTION") continue; // ✅ SKIP EVENTS
+      if (doc.id === "DEFAULT_SECTION") continue;
       const data = doc.data();
       if (!data.classes) continue;
 
-      // Multi-Tier Section Name Resolution
-      const looksLikeId = (s) => s && s.length > 15 && !s.includes(" ");
-      let resolvedName = "Section";
-      const potentialNames = [data.section, data.scheduleName, data.name, doc.id];
-
-      // Tier 1: Map Resolution
-      for (const p of potentialNames) {
-        if (p && sectionMap[p]) {
-          resolvedName = sectionMap[p];
-          break;
-        }
-      }
-
-      // Tier 2: Clean Names
-      if (resolvedName === "Section") {
-        for (const p of potentialNames) {
-          if (p && !looksLikeId(p)) {
-            resolvedName = p;
-            break;
-          }
-        }
-      }
-
-      // Tier 3: Last Resort (Show what we have)
-      if (resolvedName === "Section") {
-        for (const p of potentialNames) {
-          if (p) {
-            resolvedName = p;
-            break;
-          }
-        }
-      }
+      // Resolve section name
+      let resolvedName = data.section || data.scheduleName || "Section";
+      if (sectionMap[data.section]) resolvedName = sectionMap[data.section];
 
       for (const c of data.classes) {
+        if (c.day !== day) continue;
         const cRoom = (c.room || "").toLowerCase().trim();
         const tRoom = roomName.toLowerCase().trim();
-
         if (cRoom !== tRoom) continue;
-        if (c.day !== day) continue;
         if (c.subject === "VACANT" || c.subject === "MARKED_VACANT") continue;
 
         if (overlaps(c.timeBlock, timeBlock)) {
@@ -417,126 +388,13 @@ function SearchableDropdown({ options, value, onChange, placeholder, label }) {
   );
 }
 
-function ClockPicker({ value, onChange, onClose, title }) {
-  const [mode, setMode] = useState('hour'); // 'hour' or 'minute'
-  const [tempHour, setTempHour] = useState(7);
-  const [tempMinute, setTempMinute] = useState(0);
-  const [tempPeriod, setTempPeriod] = useState('AM');
-  const [isDragging, setIsDragging] = useState(false);
-
-  useEffect(() => {
-    if (value && value.includes(':')) {
-      const parts = value.split(' ');
-      const timeParts = parts[0].split(':');
-      setTempHour(parseInt(timeParts[0]));
-      setTempMinute(parseInt(timeParts[1]));
-      setTempPeriod(parts[1] || 'AM');
-    } else {
-      setTempHour(7);
-      setTempMinute(0);
-      setTempPeriod('AM');
-    }
-  }, [value]);
-
-  const handleDialInteraction = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left - 105;
-    const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top - 105;
-
-    let angle = Math.atan2(y, x) * (180 / Math.PI) + 90;
-    if (angle < 0) angle += 360;
-
-    if (mode === 'hour') {
-      let h = Math.round(angle / 30);
-      if (h === 0) h = 12;
-      setTempHour(h);
-    } else {
-      let m = Math.round(angle / 6);
-      if (m === 60) m = 0;
-      setTempMinute(m);
-    }
-  };
-
-  const dialNumbers = mode === 'hour'
-    ? [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-    : [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
-
-  const dialAngle = mode === 'hour' ? (tempHour % 12) * 30 : tempMinute * 6;
-
-  return h('div', { className: 'dg-time-overlay' },
-    h('div', { className: 'dg-time-modal' },
-      h('div', { className: 'dg-time-header' },
-        h('div', { className: 'dg-label', style: { textAlign: 'left', marginBottom: '8px' } }, title || 'Select Time'),
-        h('div', { className: 'dg-time-display' },
-          h('div', {
-            className: `dg-time-box ${mode === 'hour' ? 'active' : ''}`,
-            onClick: () => setMode('hour')
-          }, String(tempHour).padStart(2, '0')),
-          h('div', { style: { fontSize: '40px', color: 'var(--dg-text-bright)', fontWeight: '700' } }, ':'),
-          h('div', {
-            className: `dg-time-box ${mode === 'minute' ? 'active' : ''}`,
-            onClick: () => setMode('minute')
-          }, String(tempMinute).padStart(2, '0')),
-          h('div', { className: 'dg-time-period' },
-            h('button', {
-              className: `dg-period-btn ${tempPeriod === 'AM' ? 'active' : ''}`,
-              onClick: () => setTempPeriod('AM')
-            }, 'AM'),
-            h('button', {
-              className: `dg-period-btn ${tempPeriod === 'PM' ? 'active' : ''}`,
-              onClick: () => setTempPeriod('PM')
-            }, 'PM')
-          )
-        )
-      ),
-      h('div', {
-        className: 'dg-clock-dial',
-        onMouseDown: (e) => { setIsDragging(true); handleDialInteraction(e); },
-        onMouseMove: (e) => { if (isDragging) handleDialInteraction(e); },
-        onMouseUp: () => { if (isDragging) { setIsDragging(false); if (mode === 'hour') setTimeout(() => setMode('minute'), 400); } },
-        onTouchStart: (e) => { setIsDragging(true); handleDialInteraction(e); },
-        onTouchMove: (e) => { if (isDragging) handleDialInteraction(e); },
-        onTouchEnd: () => { if (isDragging) { setIsDragging(false); if (mode === 'hour') setTimeout(() => setMode('minute'), 400); } }
-      },
-        h('div', { className: 'dg-dial-center' }),
-        h('div', {
-          className: 'dg-dial-hand',
-          style: { transform: `rotate(${dialAngle}deg)` }
-        },
-          h('div', { className: 'dg-dial-indicator' },
-            mode === 'hour' ? tempHour : String(tempMinute).padStart(2, '0')
-          )
-        ),
-        dialNumbers.map((num, i) => {
-          const angle = (i * 30 - 90) * (Math.PI / 180);
-          const x = 105 + 80 * Math.cos(angle);
-          const y = 105 + 80 * Math.sin(angle);
-          const isActive = mode === 'hour'
-            ? (num === tempHour || (num === 12 && tempHour === 0))
-            : (num === Math.round(tempMinute / 5) * 5 % 60);
-
-          return h('div', {
-            key: num,
-            className: `dg-dial-num ${isActive ? 'active' : ''}`,
-            style: { left: `${x - 17}px`, top: `${y - 17}px` }
-          }, mode === 'minute' ? String(num).padStart(2, '0') : num);
-        })
-      ),
-      h('div', { style: { display: 'flex', gap: '10px', width: '100%', marginTop: '20px' } },
-        h('button', {
-          className: 'dg-btn',
-          style: { backgroundColor: 'transparent', border: '1px solid var(--dg-border)', color: 'var(--dg-text-bright)', flex: 1, boxShadow: 'none' },
-          onClick: onClose
-        }, 'Cancel'),
-        h('button', {
-          className: 'dg-btn',
-          style: { flex: 1 },
-          onClick: () => onChange(`${tempHour}:${String(tempMinute).padStart(2, '0')} ${tempPeriod}`)
-        }, 'OK')
-      )
-    )
-  );
-}
+const to12 = (time24) => {
+  if (!time24 || !time24.includes(':')) return time24;
+  let [h, m] = time24.split(':').map(Number);
+  const period = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return `${h}:${String(m).padStart(2, '0')} ${period}`;
+};
 
 function EventModal({ onClose, initialData }) {
   const [step, setStep] = useState('form');
@@ -565,11 +423,6 @@ function EventModal({ onClose, initialData }) {
   const [vacantRooms, setVacantRooms] = useState([]);
   const [displacements, setDisplacements] = useState([]); // Array of {from, to, time, classInfo}
   const [isProcessing, setIsProcessing] = useState(false);
-
-  // Picker State
-  const [showPicker, setShowPicker] = useState(false);
-  const [pickerTarget, setPickerTarget] = useState(null); // 'start' or 'end'
-  const [pickerTitle, setPickerTitle] = useState('');
 
   useEffect(() => {
     fetchAllRooms(db).then(async rooms => {
@@ -1087,29 +940,23 @@ function EventModal({ onClose, initialData }) {
           h('div', { className: 'dg-row' },
             h('div', { className: 'dg-field' },
               h('label', { className: 'dg-label' }, 'Start Time'),
-              h('button', {
-                type: 'button',
+              h('input', {
+                type: 'time',
                 className: 'dg-input',
                 style: { textAlign: 'left', cursor: 'pointer', background: 'var(--dg-card-bg)' },
-                onClick: () => {
-                  setPickerTarget('start');
-                  setPickerTitle('Select Start Time');
-                  setShowPicker(true);
-                }
-              }, startTime || '--:-- --')
+                value: convertTo24h(startTime),
+                onChange: (e) => setStartTime(to12(e.target.value))
+              })
             ),
             h('div', { className: 'dg-field' },
               h('label', { className: 'dg-label' }, 'End Time'),
-              h('button', {
-                type: 'button',
+              h('input', {
+                type: 'time',
                 className: 'dg-input',
                 style: { textAlign: 'left', cursor: 'pointer', background: 'var(--dg-card-bg)' },
-                onClick: () => {
-                  setPickerTarget('end');
-                  setPickerTitle('Select End Time');
-                  setShowPicker(true);
-                }
-              }, endTime || '--:-- --')
+                value: convertTo24h(endTime),
+                onChange: (e) => setEndTime(to12(e.target.value))
+              })
             )
           ),
           h('div', { className: 'dg-field' },
@@ -1140,18 +987,24 @@ function EventModal({ onClose, initialData }) {
               label: ''
             })
           ),
-          h('div', { className: 'dg-row', style: { marginTop: '1.5rem', gap: '12px' } },
+          h('div', { className: 'dg-row', style: { marginTop: '1.5rem', gap: '15px' } },
             h('button', {
               type: 'button',
               className: 'dg-btn',
-              style: { flex: 1 },
+              style: { flex: 1, margin: 0 },
               onClick: checkAvailability,
               disabled: isProcessing
             }, isProcessing ? "Wait..." : (initialData ? "Save Changes ✨" : "Check & Publish ✨")),
             h('button', {
               type: 'button',
               className: 'dg-btn',
-              style: { flex: 1, backgroundColor: 'var(--dg-card-bg)', color: 'var(--dg-text-bright)', border: '1px solid var(--dg-border)' },
+              style: { 
+                flex: 1, 
+                margin: 0, 
+                backgroundColor: '#bfdbfe', 
+                color: '#000', 
+                border: '2px solid #000' 
+              },
               onClick: () => saveEvent("draft"),
               disabled: isProcessing
             }, "Draft 📄")
@@ -1160,22 +1013,19 @@ function EventModal({ onClose, initialData }) {
             h('button', {
               type: 'button',
               className: 'dg-btn',
-              style: { width: 'fit-content', padding: '8px 24px', backgroundColor: 'transparent', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', fontSize: '0.85rem' },
+              style: { 
+                width: 'fit-content', 
+                padding: '8px 24px', 
+                backgroundColor: '#fee2e2', 
+                color: '#ef4444', 
+                border: '2px solid #000', 
+                fontSize: '0.85rem' 
+              },
               onClick: removeEvent,
               disabled: isProcessing
             }, "🗑️ Remove Event")
           )
-        ),
-        showPicker && h(ClockPicker, {
-          value: pickerTarget === 'start' ? startTime : endTime,
-          title: pickerTitle,
-          onClose: () => setShowPicker(false),
-          onChange: (newTime) => {
-            if (pickerTarget === 'start') setStartTime(newTime);
-            else setEndTime(newTime);
-            setShowPicker(false);
-          }
-        })
+        )
       )
     )
   );

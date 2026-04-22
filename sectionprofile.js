@@ -22,6 +22,24 @@ document.addEventListener("DOMContentLoaded", async () => {
             document.getElementById("strandLabel").innerHTML = `<strong>Strand/Program:</strong> ${data.strand}`;
             document.getElementById("gradeLabel").innerHTML = `<strong>Grade Level:</strong> ${data.gradeLevel}`;
             
+            // Display Credentials for Admin Only
+            const credentialSection = document.getElementById("credentialSection");
+            const emailLabel = document.getElementById("emailLabel");
+            const passwordLabel = document.getElementById("passwordLabel");
+
+            if (data.sectionEmail && credentialSection) {
+                // Check role from users collection
+                const user = auth.currentUser;
+                if (user) {
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
+                    if (userDoc.exists() && userDoc.data().role === 'admin') {
+                        credentialSection.style.display = "block";
+                        emailLabel.innerHTML = `<strong>Email:</strong> ${data.sectionEmail}`;
+                        passwordLabel.innerHTML = `<strong>Password:</strong> ${data.defaultPassword || "Not Set"}`;
+                    }
+                }
+            }
+
             // Fetch Schedule for this section
             fetchSectionSchedule(data.name);
         } else {

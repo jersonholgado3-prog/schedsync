@@ -60,10 +60,9 @@
             z-index: 1001;
             border: none !important;
             border-top-right-radius: 40px !important;
-            overflow: hidden !important;
+            overflow-y: auto !important; overflow-x: hidden !important; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
             flex-shrink: 0;
-        }
-
+            }
         .sidebar-header {
             background-color: #FFD200;
             padding: 2rem;

@@ -7,11 +7,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script>
     (function () {
-      // 1. Theme Lock 🌙
-      const theme = localStorage.getItem("theme");
-      if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-        document.documentElement.classList.add("dark");
-      }
+      // 1. Theme Lock 🌙 - Always Light for Auth Pages
+      document.documentElement.classList.remove("dark");
 
       // 2. UI Mode Lock 👔
       const uiMode = localStorage.getItem("uiMode");

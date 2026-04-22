@@ -15,7 +15,7 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/fi
 import { initUserProfile } from "./userprofile.js";
 import { initUniversalSearch } from "./search.js";
 import { showToast, showConfirm } from "./js/utils/ui-utils.js";
-import { overlaps, toMin, toTime, parseBlock } from "./js/utils/time-utils.js";
+import { overlaps, toMin, toTime, parseBlock, to12 } from "./js/utils/time-utils.js";
 
 document.addEventListener('DOMContentLoaded', () => {
   initMobileNav();
@@ -77,8 +77,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const periodAM = document.getElementById("periodAM");
   const periodPM = document.getElementById("periodPM");
   const dialContainer = document.getElementById("dialContainer");
-  const dialHand = document.getElementById("dialHand");
-  const handIndicator = document.getElementById("handIndicator");
+  const dialNumbers = document.getElementById("dialNumbers");
+  const svgHandLine = document.getElementById("svgHandLine");
+  const svgIndicatorCircle = document.getElementById("svgIndicatorCircle");
+  const svgIndicatorText = document.getElementById("svgIndicatorText");
   const timePickerCancel = document.getElementById("timePickerCancel");
   const timePickerOK = document.getElementById("timePickerOK");
 
@@ -90,17 +92,16 @@ document.addEventListener('DOMContentLoaded', () => {
   let tempPeriod = 'AM';
 
   function initDialNumbers(mode) {
-    // Clear existing numbers
-    const existing = dialContainer.querySelectorAll('.dial-number');
-    existing.forEach(el => el.remove());
+    if (dialNumbers) dialNumbers.innerHTML = "";
+    else return;
 
     const numbers = mode === 'hour'
       ? [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
       : [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 
-    const radius = 80;
-    const centerX = 105;
-    const centerY = 105;
+    const radius = 100;
+    const centerX = 135;
+    const centerY = 135;
 
     numbers.forEach((num, i) => {
       const angle = (i * 30 - 90) * (Math.PI / 180);
@@ -110,38 +111,53 @@ document.addEventListener('DOMContentLoaded', () => {
       const el = document.createElement('div');
       el.className = 'dial-number';
       el.textContent = mode === 'minute' ? num.toString().padStart(2, '0') : num;
-      el.style.left = `${x - 17}px`;
-      el.style.top = `${y - 17}px`;
+      el.style.left = `${x - 20}px`;
+      el.style.top = `${y - 20}px`;
       el.dataset.value = num;
-      dialContainer.appendChild(el);
+      dialNumbers.appendChild(el);
     });
 
     updateClockUI();
   }
 
-  function updateClockUI() {
+  function updateSVGHand(angleDeg) {
+    // SVG viewbox 270x270, center=(135,135), hand radius=100px
+    const rad = (angleDeg - 90) * Math.PI / 180;
+    const x2 = 135 + 100 * Math.cos(rad);
+    const y2 = 135 + 100 * Math.sin(rad);
+    
+    if (svgHandLine) {
+      svgHandLine.setAttribute('x1', 135);
+      svgHandLine.setAttribute('y1', 135);
+      svgHandLine.setAttribute('x2', x2);
+      svgHandLine.setAttribute('y2', y2);
+    }
+    if (svgIndicatorCircle) {
+      svgIndicatorCircle.setAttribute('cx', x2);
+      svgIndicatorCircle.setAttribute('cy', y2);
+    }
+  }
+
+  function updateClockUI(liveAngle = null) {
     let angle = 0;
-    if (pickingMode === 'hour') {
-      angle = (tempHour % 12) * 30;
-      handIndicator.textContent = tempHour;
+    if (liveAngle !== null) {
+      angle = liveAngle;
     } else {
-      angle = tempMinute * 6;
-      handIndicator.textContent = tempMinute.toString().padStart(2, '0');
+      angle = pickingMode === 'hour' ? (tempHour % 12) * 30 : tempMinute * 6;
     }
 
-    dialHand.style.transform = `rotate(${angle}deg)`;
+    updateSVGHand(angle);
 
-    // Update active highlight on dial numbers
-    const numbers = dialContainer.querySelectorAll('.dial-number');
-    numbers.forEach(el => {
-      const val = parseInt(el.dataset.value);
-      if (pickingMode === 'hour') {
-        el.classList.toggle('active', val === tempHour || (val === 12 && tempHour === 0));
-      } else {
-        const closest5 = Math.round(tempMinute / 5) * 5;
-        el.classList.toggle('active', val === closest5 % 60);
-      }
-    });
+    if (dialNumbers) {
+      const numbers = dialNumbers.querySelectorAll('.dial-number');
+      numbers.forEach(el => {
+        const val = parseInt(el.dataset.value);
+        const isActive = pickingMode === 'hour' 
+          ? (val === (tempHour % 12 || 12)) 
+          : (val === Math.round(tempMinute / 5) * 5 % 60);
+        el.classList.toggle('active', isActive);
+      });
+    }
 
     // Update Top Blocks
     if (document.activeElement !== hourBlock) {
@@ -160,8 +176,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function handleDialInteraction(e) {
     const rect = dialContainer.getBoundingClientRect();
-    const x = (e.clientX || e.touches[0].clientX) - rect.left - 105;
-    const y = (e.clientY || e.touches[0].clientY) - rect.top - 105;
+    const isTouch = e.type.startsWith('touch');
+    const clientX = isTouch ? e.touches[0].clientX : e.clientX;
+    const clientY = isTouch ? e.touches[0].clientY : e.clientY;
+
+    if (clientX === undefined || clientY === undefined) return;
+
+    // Use dynamic center instead of hardcoded 105 🛡️
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    const x = clientX - rect.left - centerX;
+    const y = clientY - rect.top - centerY;
 
     let angle = Math.atan2(y, x) * (180 / Math.PI) + 90;
     if (angle < 0) angle += 360;
@@ -175,15 +201,25 @@ document.addEventListener('DOMContentLoaded', () => {
       if (minute === 60) minute = 0;
       tempMinute = minute;
     }
-    updateClockUI();
+    updateClockUI(angle);
   }
 
   let isDialDragging = false;
-  dialContainer.addEventListener('mousedown', (e) => { isDialDragging = true; handleDialInteraction(e); });
-  window.addEventListener('mousemove', (e) => { if (isDialDragging) handleDialInteraction(e); });
+  dialContainer.addEventListener('mousedown', (e) => { 
+    isDialDragging = true; 
+    handleDialInteraction(e); 
+    // Removed preventDefault 🛡️
+  });
+  window.addEventListener('mousemove', (e) => { 
+    if (isDialDragging) {
+      handleDialInteraction(e);
+      e.preventDefault();
+    }
+  }, { passive: false });
   window.addEventListener('mouseup', () => {
     if (isDialDragging) {
       isDialDragging = false;
+      updateClockUI();
       if (pickingMode === 'hour') {
         setTimeout(() => setPickingMode('minute'), 400);
       }
@@ -191,50 +227,85 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Touch
-  dialContainer.addEventListener('touchstart', (e) => { isDialDragging = true; handleDialInteraction(e); e.preventDefault(); });
-  window.addEventListener('touchmove', (e) => { if (isDialDragging) handleDialInteraction(e); });
-  window.addEventListener('touchend', () => { if (isDialDragging) { isDialDragging = false; if (pickingMode === 'hour') setTimeout(() => setPickingMode('minute'), 400); } });
+  dialContainer.addEventListener('touchstart', (e) => { 
+    isDialDragging = true; 
+    handleDialInteraction(e); 
+    e.preventDefault(); 
+  }, { passive: false });
+  window.addEventListener('touchmove', (e) => { 
+    if (isDialDragging) {
+      handleDialInteraction(e);
+      e.preventDefault();
+    }
+  }, { passive: false });
+  window.addEventListener('touchend', () => { 
+    if (isDialDragging) { 
+      isDialDragging = false; 
+      updateClockUI();
+      if (pickingMode === 'hour') setTimeout(() => setPickingMode('minute'), 400); 
+    } 
+  });
 
   function setPickingMode(mode) {
     pickingMode = mode;
     initDialNumbers(mode);
   }
 
-  hourBlock.addEventListener('click', () => setPickingMode('hour'));
-  minuteBlock.addEventListener('click', () => setPickingMode('minute'));
+  hourBlock.addEventListener('click', (e) => { e.stopPropagation(); setPickingMode('hour'); hourBlock.select(); });
+  minuteBlock.addEventListener('click', (e) => { e.stopPropagation(); setPickingMode('minute'); minuteBlock.select(); });
 
+  hourBlock.addEventListener('focus', () => {
+    setPickingMode('hour');
+    setTimeout(() => hourBlock.select(), 10);
+  });
+  minuteBlock.addEventListener('focus', () => {
+    setPickingMode('minute');
+    setTimeout(() => minuteBlock.select(), 10);
+  });
+
+  // Typing Support ⌨️
   hourBlock.addEventListener('input', (e) => {
     let val = e.target.value.replace(/\D/g, '');
-    if (val === '') return;
+    if (val.length > 2) val = val.slice(-2);
+    e.target.value = val;
+
     let h = parseInt(val);
-    if (h > 12) h = 12;
-    if (h === 0) h = 1;
-    tempHour = h;
-    e.target.value = h.toString().padStart(2, '0');
-    updateClockUI();
+    if (!isNaN(h)) {
+      if (h > 12) { h = 12; e.target.value = '12'; }
+      if (h < 0) h = 0;
+      tempHour = h === 0 ? 12 : h;
+      updateClockUI();
+      if (val.length === 2 && h > 0) {
+        setTimeout(() => minuteBlock.focus(), 300);
+      }
+    }
   });
 
   minuteBlock.addEventListener('input', (e) => {
     let val = e.target.value.replace(/\D/g, '');
-    if (val === '') return;
+    if (val.length > 2) val = val.slice(-2);
+    e.target.value = val;
+
     let m = parseInt(val);
-    if (m > 59) m = 59;
-    tempMinute = m;
-    e.target.value = m.toString().padStart(2, '0');
-    updateClockUI();
+    if (!isNaN(m)) {
+      if (m > 59) { m = 59; e.target.value = '59'; }
+      tempMinute = m;
+      updateClockUI();
+    }
   });
 
-  hourBlock.addEventListener('focus', () => setPickingMode('hour'));
-  minuteBlock.addEventListener('focus', () => setPickingMode('minute'));
-
-  // Ensure blocks are updated when blurred to maintain 2-digit format
   hourBlock.addEventListener('blur', () => {
-    if (hourBlock.value === '') hourBlock.value = tempHour.toString().padStart(2, '0');
-    updateClockUI();
+    hourBlock.value = tempHour.toString().padStart(2, '0');
   });
   minuteBlock.addEventListener('blur', () => {
-    if (minuteBlock.value === '') minuteBlock.value = tempMinute.toString().padStart(2, '0');
-    updateClockUI();
+    minuteBlock.value = tempMinute.toString().padStart(2, '0');
+  });
+
+  hourBlock.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') minuteBlock.focus();
+  });
+  minuteBlock.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') timePickerOK.click();
   });
 
   periodAM.addEventListener('click', () => { tempPeriod = 'AM'; updateClockUI(); });
@@ -267,8 +338,9 @@ document.addEventListener('DOMContentLoaded', () => {
     timePickerOverlay.classList.remove('show');
   });
 
-  startTimeInput.addEventListener('click', () => showTimePicker(startTimeInput));
-  endTimeInput.addEventListener('click', () => showTimePicker(endTimeInput));
+  // Custom time picker is disabled. Native input[type="time"] is used instead.
+  // startTimeInput.addEventListener('click', () => showTimePicker(startTimeInput));
+  // endTimeInput.addEventListener('click', () => showTimePicker(endTimeInput));
 
   /* ───────── STATE ───────── */
   let selectedDays = new Set();
@@ -672,11 +744,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const startMin = toMin(start);
       const endMin = toMin(end);
 
-      // ... rest of time validation ...
+      if (startMin >= endMin) {
+        showToast("End time must be after start time", "error");
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Save Schedule";
+        return;
+      }
+
       const INTERVAL = 30;
       const timeBlocks = [];
       for (let m = startMin; m + INTERVAL <= endMin; m += INTERVAL) {
-        timeBlocks.push(`${toTime(m)}-${toTime(m + INTERVAL)}`);
+        timeBlocks.push(`${to12(m)}-${to12(m + INTERVAL)}`);
       }
 
       const newClasses = [];
@@ -734,8 +812,8 @@ document.addEventListener('DOMContentLoaded', () => {
           await updateDoc(doc(db, "schedules", docId), {
             classes: [...existing, ...newClasses],
             scheduleName: name,
-            startTime: start,
-            endTime: end,
+            startTime: to12(startMin),
+            endTime: to12(endMin),
             selectedDays: [...selectedDays],
             updated: new Date().toDateString(),
             status: "draft",
@@ -747,8 +825,8 @@ document.addEventListener('DOMContentLoaded', () => {
             userId: currentUser.uid,
             section,
             scheduleName: name,
-            startTime: start,
-            endTime: end,
+            startTime: to12(startMin),
+            endTime: to12(endMin),
             classes: newClasses,
             selectedDays: [...selectedDays],
             updated: new Date().toDateString(),
