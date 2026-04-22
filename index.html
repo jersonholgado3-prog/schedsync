@@ -6,11 +6,8 @@
   <title>Welcome to SchedSync</title>
   <script>
     (function () {
-      // 1. Theme Lock 🌙 - RE-ENABLED ✨
-      const theme = localStorage.getItem("theme");
-      if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-        document.documentElement.classList.add("dark");
-      }
+      // 1. Theme Lock 🌙 - Always Light for Landing/Login
+      document.documentElement.classList.remove("dark");
 
       // 2. UI Mode Lock 👔
       const uiMode = localStorage.getItem("uiMode");
