@@ -653,6 +653,181 @@
     background-color: #FEF08A;
 }
 
+/* DROP ZONE STYLES */
+.drop-zone-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(99, 102, 241, 0.1);
+    backdrop-filter: blur(8px);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    border: 8px dashed #6366f1;
+    pointer-events: none;
+    transition: all 0.3s ease;
+}
+
+.drop-zone-overlay.active {
+    display: flex;
+}
+
+.drop-zone-content {
+    background: white;
+    padding: 2rem 4rem;
+    border-radius: 30px;
+    border: 4px solid black;
+    box-shadow: 10px 10px 0px black;
+    text-align: center;
+}
+
+.drop-zone-content h2 {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    color: #6366f1;
+}
+
+.drop-zone-content p {
+    font-weight: 600;
+    color: #4B5563;
+}
+
+.dark .drop-zone-content {
+    background: #1e293b;
+    color: white;
+    border-color: #475569;
+}
+
+.dark .drop-zone-content p {
+    color: #cbd5e1;
+}
+
+/* SELECTION BAR & CHECKBOXES */
+.selection-bar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    background: white;
+    border: 3px solid black;
+    border-radius: 20px;
+    padding: 1rem 2rem;
+    margin: 1rem 2rem;
+    box-shadow: 6px 6px 0px black;
+    position: sticky;
+    top: 90px;
+    z-index: 999;
+    transition: all 0.3s ease;
+}
+
+.selection-bar.active {
+    display: flex;
+}
+
+.selection-count {
+    font-size: 1.25rem;
+    font-weight: 800;
+}
+
+.selection-count span {
+    color: #6366f1;
+}
+
+.selection-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.action-btn {
+    padding: 0.6rem 1.2rem;
+    border: 3px solid black;
+    border-radius: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 3px 3px 0px black;
+}
+
+.action-btn:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 5px 5px 0px black;
+}
+
+.action-btn:active {
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0px black;
+}
+
+.gen-btn {
+    background-color: #10b981;
+    color: white;
+}
+
+.delete-btn {
+    background-color: #ef4444;
+    color: white;
+}
+
+.cancel-btn {
+    background-color: #e2e8f0;
+    color: black;
+}
+
+.checkbox-wrapper {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    z-index: 10;
+}
+
+.faculty-checkbox {
+    width: 28px;
+    height: 28px;
+    border: 3px solid black;
+    border-radius: 8px;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-color: white;
+    transition: all 0.2s;
+    display: block;
+    position: relative;
+    box-shadow: 2px 2px 0px black;
+}
+
+.faculty-checkbox:checked {
+    background-color: #6366f1;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+    background-size: 18px;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.faculty-card.selected {
+    border-color: #6366f1;
+    background-color: #f5f3ff;
+    transform: scale(0.98);
+}
+
+.dark .selection-bar {
+    background-color: #1e293b;
+    border-color: #475569;
+    box-shadow: 6px 6px 0px #000;
+}
+
+.dark .faculty-checkbox {
+    background-color: #1e293b;
+    border-color: #475569;
+}
+
+.dark .faculty-card.selected {
+    background-color: #2e1065;
+    border-color: #8b5cf6;
+}
+
 
 
 @media (max-width: 1200px) {
@@ -1267,4 +1442,11 @@
         padding: 4px 8px !important;
         margin-top: 0.75rem !important;
     }
+}
+
+/* Document Import Toolbar */
+.import-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.5rem 1rem 0;
 }

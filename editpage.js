@@ -195,11 +195,20 @@ document.addEventListener("DOMContentLoaded", () => {
           const block = activeCell.dataset.block;
 
           const sched = schedules.find(s => s.id === sid);
-          const classItem = (sched?.classes || []).find(c => c.day === day && c.timeBlock === block);
+          // 🛡️ INTELLIGENT SEARCH: Find the class that contains this block ⚓
+          const classItem = (sched?.classes || []).find(c => {
+            if (c.day !== day) return false;
+            if (c.timeBlock === block) return true;
+            
+            // If it spans multiple, check if it overlaps this specific 30-min slot
+            const cParsed = parseBlock(c.timeBlock);
+            const bParsed = parseBlock(block);
+            return overlaps(cParsed, bParsed);
+          });
 
           if (classItem) {
             clipboardCellData = JSON.parse(JSON.stringify(classItem));
-            showToast("Class copied! Press Ctrl+V to paste 📋", "success");
+            showToast(`Copied: ${classItem.subject} (${classItem.timeBlock}) 📋`, "success");
           }
         }
 
@@ -247,6 +256,26 @@ document.addEventListener("DOMContentLoaded", () => {
             day: targetDay,
             timeBlock: targetBlock
           };
+
+          // 🛡️ CONFLICT DETECTION ON PASTE ⚓
+          showToast("Checking for conflicts... ⚖️", "info");
+          const conflicts = await checkConflicts(newData, sid);
+          if (conflicts.hasConflict) {
+              showConflictRecommendations(newData);
+
+              let msg = "<div style='text-align: center; color: #ef4444; font-weight: 800; font-size: 1.1rem; margin-bottom: 10px;'>PASTE CONFLICT! ⚠️</div>";
+              if (conflicts.room) msg += `<div style='margin-bottom: 8px;'>${conflicts.room}</div>`;
+              if (conflicts.teacher) msg += `<div style='margin-bottom: 8px;'>${conflicts.teacher}</div>`;
+              if (conflicts.blueprint) msg += `<div style='margin-bottom: 8px;'>${conflicts.blueprint}</div>`;
+              msg += "<div style='margin-top: 15px; font-size: 0.85rem; border-top: 1px solid #ddd; pt: 10px;'>Force paste anyway?</div>";
+
+              const proceed = await showConfirm("⚠️ ATTENTION", msg);
+              if (!proceed) {
+                  // Re-render to clear any visual changes if necessary
+                  return;
+              }
+          }
+
           updated.push(newData);
           sched.classes = updated;
 
@@ -625,7 +654,7 @@ async function hasRoomConflict(n, excludeId) {
         if (overlaps(cBlock, nBlock)) {
           highlightConflict(s.id, c.day, c.timeBlock);
           return {
-            msg: `ROOM CONFLICT: ${c.room} is occupied by ${s.section} (${c.subject}) on ${c.day} at ${c.timeBlock}`,
+            msg: `<b>ROOM CONFLICT!</b><br>Occupied by ${s.section}`,
             schedId: s.id,
             day: c.day,
             block: c.timeBlock
@@ -658,7 +687,7 @@ async function hasRoomConflict(n, excludeId) {
       if (overlaps(cBlock, nBlock)) {
         highlightConflict(d.id, c.day, c.timeBlock);
         return {
-          msg: `ROOM CONFLICT: ${c.room} is occupied by ${data.section} (${c.subject}) on ${c.day} at ${c.timeBlock}`,
+          msg: `<b>ROOM CONFLICT!</b><br>Taken by ${data.section}`,
           schedId: d.id,
           day: c.day,
           block: c.timeBlock
@@ -689,7 +718,7 @@ async function hasTeacherConflict(n, excludeId) {
         if (overlaps(cBlock, nBlock)) {
           highlightConflict(s.id, c.day, c.timeBlock);
           return {
-            msg: `TEACHER CONFLICT: ${c.teacher} already has a class with ${s.section} on ${c.day} at ${c.timeBlock}`,
+            msg: `<b>TEACHER CONFLICT!</b><br>Busy with ${s.section}`,
             schedId: s.id,
             day: c.day,
             block: c.timeBlock
@@ -721,7 +750,7 @@ async function hasTeacherConflict(n, excludeId) {
       if (overlaps(cBlock, nBlock)) {
         highlightConflict(d.id, c.day, c.timeBlock);
         return {
-          msg: `TEACHER CONFLICT: ${c.teacher} already has a class with ${data.section} on ${c.day} at ${c.timeBlock}`,
+          msg: `<b>TEACHER CONFLICT!</b><br>Busy with ${data.section}`,
           schedId: d.id,
           day: c.day,
           block: c.timeBlock
@@ -800,7 +829,7 @@ async function hasBlueprintConflict(newBlock, excludeId) {
     if (bc.day === newBlock.day && bc.subject !== "VACANT" && bc.subject !== "MARKED_VACANT") {
       const bcParsed = parseBlock(bc.timeBlock);
       if (overlaps(newParsed, bcParsed)) {
-        return `Conflict with blueprint: ${bc.day} ${bc.timeBlock} (${bc.subject}, ${bc.teacher})`;
+        return `<b>SECTION BUSY!</b><br>Slot taken by ${bc.subject}`;
       }
     }
   }
@@ -939,12 +968,23 @@ async function load() {
     } else {
       // Query schedules
       let q;
+      const urlParams = new URLSearchParams(window.location.search);
+      const filterName = urlParams.get("name");
+
       if (currentUserRole === 'admin') {
-        // Admin: See everything
-        q = collection(db, "schedules");
+        // Admin: See everything, but filter by name if present to avoid showing ALL sections/college
+        if (filterName) {
+            q = query(collection(db, "schedules"), where("scheduleName", "==", filterName));
+        } else {
+            q = collection(db, "schedules");
+        }
       } else {
-        // Teacher: See own only
-        q = query(collection(db, "schedules"), where("userId", "==", currentUser.uid));
+        // Teacher: See own only, and filter by name if present
+        if (filterName) {
+            q = query(collection(db, "schedules"), where("userId", "==", currentUser.uid), where("scheduleName", "==", filterName));
+        } else {
+            q = query(collection(db, "schedules"), where("userId", "==", currentUser.uid));
+        }
       }
 
       const snap = await getDocs(q);
@@ -955,12 +995,6 @@ async function load() {
           schedules.push({ id: d.id, ...data });
         }
       });
-
-      // Filter by scheduleName if present in URL
-      const filterName = urlParams.get("name");
-      if (filterName) {
-        schedules = schedules.filter(s => s.scheduleName === filterName);
-      }
     }
 
     fetchTeachers(); // Fetch teachers in background
@@ -1111,60 +1145,90 @@ function setupCustomDropdown(inputId, dropdownId, getOptions) {
 function getSubjectOptions(query) {
   if (!selected || !selected.id) return [];
   const sched = schedules.find(s => s.id === selected.id);
-  const schedSection = sched ? (sched.section || "") : "";
-  const strand = getStrandFromSection(schedSection); // e.g., "ICT", "BSCS"
+  const schedSection = (sched ? (sched.section || "") : "").toUpperCase();
+  const strand = getStrandFromSection(schedSection);
+
+  // --- 1. Identify Year Level 🎯 ---
+  let levelMatch = schedSection.match(/[A-Z]+(\d{1,2})/);
+  let sectionLevel = levelMatch ? levelMatch[1] : "";
+
+  function matchesLevel(termName) {
+      if (!sectionLevel) return true;
+      const t = termName.toUpperCase();
+      if (sectionLevel === "11") return t.includes("G11") || t.includes("GRADE 11");
+      if (sectionLevel === "12") return t.includes("G12") || t.includes("GRADE 12");
+      if (sectionLevel === "1") return t.includes("FIRST YEAR") || t.includes("1ST YEAR");
+      if (sectionLevel === "2") return t.includes("SECOND YEAR") || t.includes("2ND YEAR");
+      if (sectionLevel === "3") return t.includes("THIRD YEAR") || t.includes("3RD YEAR");
+      if (sectionLevel === "4") return t.includes("FOURTH YEAR") || t.includes("4TH YEAR");
+      return true;
+  }
 
   let options = [];
 
-    // 1. Dynamic Subjects from Firestore 🚀
-    if (dynamicSubjects.length > 0) {
-        // Find the course document that matches the strand (flexible matching)
-        // If strand is "ICT", it should match course "ICT" or "ITM" or "TVL"
-        let matchingCourse = dynamicSubjects_raw.find(c => {
-            const courseName = c.name.toUpperCase();
-            const strandName = strand ? strand.toUpperCase() : "";
-            return courseName === strandName || 
-                   (strandName === "ICT" && (courseName.includes("ICT") || courseName.includes("ITM"))) ||
-                   courseName.includes(strandName);
-        });
-        
-        if (matchingCourse && matchingCourse.terms) {
-            const termNames = Object.keys(matchingCourse.terms).sort();
-            termNames.forEach(term => {
-                const termSubjects = matchingCourse.terms[term];
-                if (termSubjects && termSubjects.length > 0) {
-                    options.push({ name: `${matchingCourse.name.toUpperCase()} - ${term.toUpperCase()}`, isHeader: true });
-                    options.push(...termSubjects);
-                }
-            });
-        } else {
-            // FALLBACK: If no specific strand match found, show all other major subjects grouped by course
-            const otherCourses = dynamicSubjects_raw.filter(c => c.name !== "CORE" && c.name !== "APPLIED");
-            otherCourses.forEach(c => {
-                if (c.terms) {
-                    Object.keys(c.terms).forEach(term => {
-                        options.push({ name: `${c.name.toUpperCase()} - ${term.toUpperCase()}`, isHeader: true });
-                        options.push(...c.terms[term]);
-                    });
-                }
-            });
-        }
+  // 1. COLLECT ALL SUBJECTS BY TERM 🚀
+  if (dynamicSubjects.length > 0) {
+      // We search through ALL courses but focus on the ones that match our Level
+      // and either our Strand OR are "CORE"/"APPLIED" (which usually have their own course docs or are inside strands)
+      
+      const shsStrands = ["ICT", "ABM", "STEM", "HUMSS", "GAS", "HE"];
+      const isSHS = sectionLevel === "11" || sectionLevel === "12";
 
-        // Always show Core and Applied as they are universal
-        const coreApplied = dynamicSubjects.filter(s => s.category === "CORE" || s.category === "APPLIED");
-        if (coreApplied.length > 0) {
-            options.push({ name: "CORE & APPLIED SUBJECTS", isHeader: true });
-            options.push(...[...new Set(coreApplied.map(s => s.name))]);
-        }
-    } else {
-    // Fallback to static if dynamic is empty
-    if (strand && SUBJECT_DATA[strand]) {
-      options.push({ name: `${strand} MAJOR SUBJECTS`, isHeader: true });
-      options.push(...SUBJECT_DATA[strand]);
-    }
-    options.push({ name: "CORE & APPLIED SUBJECTS", isHeader: true });
-    let general = [...new Set([...SUBJECT_DATA.CORE, ...SUBJECT_DATA.APPLIED])];
-    options.push(...general);
+      // Filter courses to only include the relevant one + Core/Applied
+      const relevantCourses = dynamicSubjects_raw.filter(c => {
+          const cName = c.name.toUpperCase();
+          const strandName = strand ? strand.toUpperCase() : "";
+          
+          // Match main strand
+          if (cName === strandName || (strandName === "ICT" && (cName.includes("ICT") || cName.includes("ITM")))) return true;
+          
+          // Match Core/Applied
+          if (cName === "CORE" || cName === "APPLIED") return true;
+
+          return false;
+      });
+
+      // Grouping by "Simplified Term Name" (e.g., "FIRST TERM", "SECOND TERM")
+      // to merge subjects from different courses (Strand + Core) into the same term header
+      const termGroups = {};
+
+      relevantCourses.forEach(c => {
+          if (c.terms) {
+              Object.keys(c.terms).forEach(originalTermName => {
+                  if (matchesLevel(originalTermName)) {
+                      // Simplify "ICT G11 FIRST TERM" -> "FIRST TERM"
+                      let simpleTerm = originalTermName.toUpperCase();
+                      if (simpleTerm.includes("FIRST TERM") || simpleTerm.includes("TERM 1") || simpleTerm.includes("1ST TERM")) simpleTerm = "FIRST TERM";
+                      else if (simpleTerm.includes("SECOND TERM") || simpleTerm.includes("TERM 2") || simpleTerm.includes("2ND TERM")) simpleTerm = "SECOND TERM";
+                      else if (simpleTerm.includes("THIRD TERM") || simpleTerm.includes("TERM 3") || simpleTerm.includes("3RD TERM")) simpleTerm = "THIRD TERM";
+                      
+                      if (!termGroups[simpleTerm]) termGroups[simpleTerm] = new Set();
+                      c.terms[originalTermName].forEach(s => termGroups[simpleTerm].add(s));
+                  }
+              });
+          }
+      });
+
+      // Add to options with clean headers
+      const sortedTerms = Object.keys(termGroups).sort((a, b) => {
+          const order = { "FIRST TERM": 1, "SECOND TERM": 2, "THIRD TERM": 3 };
+          return (order[a] || 99) - (order[b] || 99);
+      });
+
+      sortedTerms.forEach(termLabel => {
+          options.push({ name: termLabel, isHeader: true });
+          options.push(...Array.from(termGroups[termLabel]));
+      });
+  }
+
+  // Fallback to static if still empty
+  if (options.length === 0) {
+      if (strand && SUBJECT_DATA[strand]) {
+          options.push({ name: "MAJOR SUBJECTS", isHeader: true });
+          options.push(...SUBJECT_DATA[strand]);
+      }
+      options.push({ name: "CORE & APPLIED", isHeader: true });
+      options.push(...[...new Set([...SUBJECT_DATA.CORE, ...SUBJECT_DATA.APPLIED])]);
   }
 
   if (query) {
@@ -1909,7 +1973,7 @@ async function findAvailableTeachers(day, timeBlock, excludeSchedId, subjectName
   }
 
   // 4. Filter Available Teachers
-  const available = teachers.filter(t => {
+  let filtered = teachers.filter(t => {
     if (unavailableTeachers.has(t.name.trim().toUpperCase())) return false;
     if (!subjectName) return true;
 
@@ -1926,9 +1990,14 @@ async function findAvailableTeachers(day, timeBlock, excludeSchedId, subjectName
     });
 
     return hasForteMatch;
-  }).map(t => t.name);
+  });
 
-  return available.slice(0, 5);
+  // 🧪 FALLBACK: If no specialists found, suggest any free teacher 🦾
+  if (filtered.length === 0 && subjectName) {
+    filtered = teachers.filter(t => !unavailableTeachers.has(t.name.trim().toUpperCase())).slice(0, 3);
+  }
+
+  return filtered.map(t => t.name).slice(0, 5);
 }
 
 async function checkConflicts(newBlock, excludeId) {
@@ -2002,8 +2071,9 @@ async function saveClass() {
     const endMin = toMin(`${endRaw} ${endAMPM}`);
     const newParsed = { start: startMin, end: endMin };
 
-    if (endMin > 1080 || endMin <= startMin) {
-      showToast("Class must end by 6:00 PM and after the start time 🦈🕔", "error");
+    // Extend bounds slightly (e.g., 8:30 PM = 1230) to allow more flexibility
+    if (endMin > 1230 || endMin <= startMin) {
+      showToast("Class must end by 8:30 PM and after the start time 🦈🕔", "error");
       return;
     }
 
@@ -2084,13 +2154,13 @@ async function saveClass() {
       if (conflicts.hasConflict) {
         showConflictRecommendations(mergedBlock);
 
-        let msg = "⚠️ ATTENTION: Conflicts Detected!\n\n";
-        if (conflicts.room) msg += `📍 Room: ${conflicts.room}\n`;
-        if (conflicts.teacher) msg += `👨‍🏫 Teacher: ${conflicts.teacher}\n`;
-        if (conflicts.blueprint) msg += `📦 Section: ${conflicts.blueprint}\n`;
-        msg += "\nDo you want to FORCE SAVE this schedule anyway?\n(See SMART RECOMMENDATIONS below)";
+        let msg = "<div style='text-align: center; color: #ef4444; font-weight: 800; font-size: 1.1rem; margin-bottom: 10px;'>CONFLICT DETECTED! ⚠️</div>";
+        if (conflicts.room) msg += `<div style='margin-bottom: 8px;'>${conflicts.room}</div>`;
+        if (conflicts.teacher) msg += `<div style='margin-bottom: 8px;'>${conflicts.teacher}</div>`;
+        if (conflicts.blueprint) msg += `<div style='margin-bottom: 8px;'>${conflicts.blueprint}</div>`;
+        msg += "<div style='margin-top: 15px; font-size: 0.85rem; border-top: 1px solid #ddd; pt: 10px;'>Force save anyway?</div>";
 
-        const proceed = await showConfirm(msg);
+        const proceed = await showConfirm("⚠️ ATTENTION", msg);
 
         if (!proceed) return;
       }
@@ -2210,19 +2280,70 @@ async function saveClass() {
   }
 }
 
+async function findAvailableSlots(teacher, room, excludeSchedId) {
+  const DAYS_LIST = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const standardSlots = [
+    "07:30 AM-09:00 AM",
+    "09:00 AM-10:30 AM",
+    "10:30 AM-12:00 PM",
+    "01:00 PM-02:30 PM",
+    "02:30 PM-04:00 PM",
+    "04:00 PM-05:30 PM"
+  ];
+
+  const results = [];
+  const sched = schedules.find(s => s.id === excludeSchedId);
+  if (!sched) return [];
+
+  // Use a faster check for bulk scanning
+  const publishedSnap = await getPublishedSchedules();
+  const publishedDocs = publishedSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  for (const day of DAYS_LIST) {
+    for (const slot of standardSlots) {
+      // Don't suggest the current slot if it's the one we are editing
+      if (day === selected.day && slot === selected.block) continue;
+
+      const testBlock = {
+        day: day,
+        timeBlock: slot,
+        teacher: teacher,
+        room: room,
+        subject: "AVAILABILITY_CHECK"
+      };
+
+      const hasRoom = await hasRoomConflict(testBlock, excludeSchedId);
+      if (hasRoom) continue;
+
+      const hasTeacher = await hasTeacherConflict(testBlock, excludeSchedId);
+      if (hasTeacher) continue;
+
+      const hasSection = await hasBlueprintConflict(testBlock, excludeSchedId);
+      if (hasSection) continue;
+
+      results.push({ day, slot });
+      if (results.length >= 6) return results;
+    }
+  }
+  return results;
+}
+
 async function showConflictRecommendations(block) {
   const roomSugg = document.getElementById('roomSuggestions');
   const teacherSugg = document.getElementById('teacherSuggestions');
+  const timeSugg = document.getElementById('timeSuggestions');
   const suggArea = document.getElementById('conflictSuggestionsArea');
   if (!roomSugg || !teacherSugg || !suggArea) return;
 
   roomSugg.innerHTML = '<div style="font-size: 0.75rem; color: #94a3b8;">Finding rooms...</div>';
   teacherSugg.innerHTML = '<div style="font-size: 0.75rem; color: #94a3b8;">Finding teachers...</div>';
+  if (timeSugg) timeSugg.innerHTML = '<div style="font-size: 0.75rem; color: #94a3b8;">Scanning for free slots...</div>';
   suggArea.style.display = 'block';
 
   try {
     const recommendedRooms = await findAvailableRooms(block.day, block.timeBlock, selected.id, block.subject);
     const recommendedTeachers = await findAvailableTeachers(block.day, block.timeBlock, selected.id, block.subject);
+    const recommendedTimes = await findAvailableSlots(block.teacher, block.room, selected.id);
 
     roomSugg.innerHTML = "";
     if (recommendedRooms.length > 0) {
@@ -2257,6 +2378,39 @@ async function showConflictRecommendations(block) {
       });
     } else {
       teacherSugg.innerHTML = '<div style="font-size: 0.75rem; color: #2563eb; font-weight: 700;">No available specialists found 🕸️</div>';
+    }
+
+    if (timeSugg) {
+      timeSugg.innerHTML = "";
+      if (recommendedTimes.length > 0) {
+        recommendedTimes.forEach(res => {
+          const pill = document.createElement('div');
+          pill.className = 'suggestion-pill';
+          pill.style.background = "#dcfce7"; // Light green for time suggestions
+          pill.style.borderColor = "#22c55e";
+          pill.innerHTML = `<span>📅</span> ${res.day.slice(0, 3)} ${res.slot.split('-')[0]}`;
+          pill.onclick = () => {
+            const [start, end] = res.slot.split('-');
+            const [sTime, sAMPM] = start.trim().split(' ');
+            const [eTime, eAMPM] = end.trim().split(' ');
+
+            document.getElementById('start').value = sTime;
+            document.getElementById('startAMPM').value = sAMPM;
+            document.getElementById('end').value = eTime;
+            document.getElementById('endAMPM').value = eAMPM;
+
+            // Update selected block so save works correctly
+            selected.day = res.day;
+            // Note: block.timeBlock will be updated by saveClass from inputs
+
+            showToast(`Moving to ${res.day} ${res.slot}...`, "info");
+            if (window.saveClass) window.saveClass();
+          };
+          timeSugg.appendChild(pill);
+        });
+      } else {
+        timeSugg.innerHTML = '<div style="font-size: 0.75rem; color: #2563eb; font-weight: 700;">No free slots found for this pairing 🕸️</div>';
+      }
     }
 
   } catch (err) {

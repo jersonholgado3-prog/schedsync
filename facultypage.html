@@ -29,6 +29,14 @@
 
 <body>
   <div class="container">
+    <!-- Drop Zone Overlay -->
+    <div id="dropZoneOverlay" class="drop-zone-overlay">
+      <div class="drop-zone-content">
+        <h2>📂 Import Faculty</h2>
+        <p>Drop your images or folders here to automatically generate faculty cards.</p>
+      </div>
+    </div>
+
     <aside class="sidebar">
       <div class="sidebar-header" onclick="window.location.href='homepage.html'">
         <img src="images/LOGO.png" alt="Logo">
@@ -116,6 +124,24 @@
 
       <div class="main-layout">
         <div class="content-section">
+          <!-- Selection Bar -->
+          <div id="selectionBar" class="selection-bar">
+            <div class="selection-count"><span id="selectedCount">0</span> Selected</div>
+            <div class="selection-actions">
+              <button id="genEmailsBtn" class="action-btn gen-btn">Gen Accounts</button>
+              <button id="multiDeleteBtn" class="action-btn delete-btn">Delete</button>
+              <button id="cancelSelectionBtn" class="action-btn cancel-btn">Cancel</button>
+            </div>
+          </div>
+
+          <div class="import-toolbar">
+            <button id="deleteAllBtn" class="action-btn delete-btn">🗑️ Delete All</button>
+
+            <button id="uploadDocBtn" class="action-btn gen-btn">📄 Upload Document</button>
+            <input type="file" id="docImportInput" accept=".pdf,.xlsx,.csv" style="display:none">
+          </div>
+
+
           <div class="faculty-grid" id="facultyGrid">
             <!-- JS will populate this -->
           </div>
@@ -123,6 +149,12 @@
       </div>
     </div>
   </div>
+
+  <!-- Document Import Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs" type="module"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script type="module" src="./faculty-doc-import.js"></script>
+
 
   <!-- Added Script Block -->
   <script type="module" src="role-restriction.js"></script>

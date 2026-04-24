@@ -10,13 +10,10 @@
     <link rel="stylesheet" href="export-styles.css" />
     <script>
         (function () {
-            // 1. Theme Lock 🌙
             const theme = localStorage.getItem("theme");
             if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
                 document.documentElement.classList.add("dark");
             }
-
-            // 2. UI Mode Lock 👔
             const uiMode = localStorage.getItem("uiMode");
             const userRole = localStorage.getItem("userRole");
             const mode = uiMode || ((userRole === 'teacher' || userRole === 'admin') ? 'professional' : 'student');
@@ -27,10 +24,7 @@
     </script>
     <link rel="stylesheet" href="profile_styles.css" />
     <style>
-        /* Custom override for Faculty Profile specifically if needed */
-        .profile-info-line span:first-child {
-            min-width: 120px;
-        }
+        .profile-info-line span:first-child { min-width: 120px; }
     </style>
 </head>
 
@@ -41,66 +35,38 @@
                 <img src="images/LOGO.png" alt="Logo">
             </div>
             <nav class="sidebar-menu">
-        <a href="homepage.html" class="sidebar-link">
-          <img src="images/HOME.png" alt="Home">
-          <span>Home</span>
-        </a>
-        <a href="myschedule.html" class="sidebar-link">
-          <img src="images/SCHED.png" alt="My Schedule">
-          <span>My Schedule</span>
-        </a>
-        <a href="facultypage.html" class="sidebar-link active">
-          <img src="images/FACULTY.png" alt="Faculty">
-          <span>Faculty</span>
-        </a>
-        <a href="campuspage.html" class="sidebar-link">
-          <img src="images/CAMPUS_ONE.png" alt="Campus">
-          <span>Campus</span>
-        </a>
-        <a href="sectionspage.html" class="sidebar-link">
-          <img src="images/SCHED.png" alt="Sections" style="filter: invert(1) brightness(2);">
-          <span>Sections</span>
-        </a>
-        <a href="event.html" class="sidebar-link">
-          <img src="images/EVENT_MODE.png" alt="Events">
-          <span>Events</span>
-        </a>
-        <a href="curriculumpage.html" class="sidebar-link">
-          <img src="images/SCHED.png" alt="Curriculum" style="filter: hue-rotate(180deg);">
-          <span>Curriculum</span>
-        </a>
-        <!-- ADMIN ONLY 🛡️ -->
-        <div id="adminSidebarLinks" style="display: none;">
-          <a href="audit_logs.html" class="sidebar-link">
-            <img src="images/SCHED.png" alt="Audit" style="filter: hue-rotate(180deg);">
-            <span>Audit Logs</span>
-          </a>
-        </div>
-      </nav>
-                    </aside>
+                <a href="homepage.html" class="sidebar-link"><img src="images/HOME.png" alt="Home"><span>Home</span></a>
+                <a href="myschedule.html" class="sidebar-link"><img src="images/SCHED.png" alt="My Schedule"><span>My Schedule</span></a>
+                <a href="facultypage.html" class="sidebar-link active"><img src="images/FACULTY.png" alt="Faculty"><span>Faculty</span></a>
+                <a href="campuspage.html" class="sidebar-link"><img src="images/CAMPUS_ONE.png" alt="Campus"><span>Campus</span></a>
+                <a href="sectionspage.html" class="sidebar-link"><img src="images/SCHED.png" alt="Sections" style="filter: invert(1) brightness(2);"><span>Sections</span></a>
+                <a href="event.html" class="sidebar-link"><img src="images/EVENT_MODE.png" alt="Events"><span>Events</span></a>
+                <a href="curriculumpage.html" class="sidebar-link"><img src="images/SCHED.png" alt="Curriculum" style="filter: hue-rotate(180deg);"><span>Curriculum</span></a>
+                <div id="adminSidebarLinks" style="display: none;">
+                    <a href="audit_logs.html" class="sidebar-link"><img src="images/SCHED.png" alt="Audit" style="filter: hue-rotate(180deg);"><span>Audit Logs</span></a>
+                </div>
+            </nav>
+        </aside>
+
         <div class="main-content-wrapper">
             <header class="header">
                 <div class="left-header">
                     <div class="hamburger-btn">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="3" y1="12" x2="21" y2="12"></line>
                             <line x1="3" y1="6" x2="21" y2="6"></line>
                             <line x1="3" y1="18" x2="21" y2="18"></line>
                         </svg>
                     </div>
                     <div class="logo-container" onclick="window.location.href='homepage.html'">
-                        <img src="images/BANNER.png" class="logo-img" alt="SchedSync Logo"
-                            style="max-height: 100%; width: 100%; object-fit: contain;">
+                        <img src="images/BANNER.png" class="logo-img" alt="SchedSync Logo" style="max-height: 100%; width: 100%; object-fit: contain;">
                     </div>
                     <div class="search-wrapper">
                         <img src="images/SEARCH.png" class="search-icon" alt="Search">
                         <input type="text" class="search-button" placeholder="Search pages" aria-label="Search">
                     </div>
                 </div>
-
                 <div class="page-title">Faculty Profile</div>
-
                 <div class="user-section">
                     <div class="notification-icon-wrapper" onclick="window.openGameNotifications()">
                         <img src="images/BELL.png" alt="Notifications">
@@ -109,10 +75,8 @@
                         <span class="burger-icon">☰</span>
                         <div class="user-name">User</div>
                         <div class="user-avatar" id="headerAvatar">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                                stroke="currentColor" style="width: 32px; height: 32px;">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M15.75 6.75a3.75 3.75 0 1 1 -7.5 0 3.75 3.75 0 0 1 7.5 0zM4.5 20.25a8.25 8.25 0 0115 0" />
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 32px; height: 32px;">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6.75a3.75 3.75 0 1 1 -7.5 0 3.75 3.75 0 0 1 7.5 0zM4.5 20.25a8.25 8.25 0 0115 0" />
                             </svg>
                         </div>
                     </div>
@@ -126,16 +90,12 @@
                         <div class="content-box">
                             <div class="profile-content">
                                 <div class="profile-image">
-                                    <img src="images/default_shark.jpg" id="facultyImg"
-                                        onerror="this.src='images/default_shark.jpg'">
+                                    <img src="images/default_shark.jpg" id="facultyImg" onerror="this.src='images/default_shark.jpg'">
                                 </div>
                                 <div class="profile-details">
-                                    <div
-                                        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.5rem;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.5rem;">
                                         <div class="profile-name" style="margin-bottom:0;">Loading Faculty...</div>
-                                        <button class="download-all-header-btn" id="downloadBtn"
-                                            onclick="window.downloadSchedule()"
-                                            style="display: flex; padding: 0.6rem 1.2rem; font-size: 0.75rem;">
+                                        <button class="download-all-header-btn" id="downloadBtn" onclick="window.downloadSchedule()" style="display: flex; padding: 0.6rem 1.2rem; font-size: 0.75rem;">
                                             <span>DOWNLOAD SCHED</span>
                                             <span class="btn-emoji">💾</span>
                                         </button>
@@ -143,11 +103,16 @@
                                     <div class="divider-2"></div>
                                     <div class="profile-info-line">
                                         <span>Subjects:</span>
-                                        <span>Loading...</span>
+                                        <span id="subjectsDisplay">Loading...</span>
                                     </div>
                                     <div class="profile-info-line">
                                         <span>Status:</span>
-                                        <span>Loading...</span>
+                                        <span id="statusDisplay">Loading...</span>
+                                    </div>
+                                    <div class="profile-info-line" id="roleInfoLine" style="display:none; align-items:center;">
+                                        <span>Role:</span>
+                                        <span id="roleDisplay">-</span>
+                                        <button id="changeRoleBtn" style="display:none; margin-left:auto; padding:4px 12px; border:2px solid #000; border-radius:8px; font-weight:800; font-size:12px; cursor:pointer; background:#f1f5f9; box-shadow:2px 2px 0 #000;">Change Role</button>
                                     </div>
                                 </div>
                             </div>
@@ -158,14 +123,8 @@
                             <div class="schedule-section" style="height: 100%; padding: 0;">
                                 <div class="table-scroll">
                                     <table id="scheduleTable">
-                                        <colgroup>
-                                            <col class="time">
-                                        </colgroup>
-                                        <thead>
-                                            <tr>
-                                                <th>TIME</th>
-                                            </tr>
-                                        </thead>
+                                        <colgroup><col class="time"></colgroup>
+                                        <thead><tr><th>TIME</th></tr></thead>
                                         <tbody id="tbody"></tbody>
                                     </table>
                                 </div>
@@ -181,35 +140,17 @@
     <script type="module" src="role-restriction.js"></script>
     <script type="module" src="facultyprofile.js"></script>
     <script type="module" src="realtime-notifications.js"></script>
-  <!-- ?? MOBILE BOTTOM NAVIGATION BAR ? -->
-  <nav class="mobile-bottom-nav" id="mobileBottomNav">
-    <a href="homepage.html" class="mob-nav-item" data-page="homepage">
-      <img src="images/HOME.png" alt="Home"><span>Home</span>
-    </a>
-    <a href="myschedule.html" class="mob-nav-item" data-page="myschedule">
-      <img src="images/SCHED.png" alt="My Schedule"><span>My Sched</span>
-    </a>
-    <a href="facultypage.html" class="mob-nav-item active" data-page="facultypage">
-      <img src="images/FACULTY.png" alt="Faculty"><span>Faculty</span>
-    </a>
-    <a href="campuspage.html" class="mob-nav-item" data-page="campuspage">
-      <img src="images/CAMPUS_ONE.png" alt="Campus"><span>Campus</span>
-    </a>
-    <a href="sectionspage.html" class="mob-nav-item" data-page="sections">
-      <img src="images/SCHED.png" alt="Sections" style="filter: invert(1) brightness(2);">
-      <span>Sections</span>
-    </a>
-    <a href="event.html" class="mob-nav-item" data-page="event">
-      <img src="images/EVENT_MODE.png" alt="Events"><span>Events</span>
-    </a>
-    <a href="curriculumpage.html" class="mob-nav-item" data-page="curriculumpage">
-      <img src="images/SCHED.png" alt="Curriculum" style="filter: hue-rotate(180deg);"><span>Curriculum</span>
-    </a>
-    <!-- ADMIN ONLY 🛡️ shown via JS -->
-    <a href="audit_logs.html" class="mob-nav-item admin-only" data-page="audit_logs" style="display:none">
-      <img src="images/SCHED.png" alt="Audit Logs" style="filter: hue-rotate(180deg);"><span>Audit</span>
-    </a>
-  </nav>
+
+    <nav class="mobile-bottom-nav" id="mobileBottomNav">
+        <a href="homepage.html" class="mob-nav-item" data-page="homepage"><img src="images/HOME.png" alt="Home"><span>Home</span></a>
+        <a href="myschedule.html" class="mob-nav-item" data-page="myschedule"><img src="images/SCHED.png" alt="My Schedule"><span>My Sched</span></a>
+        <a href="facultypage.html" class="mob-nav-item active" data-page="facultypage"><img src="images/FACULTY.png" alt="Faculty"><span>Faculty</span></a>
+        <a href="campuspage.html" class="mob-nav-item" data-page="campuspage"><img src="images/CAMPUS_ONE.png" alt="Campus"><span>Campus</span></a>
+        <a href="sectionspage.html" class="mob-nav-item" data-page="sections"><img src="images/SCHED.png" alt="Sections" style="filter: invert(1) brightness(2);"><span>Sections</span></a>
+        <a href="event.html" class="mob-nav-item" data-page="event"><img src="images/EVENT_MODE.png" alt="Events"><span>Events</span></a>
+        <a href="curriculumpage.html" class="mob-nav-item" data-page="curriculumpage"><img src="images/SCHED.png" alt="Curriculum" style="filter: hue-rotate(180deg);"><span>Curriculum</span></a>
+        <a href="audit_logs.html" class="mob-nav-item admin-only" data-page="audit_logs" style="display:none"><img src="images/SCHED.png" alt="Audit Logs" style="filter: hue-rotate(180deg);"><span>Audit</span></a>
+    </nav>
 </body>
 
 </html>

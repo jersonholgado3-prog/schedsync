@@ -95,7 +95,7 @@ export function showConfirm(titleOrMessage, messageOrCallback) {
         const okBtn = document.getElementById('confirmOkBtn');
 
         titleEl.textContent = title || "Confirm Action";
-        messageEl.textContent = message || "Are you sure you want to proceed?";
+        messageEl.innerHTML = message || "Are you sure you want to proceed?";
 
         const close = (result) => {
             overlay.classList.remove('open');

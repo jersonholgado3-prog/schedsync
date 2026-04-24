@@ -1,3 +1,5 @@
+import './import-progress.js';
+
 // 0. UI Mode Helpers 🎮👔
 export const getUIMode = () => {
     const saved = localStorage.getItem('uiMode');

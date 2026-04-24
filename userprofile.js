@@ -109,6 +109,9 @@ export function initUserProfile(profileSelector = "#userProfile") {
 
       if (confirmed) {
         try {
+          localStorage.removeItem('importProgress');
+          localStorage.removeItem('importCancelled');
+
           localStorage.setItem('manual_logout', 'true');
           await signOut(auth);
           window.location.href = "index.html";

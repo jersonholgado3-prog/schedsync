@@ -31,7 +31,7 @@ export const toMin = (t) => {
     if (period) {
         const p = period.toUpperCase();
         if ((p === "PM" || p === "P.M.") && h !== 12) h += 12;
-        if (p === "AM" && h === 12) h = 0;
+        if ((p === "AM" || p === "A.M.") && h === 12) h = 0;
     }
 
     return (h || 0) * 60 + (m || 0);
