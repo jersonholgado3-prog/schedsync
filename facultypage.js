@@ -9,7 +9,8 @@ import {
   addDoc,
   writeBatch,
   doc,
-  deleteDoc
+  deleteDoc,
+  setDoc
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, deleteUser } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
@@ -185,7 +186,7 @@ async function importFacultyMembers(items) {
         await new Promise(res => setTimeout(res, 800 + Math.floor(i / 10) * 200));
         break;
       } catch (err) {
-        if (tempApp) await deleteApp(tempApp).catch(() => {});
+        if (tempApp) await deleteApp(tempApp).catch(() => { });
         tempApp = null;
         const isQuota = err.code === 'auth/quota-exceeded' ||
           err.message?.includes('quota') || err.message?.includes('QUOTA_EXCEEDED') ||
@@ -210,6 +211,7 @@ async function importFacultyMembers(items) {
     tickImportProgress();
     showToast(`Processing ${i + 1}/${items.length}...`, "info");
   }
+  clearImportProgress();
   showToast(`Successfully processed ${succeeded}/${items.length} faculty!`, "success");
   loadTeachers();
 }
@@ -244,7 +246,7 @@ function initSelectionUI() {
   multiDeleteBtn.onclick = async () => {
     const selectedFaculty = allFaculty.filter(f => selectedIds.has(f.id));
     const confirmed = await showConfirm(`Delete ${selectedFaculty.length} members and their accounts?`, "Bulk Delete");
-    
+
     if (confirmed) {
       showToast("Deleting... ⏳", "info");
       for (const f of selectedFaculty) {
@@ -299,7 +301,7 @@ async function deleteAuthAccount(email, password) {
   } catch (err) {
     console.warn(`Auth deletion failed for ${email}:`, err.message);
   } finally {
-    if (secondaryApp) await deleteApp(secondaryApp).catch(() => {});
+    if (secondaryApp) await deleteApp(secondaryApp).catch(() => { });
   }
 }
 
@@ -345,8 +347,11 @@ async function loadTeachers() {
   }
 
   try {
-    const q = query(collection(db, "users"), where("role", "==", "teacher"));
-    const snap = await getDocs(q);
+    const [teacherSnap, phSnap] = await Promise.all([
+      getDocs(query(collection(db, "users"), where("role", "==", "teacher"))),
+      getDocs(query(collection(db, "users"), where("role", "==", "program head")))
+    ]);
+    const snap = { docs: [...teacherSnap.docs, ...phSnap.docs], empty: teacherSnap.empty && phSnap.empty };
 
     if (snap.empty) {
       facultyGrid.innerHTML = "<p style='text-align: center; width: 100%; grid-column: 1/-1;'>No teachers found.</p>";
@@ -355,7 +360,7 @@ async function loadTeachers() {
 
     facultyGrid.innerHTML = "";
     const rawData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
+
     // Filter duplicates: prefer UID-indexed docs
     const uniqueMap = new Map();
     rawData.forEach(f => {
@@ -376,11 +381,25 @@ async function loadTeachers() {
       const employmentStatus = d.employmentStatus || d.status || "N/A";
       const isSelected = selectedIds.has(d.id);
       const isAdmin = localStorage.getItem('userRole') === 'admin';
+      const isProgramHead = localStorage.getItem('userRole') === 'program head';
+      const canAssignSubjects = isAdmin || isProgramHead;
+      const role = d.role || 'teacher';
+      const program = d.program || '';
+
+      // Program Head specialization label
+      const programHeadTypes = {
+        'ICT/IT': '💻 ICT/IT Program Head',
+        'GE': '📚 GE Program Head',
+        'BM': '💼 BM Program Head',
+        'SHS': '🎓 Asst. Principal (SHS)'
+      };
+      const roleLabel = role === 'program head' ? (programHeadTypes[program] || 'Program Head') :
+        role === 'admin' ? 'Admin' : 'Teacher';
 
       const card = document.createElement("div");
       card.className = `faculty-card ${isSelected ? 'selected' : ''}`;
       card.dataset.title = teacherName;
-      card.dataset.description = `${subjects} ${employmentStatus} `;
+      card.dataset.description = `${subjects} ${employmentStatus} ${roleLabel}`;
 
       card.onclick = (e) => {
         if (selectedIds.size > 0 || e.target.classList.contains('faculty-checkbox')) {
@@ -401,15 +420,27 @@ async function loadTeachers() {
         <div class="faculty-name">${teacherName}</div>
         <div class="faculty-details">
           ${subjects ? `<strong>Subjects:</strong> ${subjects}` : "No subjects assigned"}
+          ${role !== 'teacher' ? `<br><strong>Role:</strong> ${roleLabel}` : ""}
           ${isAdmin && d.email ? `<br><strong>Email:</strong> ${d.email}` : ""}
           ${isAdmin && d.password ? `<br><strong>Password:</strong> ${d.password}` : ""}
         </div>
         <div class="status-badge ${employmentStatus.toLowerCase().includes('regular') ? 'status-regular' : 'status-parttime'}">
           ${employmentStatus}
         </div>
+        ${canAssignSubjects ? `<button class="assign-subjects-btn" data-id="${d.id}" data-name="${teacherName.replace(/"/g,'&quot;')}" style="margin-top:8px;width:100%;padding:6px;border:2px solid #000;border-radius:8px;background:#fff;font-size:0.75rem;font-weight:700;cursor:pointer;">📚 Assign Subjects</button>` : ''}
       `;
 
       facultyGrid.appendChild(card);
+
+      if (canAssignSubjects) {
+        const assignBtn = card.querySelector('.assign-subjects-btn');
+        if (assignBtn) {
+          assignBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            openAssignSubjectsModal(d.id, teacherName, d.subjects || []);
+          });
+        }
+      }
     });
   } catch (error) {
     console.error("Error loading teachers:", error);
@@ -423,12 +454,309 @@ document.addEventListener("DOMContentLoaded", () => {
   initMobileNav();
   initDragAndDrop();
   initSelectionUI();
+  initAddFacultyModal();
+  initAssignSubjectsModal();
   loadTeachers();
+  const locked = localStorage.getItem('importLocked');
+  if (locked) lockImportUI(locked);
 });
 
+function lockImportUI(message) {
+  const msg = message || 'Account generation unavailable. Try again later.';
+  localStorage.setItem('importLocked', msg);
+
+  ['uploadDocBtn', 'genEmailsBtn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.disabled = true; el.title = msg; el.style.opacity = '0.45'; el.style.cursor = 'not-allowed'; }
+  });
+
+  if (!document.getElementById('import-lock-banner')) {
+    const banner = document.createElement('div');
+    banner.id = 'import-lock-banner';
+    banner.style.cssText = 'background:#fef2f2;border:2px solid #ef4444;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;font-weight:700;color:#b91c1c;display:flex;align-items:center;gap:8px;';
+    banner.innerHTML = '<span>ðŸš«</span><span>' + msg + '</span>';
+    const toolbar = document.querySelector('.import-toolbar');
+    if (toolbar) toolbar.insertAdjacentElement('beforebegin', banner);
+  }
+}
+
+function restoreImportUI() {
+  localStorage.removeItem('importLocked');
+  ['uploadDocBtn', 'genEmailsBtn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.disabled = false; el.title = ''; el.style.opacity = ''; el.style.cursor = ''; }
+  });
+  document.getElementById('import-lock-banner')?.remove();
+}
+// --- ADD FACULTY MODAL ---
+
+function initAddFacultyModal() {
+  const fab = document.getElementById('addFacultyFab');
+  const modal = document.getElementById('addFacultyModal');
+  const form = document.getElementById('addFacultyForm');
+  const cancelBtn = document.getElementById('cancelFacultyBtn');
+  const roleSelect = document.getElementById('facultyRole');
+  const programGroup = document.getElementById('programGroup');
+
+  if (!fab || !modal || !form) return;
+
+  fab.addEventListener('click', () => modal.classList.remove('hidden'));
+  cancelBtn.addEventListener('click', () => { modal.classList.add('hidden'); form.reset(); });
+  modal.addEventListener('click', (e) => { if (e.target === modal) { modal.classList.add('hidden'); form.reset(); } });
+
+  roleSelect.addEventListener('change', () => {
+    programGroup.style.display = roleSelect.value === 'program head' ? '' : 'none';
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const submitBtn = form.querySelector('.modal-btn-save');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Adding...';
+
+    const firstName = document.getElementById('facultyFirstName').value.trim();
+    const middleName = document.getElementById('facultyMiddleName').value.trim();
+    const lastName = document.getElementById('facultyLastName').value.trim();
+    const email = document.getElementById('facultyEmail').value.trim();
+    const status = document.getElementById('facultyStatus').value;
+    const role = document.getElementById('facultyRole').value;
+    const program = role === 'program head' ? document.getElementById('facultyProgram').value : '';
+
+    const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ');
+    const sanitized = lastName.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    const password = `${sanitized}@SCHEDSYNC`;
+
+    let tempApp = null;
+    try {
+      const tempAppName = 'AddFaculty-' + Date.now();
+      tempApp = initializeApp(secondaryConfig, tempAppName);
+      const tempAuth = getAuth(tempApp);
+
+      let uid;
+      try {
+        const cred = await createUserWithEmailAndPassword(tempAuth, email, password);
+        uid = cred.user.uid;
+      } catch (authErr) {
+        if (authErr.code === 'auth/email-already-in-use') {
+          const cred = await signInWithEmailAndPassword(tempAuth, email, password);
+          uid = cred.user.uid;
+        } else throw authErr;
+      }
+
+      const facultyData = {
+        username: fullName,
+        email,
+        password,
+        authUid: uid,
+        role,
+        ...(program && { program }),
+        employmentStatus: status,
+        subjects: [],
+        photoURL: '',
+        createdAt: new Date().toISOString()
+      };
+
+      await setDoc(doc(db, 'users', uid), facultyData, { merge: true });
+
+      showToast(`${fullName} added successfully!`, 'success');
+      modal.classList.add('hidden');
+      form.reset();
+      programGroup.style.display = 'none';
+      loadTeachers();
+    } catch (err) {
+      console.error('Add faculty error:', err);
+      let msg = 'Failed to add faculty.';
+      if (err.code === 'auth/email-already-in-use') msg = 'Email already in use.';
+      if (err.code === 'auth/invalid-email') msg = 'Invalid email address.';
+      if (err.code === 'auth/weak-password') msg = 'Password too weak.';
+      showToast(msg, 'error');
+    } finally {
+      if (tempApp) await deleteApp(tempApp).catch(() => {});
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Add Faculty';
+    }
+  });
+}
+
 window.addFaculty = function () {
-  showToast("Add Faculty clicked!", "info");
+  document.getElementById('addFacultyModal')?.classList.remove('hidden');
 };
+
+// --- ASSIGN SUBJECTS (Program Head) ---
+
+const PROGRAM_KEYWORDS = {
+  'ICT/IT': ['BSIT', 'BSCS', 'ICT', 'IT', 'COMPUTER', 'INFORMATION'],
+  'GE':     ['GE', 'GENERAL', 'MATH', 'SCIENCE', 'ENGLISH', 'FILIPINO', 'HISTORY', 'PE', 'NSTP'],
+  'BM':     ['BM', 'BUSINESS', 'ACCOUNTANCY', 'MANAGEMENT', 'BSBA', 'BSAC', 'ECONOMICS'],
+  'SHS':    ['SHS', 'SENIOR', 'G11', 'G12', 'GRADE 11', 'GRADE 12'],
+};
+
+let _assignTeacherId = null;
+let _groupedCourses = [];
+
+function rankTerm(s) {
+  const u = s.toUpperCase();
+  let yr = 0, sem = 0;
+  if      (u.includes('FIRST YEAR')  || u.includes('G11') || u.includes('GRADE 11')) yr = 1;
+  else if (u.includes('SECOND YEAR') || u.includes('G12') || u.includes('GRADE 12')) yr = 2;
+  else if (u.includes('THIRD YEAR'))  yr = 3;
+  else if (u.includes('FOURTH YEAR')) yr = 4;
+  if      (u.includes('FIRST TERM')  || u.includes('FIRST SEM'))  sem = 1;
+  else if (u.includes('SECOND TERM') || u.includes('SECOND SEM')) sem = 2;
+  else if (u.includes('THIRD TERM')  || u.includes('THIRD SEM'))  sem = 3;
+  const termMatch = u.match(/TERM\s*(\d)/);
+  if (termMatch) sem = parseInt(termMatch[1]);
+  return yr * 10 + sem;
+} // [{name, terms: [{termName, subjects:[]}]}]
+
+async function openAssignSubjectsModal(teacherId, teacherName, currentSubjects) {
+  _assignTeacherId = teacherId;
+
+  const modal = document.getElementById('assignSubjectsModal');
+  const nameEl = document.getElementById('assignTeacherName');
+  const list = document.getElementById('subjectCheckboxList');
+  const searchInput = document.getElementById('subjectSearchInput');
+
+  nameEl.textContent = `Teacher: ${teacherName}`;
+  list.innerHTML = '<div style="text-align:center;padding:1rem;color:#64748b;">Loading subjects...</div>';
+  searchInput.value = '';
+  modal.classList.remove('hidden');
+
+  const myRole = localStorage.getItem('userRole') || '';
+  const myProgram = localStorage.getItem('userProgram') || '';
+  const keywords = myRole === 'admin' ? [] : (PROGRAM_KEYWORDS[myProgram] || []);
+
+  try {
+    const snap = await getDocs(collection(db, 'courses'));
+    _groupedCourses = [];
+
+    snap.docs.forEach(d => {
+      const data = d.data();
+      const courseName = data.name || d.id;
+      const matches = keywords.length === 0 || keywords.some(kw => courseName.toUpperCase().includes(kw));
+      if (!matches || !data.terms) return;
+
+      const terms = Object.entries(data.terms)
+        .map(([termName, subjects]) => ({ termName, subjects: (subjects || []).filter(Boolean) }))
+        .filter(t => t.subjects.length > 0)
+        .sort((a, b) => rankTerm(a.termName) - rankTerm(b.termName));
+
+      if (terms.length > 0) _groupedCourses.push({ name: courseName, terms });
+    });
+
+    _groupedCourses.sort((a, b) => a.name.localeCompare(b.name));
+    renderGroupedSubjects(currentSubjects, '');
+  } catch (err) {
+    list.innerHTML = '<div style="color:#ef4444;padding:1rem;">Failed to load subjects.</div>';
+    console.error(err);
+  }
+}
+
+function renderGroupedSubjects(currentSubjects, filter) {
+  const list = document.getElementById('subjectCheckboxList');
+  const currentSet = new Set(currentSubjects || []);
+  const q = (filter || '').toLowerCase();
+
+  if (_groupedCourses.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:1rem;color:#64748b;">No subjects found.</div>';
+    return;
+  }
+
+  let html = '';
+  _groupedCourses.forEach((course, ci) => {
+    // Flatten all subjects in this course for filtering
+    const allCourseSubjects = course.terms.flatMap(t => t.subjects);
+    const matchingSubjects = q ? allCourseSubjects.filter(s => s.toLowerCase().includes(q)) : allCourseSubjects;
+    if (matchingSubjects.length === 0) return;
+
+    const checkedCount = matchingSubjects.filter(s => currentSet.has(s)).length;
+    html += `
+      <div class="assign-course-group">
+        <div class="assign-course-header" style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#f1f5f9;border:2px solid #000;border-radius:10px;cursor:pointer;font-weight:800;font-size:0.85rem;user-select:none;">
+          <span>📁 ${course.name}</span>
+          <span style="font-size:0.75rem;color:#64748b;">${checkedCount > 0 ? `${checkedCount} selected · ` : ''}▼</span>
+        </div>
+        <div class="assign-course-body" style="display:none;flex-direction:column;gap:4px;padding:6px 0 0 8px;">
+    `;
+
+    if (q) {
+      // Flat list when searching
+      matchingSubjects.forEach(s => {
+        html += subjectCheckboxHTML(s, currentSet.has(s));
+      });
+    } else {
+      // Grouped by term
+      course.terms.forEach(term => {
+        if (term.subjects.length === 0) return;
+        html += `<div style="font-size:0.75rem;font-weight:700;color:#94a3b8;padding:4px 0 2px;">${term.termName}</div>`;
+        term.subjects.forEach(s => {
+          html += subjectCheckboxHTML(s, currentSet.has(s));
+        });
+      });
+    }
+
+    html += `</div></div>`;
+  });
+
+  list.innerHTML = html || '<div style="text-align:center;padding:1rem;color:#64748b;">No subjects found.</div>';
+
+  // Toggle open/close
+  list.querySelectorAll('.assign-course-header').forEach(h => {
+    h.addEventListener('click', () => {
+      const body = h.nextElementSibling;
+      const isOpen = body.style.display === 'flex';
+      body.style.display = isOpen ? 'none' : 'flex';
+    });
+  });
+}
+
+function subjectCheckboxHTML(s, checked) {
+  const escaped = s.replace(/"/g, '&quot;');
+  return `<label style="display:flex;align-items:center;gap:8px;padding:5px 8px;border:1.5px solid #e2e8f0;border-radius:7px;cursor:pointer;font-size:0.82rem;font-weight:600;">
+    <input type="checkbox" value="${escaped}" ${checked ? 'checked' : ''} style="width:15px;height:15px;cursor:pointer;">
+    <span>${s}</span>
+  </label>`;
+}
+
+function initAssignSubjectsModal() {
+  const modal = document.getElementById('assignSubjectsModal');
+  const cancelBtn = document.getElementById('cancelAssignBtn');
+  const saveBtn = document.getElementById('saveAssignBtn');
+  const searchInput = document.getElementById('subjectSearchInput');
+
+  if (!modal) return;
+
+  cancelBtn.addEventListener('click', () => { modal.classList.add('hidden'); _assignTeacherId = null; });
+  modal.addEventListener('click', e => { if (e.target === modal) { modal.classList.add('hidden'); _assignTeacherId = null; } });
+
+  searchInput.addEventListener('input', () => {
+    // Preserve currently checked values before re-render
+    const checked = new Set(
+      Array.from(document.querySelectorAll('#subjectCheckboxList input[type=checkbox]:checked')).map(cb => cb.value)
+    );
+    renderGroupedSubjects(checked, searchInput.value);
+  });
+
+  saveBtn.addEventListener('click', async () => {
+    if (!_assignTeacherId) return;
+    const selected = Array.from(document.querySelectorAll('#subjectCheckboxList input[type=checkbox]:checked')).map(cb => cb.value);
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+    try {
+      await setDoc(doc(db, 'users', _assignTeacherId), { subjects: selected }, { merge: true });
+      showToast('Subjects saved!', 'success');
+      modal.classList.add('hidden');
+      _assignTeacherId = null;
+      loadTeachers();
+    } catch (err) {
+      showToast('Failed to save subjects.', 'error');
+      console.error(err);
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save';
+    }
+  });
+}
 
 // Expose for faculty-doc-import.js
 window.importFacultyMembers = importFacultyMembers;

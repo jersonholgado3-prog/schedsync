@@ -53,72 +53,29 @@ export function showToast(message, type = "info") {
  * @returns {Promise<boolean>}
  */
 export function showConfirm(titleOrMessage, messageOrCallback) {
-    let title = "Confirm Action";
-    let message = "";
-    let callback = null;
-
-    if (typeof messageOrCallback === 'function') {
-        // Legacy: showConfirm(msg, callback)
-        message = titleOrMessage;
-        callback = messageOrCallback;
-    } else if (typeof messageOrCallback === 'string') {
-        // Modern: showConfirm(title, msg)
-        title = titleOrMessage;
-        message = messageOrCallback;
-    } else {
-        // Promise-style single argument: showConfirm(msg)
-        title = "Confirm Action";
-        message = titleOrMessage;
-    }
+    let title = "Confirm Action", message = "", callback = null;
+    if (typeof messageOrCallback === "function") { message = titleOrMessage; callback = messageOrCallback; }
+    else if (typeof messageOrCallback === "string") { title = titleOrMessage; message = messageOrCallback; }
+    else { message = titleOrMessage; }
 
     return new Promise((resolve) => {
-        let overlay = document.querySelector('.maangas-confirm-overlay');
-        if (!overlay) {
-            overlay = document.createElement('div');
-            overlay.className = 'maangas-confirm-overlay';
-            overlay.innerHTML = `
-                <div class="maangas-confirm-box">
-                    <div class="maangas-confirm-title" id="confirmTitle">Confirm Action</div>
-                    <div class="maangas-confirm-message" id="confirmMessage">Are you sure?</div>
-                    <div class="maangas-confirm-actions">
-                        <button class="maangas-btn btn-cancel" id="confirmCancelBtn">Cancel</button>
-                        <button class="maangas-btn btn-confirm" id="confirmOkBtn">Confirm</button>
-                    </div>
+        const overlay = document.createElement("div");
+        overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:99999;";
+        overlay.innerHTML = `
+            <div style="background:#fff;border:3px solid #000;border-radius:20px;box-shadow:6px 6px 0 #000;padding:2rem;width:90%;max-width:400px;display:flex;flex-direction:column;gap:16px;font-family:Poppins,sans-serif;text-align:center;">
+                <div style="font-size:1.1rem;font-weight:800;text-transform:uppercase;">${title}</div>
+                <div style="font-size:0.9rem;color:#334155;line-height:1.5;">${message}</div>
+                <div style="display:flex;gap:10px;justify-content:center;">
+                    <button id="scCancelBtn" style="flex:1;padding:10px;border:2px solid #000;border-radius:10px;background:#f1f5f9;font-weight:700;cursor:pointer;">Cancel</button>
+                    <button id="scConfirmBtn" style="flex:1;padding:10px;border:2px solid #000;border-radius:10px;background:#000;color:#fff;font-weight:700;cursor:pointer;">Confirm</button>
                 </div>
-            `;
-            document.body.appendChild(overlay);
-        }
-
-        const titleEl = document.getElementById('confirmTitle');
-        const messageEl = document.getElementById('confirmMessage');
-        const cancelBtn = document.getElementById('confirmCancelBtn');
-        const okBtn = document.getElementById('confirmOkBtn');
-
-        titleEl.textContent = title || "Confirm Action";
-        messageEl.innerHTML = message || "Are you sure you want to proceed?";
-
-        const close = (result) => {
-            overlay.classList.remove('open');
-            setTimeout(() => {
-                overlay.style.visibility = 'hidden';
-                overlay.style.opacity = '0';
-                if (callback && result) callback();
-                resolve(result);
-            }, 200);
-        };
-
-        cancelBtn.onclick = (e) => { e.stopPropagation(); close(false); };
-        okBtn.onclick = (e) => { e.stopPropagation(); close(true); };
-
-        // Force Show 🛡️
-        overlay.style.visibility = 'visible';
-        overlay.style.display = 'flex'; // Ensure it's not display: none
-        
-        // Use a tiny timeout to ensure the transition plays correctly every time
-        setTimeout(() => {
-            overlay.classList.add('open');
-            overlay.style.opacity = '1';
-        }, 10);
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        const close = (result) => { overlay.remove(); if (callback && result) callback(); resolve(result); };
+        overlay.querySelector("#scCancelBtn").onclick = (e) => { e.stopPropagation(); close(false); };
+        overlay.querySelector("#scConfirmBtn").onclick = (e) => { e.stopPropagation(); close(true); };
+        overlay.onclick = (e) => { if (e.target === overlay) close(false); };
     });
 }
 
@@ -131,48 +88,26 @@ export function showConfirm(titleOrMessage, messageOrCallback) {
 export function showPrompt(title, message) {
     return new Promise((resolve) => {
         const overlay = document.createElement("div");
-        overlay.className = "confirm-overlay"; // Reuse existing styles
-        overlay.style.zIndex = "10005";
-
+        overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:99999;";
         overlay.innerHTML = `
-            <div class="confirm-box">
-                 <div style="margin-bottom: 20px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                    </svg>
-                </div>
-                <div class="confirm-title">${title}</div>
-                <div class="confirm-text">${message}</div>
-                <input type="text" class="confirm-input" placeholder="Type here..." id="promptInput" style="width:100%; padding:10px; margin:15px 0; border-radius:8px; border:2px solid #ddd;">
-                <div class="confirm-buttons" style="display:flex; gap:10px; justify-content:center;">
-                    <button class="confirm-btn cancel" style="padding:10px 20px; border-radius:8px; cursor:pointer; background:#ddd; border:none;">Cancel</button>
-                    <button class="confirm-btn confirm" style="padding:10px 20px; border-radius:8px; cursor:pointer; background:#6366f1; color:white; border:none;">Confirm</button>
+            <div style="background:#fff;border:3px solid #000;border-radius:20px;box-shadow:6px 6px 0 #000;padding:2rem;width:90%;max-width:400px;display:flex;flex-direction:column;gap:12px;font-family:Poppins,sans-serif;">
+                <div style="font-size:1.1rem;font-weight:800;">${title}</div>
+                <div style="font-size:0.85rem;color:#64748b;">${message}</div>
+                <input type="text" id="promptInput" placeholder="Type here..." style="width:100%;padding:10px 12px;border:2px solid #000;border-radius:10px;font-size:0.9rem;outline:none;box-sizing:border-box;">
+                <div style="display:flex;gap:10px;justify-content:flex-end;">
+                    <button id="promptCancel" style="padding:8px 18px;border:2px solid #000;border-radius:10px;background:#fff;font-weight:700;cursor:pointer;">Cancel</button>
+                    <button id="promptConfirm" style="padding:8px 18px;border:2px solid #000;border-radius:10px;background:#000;color:#fff;font-weight:700;cursor:pointer;">Confirm</button>
                 </div>
             </div>
         `;
-
         document.body.appendChild(overlay);
         const input = overlay.querySelector("#promptInput");
-        const cancelBtn = overlay.querySelector(".cancel");
-        const confirmBtn = overlay.querySelector(".confirm");
-
         input.focus();
-
-        const close = (value = null) => {
-            overlay.style.animation = "fadeOut 0.2s forwards";
-            setTimeout(() => {
-                overlay.remove();
-                resolve(value);
-            }, 200);
-        };
-
-        cancelBtn.onclick = () => close(null);
-        confirmBtn.onclick = () => close(input.value.trim());
-        input.onkeydown = (e) => {
-            if (e.key === "Enter") confirmBtn.click();
-            if (e.key === "Escape") cancelBtn.click();
-        };
+        const close = (value = null) => { overlay.remove(); resolve(value); };
+        overlay.querySelector("#promptCancel").onclick = () => close(null);
+        overlay.querySelector("#promptConfirm").onclick = () => close(input.value.trim());
+        input.onkeydown = (e) => { if (e.key === "Enter") close(input.value.trim()); if (e.key === "Escape") close(null); };
+        overlay.onclick = (e) => { if (e.target === overlay) close(null); };
     });
 }
 

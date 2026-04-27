@@ -6,6 +6,7 @@ import { showToast, showConfirm } from "./js/utils/ui-utils.js";
 // 🚀 Early Cache Check for Flicker Prevention
 let cachedRole = localStorage.getItem('userRole');
 let cachedPermission = localStorage.getItem('editPermission') === 'true';
+let cachedProgram = localStorage.getItem('userProgram') || '';
 
 // 🛡️ RBAC HARDENING: MutationObserver instead of setInterval ⚓
 const observer = new MutationObserver((mutations) => {
@@ -57,6 +58,8 @@ onAuthStateChanged(auth, async (user) => {
                 // Update Cache ⚓
                 localStorage.setItem('userRole', role);
                 localStorage.setItem('editPermission', String(hasPermission));
+                const program = userData.program || '';
+                localStorage.setItem('userProgram', program);
 
                 applyRestrictions(role, hasPermission);
             }
@@ -74,11 +77,15 @@ onAuthStateChanged(auth, async (user) => {
 document.addEventListener("DOMContentLoaded", () => {
     const role = localStorage.getItem('userRole') || 'student';
     const hasPermission = localStorage.getItem('editPermission') === 'true';
+    const program = localStorage.getItem('userProgram') || '';
     applyRestrictions(role, hasPermission);
 });
 
 function applyRestrictions(role, hasPermission) {
-    if (role !== 'admin' && !hasPermission) {
+    // Program Heads should have same permissions as teachers/admins
+    const isEditor = role === 'admin' || role === 'program head' || hasPermission;
+    
+    if (!isEditor) {
         injectHiderStyle();
         sweep();
         observer.observe(document.body, { childList: true, subtree: true });
@@ -105,7 +112,8 @@ function applyRestrictions(role, hasPermission) {
 
 function sweep() {
     const role = localStorage.getItem('userRole') || 'student';
-    if (role === 'admin') return;
+    // Program Heads should NOT be restricted
+    if (role === 'admin' || role === 'program head') return;
 
     // 1. Hide Editor elements
     document.querySelectorAll('div[onclick*="sectionspage.html"], div[onclick*="editpage.html"]').forEach(el => {

@@ -830,11 +830,52 @@ async function initAdminAnalytics() {
 
     renderPeakHoursChart(hourCounts);
 
+    // Faculty Load Distribution
+    const teacherLoad = {};
+    schedules.forEach(s => {
+      (s.classes || []).forEach(c => {
+        if (!c.teacher || c.subject === "VACANT" || c.subject === "MARKED_VACANT") return;
+        teacherLoad[c.teacher] = (teacherLoad[c.teacher] || 0) + 1;
+      });
+    });
+    renderFacultyLoadChart(teacherLoad);
+
   } catch (err) {
     console.error("Analytics Init Failed:", err);
   }
 }
 
+let facultyLoadChart = null;
+function renderFacultyLoadChart(data) {
+  const ctx = document.getElementById('facultyLoadChart');
+  if (!ctx) return;
+  if (facultyLoadChart) facultyLoadChart.destroy();
+
+  const sorted = Object.entries(data).sort((a, b) => b[1] - a[1]).slice(0, 15);
+  facultyLoadChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: sorted.map(([name]) => name),
+      datasets: [{
+        label: 'Subjects',
+        data: sorted.map(([, count]) => count),
+        backgroundColor: '#FFD200',
+        borderColor: '#000',
+        borderWidth: 2,
+        borderRadius: 6
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      scales: {
+        x: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { display: false } },
+        y: { grid: { display: false }, ticks: { font: { weight: 'bold' } } }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+}
 function renderRoomUsageChart(data) {
   const ctx = document.getElementById('roomUsageChart');
   if (!ctx) return;

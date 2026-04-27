@@ -373,47 +373,9 @@ export function initUniversalSearch(db, options = {}) {
       return;
     }
 
-    // Instant local filtering
-    const results = searchPool.filter(item => {
-      const name = String(item.name || "").toLowerCase();
-      const meta = String(item.meta || "").toLowerCase();
-
-      // 1. Direct match (e.g. "Room 201" contains "201")
-      if (name.includes(term) || meta.includes(term)) return true;
-
-      // 2. Aggressive normalization (e.g. "room201" matches "Room 201")
-      const normName = name.replace(/[^a-z0-9]/g, '');
-      const normTerm = term.replace(/[^a-z0-9]/g, '');
-      if (normName.includes(normTerm)) return true;
-
-      // 3. Alternate Room Prefix handling
-      if (item.type === 'room') {
-        const roomOnly = name.replace(/room/g, '').trim();
-        const termOnly = term.replace(/room/g, '').trim();
-        if (roomOnly && termOnly && roomOnly.includes(termOnly)) return true;
-      }
-
-      return false;
-    });
-
-    // Score and Sort: Prioritize prefix matches
-    results.sort((a, b) => {
-      const aName = String(a.name || "").toLowerCase();
-      const bName = String(b.name || "").toLowerCase();
-      const aStarts = aName.startsWith(term);
-      const bStarts = bName.startsWith(term);
-
-      const aStartsNorm = aName.replace(/[^a-z0-9]/g, '').startsWith(term.replace(/[^a-z0-9]/g, ''));
-      const bStartsNorm = bName.replace(/[^a-z0-9]/g, '').startsWith(term.replace(/[^a-z0-9]/g, ''));
-
-      if (aStartsNorm && !bStartsNorm) return -1;
-      if (!aStartsNorm && bStartsNorm) return 1;
-      if (aStarts && !bStarts) return -1;
-      if (!aStarts && bStarts) return 1;
-
-      return aName.localeCompare(bName);
-    });
-
+    // Fuse.js fuzzy search
+    const fuse = new Fuse(searchPool, { keys: ['name', 'meta'], threshold: 0.4, includeScore: true, minMatchCharLength: 1 });
+    const results = fuse.search(term).map(r => r.item);
     renderResults(results.slice(0, 15), term);
   };
 
@@ -750,15 +712,18 @@ export function initCardSearch(
 
   const cards = document.querySelectorAll(cardSelector);
 
+  const cardData = Array.from(cards).map(card => {
+    const obj = { _el: card };
+    dataAttrs.forEach(attr => { obj[attr] = card.dataset[attr] || ''; });
+    return obj;
+  });
+  const cardFuse = new Fuse(cardData, { keys: dataAttrs, threshold: 0.4, minMatchCharLength: 1 });
+
   const filterCards = () => {
-    const queryStr = search.value.toLowerCase();
-    cards.forEach(card => {
-      const matches = dataAttrs.some(attr => {
-        const value = (card.dataset[attr] || "").toLowerCase();
-        return value.includes(queryStr);
-      });
-      card.style.display = matches ? "flex" : "none";
-    });
+    const queryStr = search.value.trim();
+    if (!queryStr) { cards.forEach(card => (card.style.display = 'flex')); return; }
+    const matched = new Set(cardFuse.search(queryStr).map(r => r.item._el));
+    cards.forEach(card => (card.style.display = matched.has(card) ? 'flex' : 'none'));
   };
 
   search.addEventListener("input", filterCards);

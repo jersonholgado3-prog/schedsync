@@ -2,7 +2,6 @@ import { initMobileNav } from "./js/ui/mobile-nav.js";
 import { db, auth, app } from "./js/config/firebase-config.js";
 import { onAuthStateChanged, updateProfile, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { doc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
 import { initUserProfile } from "./userprofile.js";
 import { initUniversalSearch } from "./search.js";
 import { getUIMode, setUIMode } from "./ui-effects.js";
@@ -34,7 +33,6 @@ const parseBlock = block => {
 };
 
 let currentUserData = null;
-const storage = getStorage(app);
 
 document.addEventListener("DOMContentLoaded", () => {
     initMobileNav();
@@ -103,42 +101,19 @@ document.addEventListener("DOMContentLoaded", () => {
 function setupImageUpdate(user) {
     const profileContainer = document.querySelector(".profile-image");
     if (!profileContainer) return;
-
-    profileContainer.title = "Click to change profile picture";
     profileContainer.style.cursor = "pointer";
-
     profileContainer.addEventListener("click", async () => {
-        const newUrl = await showPrompt("Update Profile Picture", "Paste your new image URL here:");
-        if (newUrl !== null) await handlePfpUpdate(newUrl);
-
-        async function handlePfpUpdate(newUrl) {
-            if (!newUrl || newUrl.trim() === "") {
-                showToast("Please enter a valid URL. 🔗", "error");
-                return;
-            }
-
-            try {
-                // 1. Update Firebase Auth
-                await updateProfile(user, { photoURL: newUrl });
-
-                // 2. Update Firestore
-                const docRef = doc(db, "users", user.uid);
-                await updateDoc(docRef, { photoURL: newUrl });
-
-                // 3. Update UI
-                if (document.getElementById("profileImg")) {
-                    document.getElementById("profileImg").src = newUrl;
-                }
-
-                // Update Header Avatar immediately
-                const headerPillImg = document.querySelector("#userProfile img");
-                if (headerPillImg) headerPillImg.src = newUrl;
-
-                showToast("Profile picture updated! ✨", "success");
-            } catch (error) {
-                console.error("SchedSync: Failed to update profile picture:", error);
-                showToast("Error updating profile picture.", "error");
-            }
+        const newUrl = await showPrompt("Update Profile Picture", "Paste your new image URL:");
+        if (!newUrl || !newUrl.trim()) return;
+        try {
+            await updateProfile(user, { photoURL: newUrl });
+            await updateDoc(doc(db, "users", user.uid), { photoURL: newUrl });
+            document.getElementById("profileImg").src = newUrl;
+            const h = document.querySelector("#userProfile img");
+            if (h) h.src = newUrl;
+            showToast("Profile picture updated!", "success");
+        } catch (e) {
+            showToast("Error updating profile picture.", "error");
         }
     });
 }

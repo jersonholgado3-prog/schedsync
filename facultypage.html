@@ -5,7 +5,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Faculty Members - SchedSync</title>
-  <script type="module" src="ui-effects.js"></script>
   <link rel="stylesheet" href="header-styles.css" />
   <script>
     (function () {
@@ -15,7 +14,7 @@
         document.documentElement.classList.add("dark");
       }
 
-      // 2. UI Mode Lock 👔
+      // 2. UI Mode Lock 😝
       const uiMode = localStorage.getItem("uiMode");
       const userRole = localStorage.getItem("userRole");
       const mode = uiMode || ((userRole === 'teacher' || userRole === 'admin') ? 'professional' : 'student');
@@ -150,15 +149,16 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
   <!-- Document Import Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs" type="module"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script type="module" src="./faculty-doc-import.js"></script>
 
 
   <!-- Added Script Block -->
   <script type="module" src="role-restriction.js"></script>
   <script type="module" src="./facultypage.js"></script>
+  <script type="module" src="./faculty-doc-import.js"></script>
 
   <script type="module" src="realtime-notifications.js"></script>
   <script type="module" src="ui-effects.js"></script>
@@ -191,6 +191,54 @@
       <img src="images/SCHED.png" alt="Audit Logs" style="filter: hue-rotate(180deg);"><span>Audit</span>
     </a>
   </nav>
+  <div id="addFacultyModal" class="faculty-modal-overlay hidden">
+    <div class="faculty-modal-box">
+      <h2>Add New Faculty</h2>
+      <form id="addFacultyForm">
+        <div class="form-group"><label for="facultyFirstName">First Name</label><input type="text" id="facultyFirstName"
+            required></div>
+        <div class="form-group"><label for="facultyMiddleName">Middle Name</label><input type="text"
+            id="facultyMiddleName"></div>
+        <div class="form-group"><label for="facultyLastName">Last Name</label><input type="text" id="facultyLastName"
+            required></div>
+        <div class="form-group"><label for="facultyEmail">Email</label><input type="email" id="facultyEmail" required>
+        </div>
+        <div class="form-group"><label for="facultyStatus">Employment Status</label><select id="facultyStatus">
+            <option value="Regular">Regular</option>
+            <option value="Part-time">Part-time</option>
+            <option value="Contractual">Contractual</option>
+            <option value="Temporary">Temporary</option>
+          </select></div>
+        <div class="form-group"><label for="facultyRole">Role</label><select id="facultyRole">
+            <option value="teacher">Teacher</option>
+            <option value="program head">Program Head</option>
+            <option value="admin">Admin</option>
+          </select></div>
+        <div class="form-group" id="programGroup" style="display:none;"><label
+            for="facultyProgram">Program</label><select id="facultyProgram">
+            <option value="ICT/IT">ICT/IT</option>
+            <option value="GE">GE</option>
+            <option value="BM">BM</option>
+            <option value="SHS">SHS</option>
+          </select></div>
+        <div class="modal-actions"><button type="button" id="cancelFacultyBtn"
+            class="modal-btn-cancel">Cancel</button><button type="submit" class="modal-btn-save">Add Faculty</button>
+        </div>
+      </form>
+    </div>
+  </div>
+<button id="addFacultyFab" class="admin-only" style="display:none" title="Add Faculty">+</button>
+
+<!-- Subject Assignment Modal -->
+<div id="assignSubjectsModal" class="faculty-modal-overlay hidden">
+  <div class="faculty-modal-box" style="max-width:560px">
+    <h2>Assign Subjects</h2>
+    <p id="assignTeacherName" style="font-weight:700;margin-bottom:1rem;font-size:0.95rem;"></p>
+    <div style="margin-bottom:0.75rem;"><input type="text" id="subjectSearchInput" placeholder="Search subjects..." style="width:100%;border:2px solid #000;border-radius:10px;padding:8px 12px;font-size:0.85rem;"></div>
+    <div id="subjectCheckboxList" style="max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding-right:4px;"></div>
+    <div class="modal-actions" style="margin-top:1rem;"><button type="button" id="cancelAssignBtn" class="modal-btn-cancel">Cancel</button><button type="button" id="saveAssignBtn" class="modal-btn-save">Save</button></div>
+  </div>
+</div>
 </body>
 
 </html>

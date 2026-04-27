@@ -67,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (userDoc.exists()) {
           const userData = userDoc.data();
           localStorage.setItem('userRole', userData.role || 'student');
+          localStorage.setItem('userProgram', userData.program || '');
           if (userData.section) {
             localStorage.setItem('userSection', userData.section);
           } else {
@@ -74,8 +75,13 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         } else {
           localStorage.setItem('userRole', 'student');
+          localStorage.setItem('userProgram', '');
           localStorage.removeItem('userSection');
         }
+
+        // Set defaults for new users (only if not already set)
+        if (!localStorage.getItem('uiMode')) localStorage.setItem('uiMode', 'professional');
+        if (!localStorage.getItem('theme')) localStorage.setItem('theme', 'light');
 
         showNotification('✅ Login successful! Redirecting...', 'success');
 

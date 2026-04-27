@@ -1422,3 +1422,114 @@
       }
     }
 
+
+/* ── Profile Modals ── */
+.prof-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 6000;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+.prof-modal-overlay.open { display: flex; }
+
+.prof-modal-box {
+    background: #fff;
+    border: 3px solid #000;
+    border-radius: 20px;
+    box-shadow: 6px 6px 0 #000;
+    padding: 2rem;
+    width: 100%;
+    max-width: 420px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+.prof-modal-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.5rem; }
+.prof-modal-sub { font-size: 0.82rem; color: #64748b; margin-bottom: 1rem; }
+.prof-form-group { display: flex; flex-direction: column; gap: 4px; margin-bottom: 0.85rem; }
+.prof-label { font-size: 0.8rem; font-weight: 700; }
+.prof-input {
+    border: 2px solid #000;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    outline: none;
+    background: #fff;
+    color: #000;
+    width: 100%;
+    box-sizing: border-box;
+}
+.prof-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 1.25rem; }
+.prof-btn-cancel {
+    padding: 8px 18px;
+    border: 2px solid #000;
+    border-radius: 10px;
+    background: #fff;
+    font-weight: 700;
+    cursor: pointer;
+    color: #000;
+}
+.prof-btn-save {
+    padding: 8px 18px;
+    border: 2px solid #000;
+    border-radius: 10px;
+    background: #000;
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+}
+.prof-btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Dark mode */
+.dark .prof-modal-box {
+    background: #1e293b;
+    border-color: #334155;
+    box-shadow: 6px 6px 0 #334155;
+    color: #f1f5f9;
+}
+.dark .prof-modal-sub { color: #94a3b8; }
+.dark .prof-input {
+    background: #0f172a;
+    border-color: #475569;
+    color: #f1f5f9;
+}
+.dark .prof-btn-cancel {
+    background: #1e293b;
+    border-color: #475569;
+    color: #f1f5f9;
+}
+.dark .prof-btn-save {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #f1f5f9;
+}
+
+/* Dark mode — assign subjects modal inputs */
+.dark #subjectSearchInput {
+    background: #0f172a;
+    border-color: #475569;
+    color: #f1f5f9;
+}
+.dark .assign-course-header {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+    color: #f1f5f9 !important;
+}
+.dark #subjectCheckboxList label {
+    border-color: #334155 !important;
+    color: #f1f5f9;
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+    .prof-modal-box { padding: 1.25rem; border-radius: 16px; }
+    .prof-modal-actions { flex-direction: column-reverse; }
+    .prof-btn-cancel, .prof-btn-save { width: 100%; text-align: center; }
+    .faculty-modal-box { padding: 1.25rem !important; border-radius: 16px !important; }
+    #subjectCheckboxList { max-height: 220px !important; }
+}

@@ -41,16 +41,47 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function populateProfile(data) {
+    console.log("populateProfile called with data:", data); // Debug log
+    
     currentTeacherName = data.username || data.name || "Unnamed Teacher";
+    console.log("currentTeacherName:", currentTeacherName); // Debug log
+    
     const subjects = (data.subjects || []).join(", ");
     const status = data.employmentStatus || data.status || "N/A";
+    const program = data.program || '';
 
-    document.querySelectorAll(".profile-name").forEach(el => el.textContent = currentTeacherName);
+    const nameElements = document.querySelectorAll(".profile-name");
+    console.log("Found profile-name elements:", nameElements.length); // Debug log
+    nameElements.forEach(el => {
+        el.textContent = currentTeacherName;
+        console.log("Set profile-name to:", currentTeacherName);
+    });
 
     const subjectsEl = document.getElementById("subjectsDisplay");
     const statusEl = document.getElementById("statusDisplay");
+    const programEl = document.getElementById("programDisplay");
+    const programInfoLine = document.getElementById("programInfoLine");
+    
+    console.log("subjectsEl:", subjectsEl, "statusEl:", statusEl);
+    
     if (subjectsEl) subjectsEl.textContent = subjects || "None selected";
     if (statusEl) statusEl.textContent = status;
+    
+    // Show program field if program head
+    if (programEl && programInfoLine) {
+        if (data.role === 'program head' && program) {
+            programInfoLine.style.display = 'flex';
+            const programHeadTypes = {
+                'ICT/IT': 'ICT/IT',
+                'GE': 'General Education',
+                'BM': 'Business Management',
+                'SHS': 'Senior High School'
+            };
+            programEl.textContent = programHeadTypes[program] || program;
+        } else {
+            programInfoLine.style.display = 'none';
+        }
+    }
 
     const facultyImg = document.getElementById("facultyImg");
     if (facultyImg) {
@@ -65,23 +96,53 @@ function populateProfile(data) {
     const changeRoleBtn = document.getElementById('changeRoleBtn');
     if (roleInfoLine && roleDisplay) {
         roleInfoLine.style.display = 'flex';
-        const roleLabels = { teacher: 'Teacher', 'program head': 'Program Head', admin: 'Admin' };
+        const programHeadTypes = {
+            'ICT/IT': 'ICT/IT Program Head',
+            'GE': 'GE (General Education) Program Head',
+            'BM': 'BM (Business Management) Program Head',
+            'SHS': 'Assistant Principal (Senior High)'
+        };
+        const roleLabels = { 
+            teacher: 'Teacher', 
+            'program head': data.program ? programHeadTypes[data.program] || 'Program Head' : 'Program Head', 
+            admin: 'Admin' 
+        };
         roleDisplay.textContent = roleLabels[data.role] || data.role || 'Teacher';
         if (isAdmin && changeRoleBtn) {
             changeRoleBtn.style.display = 'inline-block';
             changeRoleBtn.onclick = async () => {
                 const currentRole = data.role || 'teacher';
-                const newRole = currentRole === 'teacher' ? 'program head' : 'teacher';
-                const label = newRole === 'program head' ? 'Program Head' : 'Teacher';
-                const confirmed = await showConfirm('Change Role', `Set this faculty member as <strong>${label}</strong>?`);
-                if (!confirmed) return;
-                try {
-                    await updateDoc(doc(db, 'users', window._currentTeacherId), { role: newRole });
-                    data.role = newRole;
-                    roleDisplay.textContent = roleLabels[newRole] || newRole;
-                    showToast(`Role updated to ${label}`, 'success');
-                } catch (e) {
-                    showToast('Failed to update role.', 'error');
+                const currentProgram = data.program || '';
+                
+                // If currently a program head, offer to change to teacher
+                if (currentRole === 'program head') {
+                    const confirmed = await showConfirm('Change Role', `Change this faculty member from <strong>${programHeadTypes[currentProgram] || 'Program Head'}</strong> to <strong>Teacher</strong>?`);
+                    if (!confirmed) return;
+                    try {
+                        await updateDoc(doc(db, 'users', window._currentTeacherId), { role: 'teacher', program: '' });
+                        data.role = 'teacher';
+                        data.program = '';
+                        roleDisplay.textContent = 'Teacher';
+                        showToast('Role updated to Teacher', 'success');
+                    } catch (e) {
+                        showToast('Failed to update role.', 'error');
+                    }
+                } else {
+                    // Show program selection modal
+                    showProgramHeadModal(async (selectedProgram) => {
+                        try {
+                            await updateDoc(doc(db, 'users', window._currentTeacherId), { 
+                                role: 'program head',
+                                program: selectedProgram 
+                            });
+                            data.role = 'program head';
+                            data.program = selectedProgram;
+                            roleDisplay.textContent = programHeadTypes[selectedProgram];
+                            showToast(`Role updated to ${programHeadTypes[selectedProgram]}`, 'success');
+                        } catch (e) {
+                            showToast('Failed to update role.', 'error');
+                        }
+                    });
                 }
             };
         }
@@ -93,6 +154,73 @@ function populateProfile(data) {
 function showErrorMessage(msg) {
     const nameEl = document.querySelector(".profile-name");
     if (nameEl) nameEl.textContent = msg;
+}
+
+/* ───────── PROGRAM HEAD MODAL ───────── */
+function showProgramHeadModal(callback) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.8);
+        backdrop-filter:blur(12px);display:flex;justify-content:center;align-items:center;
+        z-index:2000001;opacity:0;transition:all 0.4s cubic-bezier(0.16,1,0.3,1);
+    `;
+    overlay.innerHTML = `
+        <div class="export-card-container" style="background:white;border:5px solid black;padding:45px;border-radius:32px;box-shadow:15px 15px 0px #000;text-align:center;max-width:650px;width:95%;transform:scale(0.9);transition:all 0.5s cubic-bezier(0.175,0.885,0.32,1.275);position:relative;">
+            <button class="close-modal-btn" style="position:absolute;top:20px;right:20px;background:#f1f5f9;border:3px solid black;width:40px;height:40px;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;box-shadow:3px 3px 0px black;">×</button>
+            <h2 style="color:#005BAB;font-size:32px;font-weight:950;margin-bottom:8px;text-transform:uppercase;letter-spacing:2px;">Select Program</h2>
+            <p style="font-size:16px;color:#64748b;font-weight:700;margin-bottom:35px;">Choose the program this faculty member will head:</p>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;">
+                <div data-program="ICT/IT" class="program-option" style="background:#eff6ff;border:4px solid black;padding:25px 15px;border-radius:20px;cursor:pointer;box-shadow:6px 6px 0px black;transition:all 0.3s;">
+                    <div style="font-size:40px;margin-bottom:10px;">💻</div>
+                    <div style="font-weight:900;color:#1e40af;font-size:14px;text-transform:uppercase;">ICT/IT Program Head</div>
+                </div>
+                <div data-program="GE" class="program-option" style="background:#fef3c7;border:4px solid black;padding:25px 15px;border-radius:20px;cursor:pointer;box-shadow:6px 6px 0px black;transition:all 0.3s;">
+                    <div style="font-size:40px;margin-bottom:10px;">📚</div>
+                    <div style="font-weight:900;color:#92400e;font-size:14px;text-transform:uppercase;">GE Program Head</div>
+                </div>
+                <div data-program="BM" class="program-option" style="background:#f0fdf4;border:4px solid black;padding:25px 15px;border-radius:20px;cursor:pointer;box-shadow:6px 6px 0px black;transition:all 0.3s;">
+                    <div style="font-size:40px;margin-bottom:10px;">💼</div>
+                    <div style="font-weight:900;color:#166534;font-size:14px;text-transform:uppercase;">BM Program Head</div>
+                </div>
+                <div data-program="SHS" class="program-option" style="background:#fce7f3;border:4px solid black;padding:25px 15px;border-radius:20px;cursor:pointer;box-shadow:6px 6px 0px black;transition:all 0.3s;">
+                    <div style="font-size:40px;margin-bottom:10px;">🎓</div>
+                    <div style="font-weight:900;color:#9d174d;font-size:14px;text-transform:uppercase;">Asst. Principal (SHS)</div>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => {
+        overlay.style.opacity = "1";
+        overlay.querySelector('.export-card-container').style.transform = "scale(1)";
+    });
+    
+    const close = () => {
+        overlay.style.opacity = "0";
+        setTimeout(() => overlay.remove(), 400);
+    };
+    
+    overlay.querySelector('.close-modal-btn').onclick = close;
+    
+    overlay.querySelectorAll('.program-option').forEach(option => {
+        option.onclick = async () => {
+            const selectedProgram = option.dataset.program;
+            close();
+            setTimeout(() => callback(selectedProgram), 450);
+        };
+        option.onmouseenter = () => {
+            option.style.transform = 'translate(-3px, -3px)';
+            option.style.boxShadow = '9px 9px 0px black';
+        };
+        option.onmouseleave = () => {
+            option.style.transform = 'translate(0, 0)';
+            option.style.boxShadow = '6px 6px 0px black';
+        };
+    });
+    
+    overlay.onclick = (e) => {
+        if (e.target === overlay) close();
+    };
 }
 
 /* ───────── SCHEDULE LOGIC ───────── */

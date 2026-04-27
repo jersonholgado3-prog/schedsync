@@ -368,7 +368,9 @@ body,
     background-color: white !important;
     box-shadow: 4px 4px 0px black !important;
     cursor: pointer !important;
-    overflow: hidden !important;
+    overflow: visible !important;
+    position: relative !important;
+    z-index: 1001 !important;
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -464,13 +466,14 @@ body,
 .search-wrapper:focus-within,
 .search-wrapper.expanded {
     width: 280px !important;
-    padding: 0 15px !important;
-    /* ✅ ADD PADDING ONLY WHEN EXPANDED */
+    padding: 0 12px !important;
     justify-content: flex-start !important;
+    gap: 8px !important;
 }
 
 .search-wrapper:focus-within .search-button,
 .search-wrapper.expanded .search-button {
+    padding-left: 4px !important;
     width: 100% !important;
     opacity: 1 !important;
     margin-left: 10px !important;

@@ -221,7 +221,10 @@
     z-index: 1001;
     border: none !important;
     border-top-right-radius: 40px !important;
-    overflow-y: auto !important; overflow-x: hidden !important; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
     flex-shrink: 0;
 }
 
@@ -315,7 +318,8 @@
     display: block;
 }
 
-@media (max-width: 768px), (max-width: 950px) and (orientation: landscape) {
+@media (max-width: 768px),
+(max-width: 950px) and (orientation: landscape) {
     .container {
         z-index: auto !important;
         position: static !important;
@@ -853,7 +857,8 @@
     display: block;
 }
 
-@media (max-width: 768px), (max-width: 950px) and (orientation: landscape) {
+@media (max-width: 768px),
+(max-width: 950px) and (orientation: landscape) {
     .container {
         z-index: auto !important;
         position: static !important;
@@ -1371,7 +1376,8 @@
     filter: invert(1) brightness(1.5) !important;
 }
 
-@media (max-width: 768px), (max-width: 950px) and (orientation: landscape) {
+@media (max-width: 768px),
+(max-width: 950px) and (orientation: landscape) {
     .header {
         grid-template-columns: auto 1fr auto !important;
         margin: 0.5rem !important;
@@ -1391,7 +1397,8 @@
 }
 
 /* 📱 MOBILE RESPONSIVE FACULTY OVERRIDES ⚓ */
-@media (max-width: 768px), (max-width: 950px) and (orientation: landscape) {
+@media (max-width: 768px),
+(max-width: 950px) and (orientation: landscape) {
     .main-content-wrapper {
         margin-left: 0 !important;
         width: 100% !important;
@@ -1449,4 +1456,163 @@
     display: flex;
     justify-content: flex-end;
     padding: 0.5rem 1rem 0;
+}
+
+/* Faculty Modal Overlay */
+.faculty-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 6000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+.faculty-modal-overlay.hidden { display: none; }
+
+.faculty-modal-box {
+    background: #fff;
+    border: 3px solid #000;
+    border-radius: 20px;
+    box-shadow: 6px 6px 0 #000;
+    padding: 2rem;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+.dark .faculty-modal-box {
+    background: #1e293b;
+    border-color: #334155;
+    color: #f1f5f9;
+    box-shadow: 6px 6px 0 #334155;
+}
+.faculty-modal-box h2 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin-bottom: 1.25rem;
+}
+.faculty-modal-box .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 0.85rem;
+}
+.faculty-modal-box label {
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+.faculty-modal-box input,
+.faculty-modal-box select {
+    border: 2px solid #000;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    outline: none;
+    background: #fff;
+}
+.dark .faculty-modal-box input,
+.dark .faculty-modal-box select {
+    background: #0f172a;
+    border-color: #475569;
+    color: #f1f5f9;
+}
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 1.25rem;
+}
+.modal-btn-cancel {
+    padding: 8px 18px;
+    border: 2px solid #000;
+    border-radius: 10px;
+    background: #fff;
+    font-weight: 700;
+    cursor: pointer;
+}
+.modal-btn-save {
+    padding: 8px 18px;
+    border: 2px solid #000;
+    border-radius: 10px;
+    background: #000;
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+}
+.modal-btn-save:hover { background: #1e293b; }
+
+/* Admin FAB */
+#addFacultyFab {
+    position: fixed;
+    bottom: 90px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #000;
+    color: #fff;
+    font-size: 2rem;
+    border: 3px solid #000;
+    box-shadow: 4px 4px 0 #000;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5500;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+#addFacultyFab:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 #000;
+}
+
+
+/* Dark mode — assign subjects modal */
+.dark #subjectSearchInput {
+    background: #0f172a;
+    border-color: #475569;
+    color: #f1f5f9;
+}
+.dark .assign-course-header {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+    color: #f1f5f9 !important;
+}
+.dark #subjectCheckboxList label {
+    border-color: #334155 !important;
+    color: #f1f5f9;
+}
+.dark .assign-subjects-btn {
+    background: #1e293b !important;
+    border-color: #475569 !important;
+    color: #f1f5f9 !important;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 600px) {
+    .faculty-modal-box {
+        padding: 1.25rem !important;
+        border-radius: 16px !important;
+        max-width: 95vw !important;
+    }
+    #subjectCheckboxList {
+        max-height: 220px !important;
+    }
+    .modal-actions {
+        flex-direction: column-reverse;
+    }
+    .modal-btn-cancel, .modal-btn-save {
+        width: 100%;
+        text-align: center;
+    }
+    #addFacultyFab {
+        bottom: 70px;
+        right: 16px;
+        width: 50px;
+        height: 50px;
+        font-size: 1.75rem;
+    }
 }

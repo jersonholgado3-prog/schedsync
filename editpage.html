@@ -39,15 +39,15 @@
       // Optional: Sound Effect? (Maybe later)
     }
 
-    // Keyboard Shortcuts ðŸŽ¹
+    // Keyboard Shortcuts ⌨️
     document.addEventListener('keydown', (e) => {
-      // Ctrl/Cmd + M for Theme Mode ðŸŒ™
+      // Ctrl/Cmd + M for Theme Mode 🌙
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'm') {
         e.preventDefault();
         toggleTheme();
       }
 
-      // Ctrl/Cmd + S for Save ðŸ’¾
+      // Ctrl/Cmd + S for Save 💾
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
         // Check if save function exists globally
@@ -62,7 +62,7 @@
         }
       }
 
-      // Esc to Close Panel âŒ
+      // Esc to Close Panel ❌
       if (e.key === 'Escape') {
         if (window.closePanel) window.closePanel();
       }
@@ -70,8 +70,6 @@
   </script>
 
   <link rel="stylesheet" href="editpage.css">
-  <script type="module" src="ui-effects.js"></script>
-  <script type="module" src="role-restriction.js"></script>
 </head>
 
 <body class="custom-scroll">
@@ -142,6 +140,12 @@
             <button class="download-all-header-btn" onclick="downloadAll()" style="display: none;">
               <span>DOWNLOAD ALL</span>
               <span class="btn-emoji">💾</span>
+            </button>
+            <button id="jspdfBtn" class="download-all-header-btn" onclick="window.downloadAsPDF()" style="display:none;background:#fef2f2;border:3px solid #000;box-shadow:4px 4px 0 #000;">
+              <span>PDF</span><span class="btn-emoji">📑</span>
+            </button>
+            <button id="xlsxBtn" class="download-all-header-btn" onclick="window.exportToExcel()" style="display:none;background:#f0fdf4;border:3px solid #000;box-shadow:4px 4px 0 #000;">
+              <span>EXCEL</span><span class="btn-emoji">📊</span>
             </button>
             <div class="notification-icon-wrapper" onclick="window.openGameNotifications()"><img src="images/BELL.png"
                 alt="Notifications"></div>
@@ -286,6 +290,12 @@
       </div>
       <!-- end .page po ! -->
       <div class="mobile-overlay"></div>
+      <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
+      <script src="https://unpkg.com/@popperjs/core@2/dist/umd/popper.min.js"></script>
+      <script src="https://unpkg.com/tippy.js@6/dist/tippy-bundle.umd.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
       <script src="toast.js"></script>
       <script type="module" src="role-restriction.js"></script>
       <script type="module" src="./editpage.js"></script>

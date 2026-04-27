@@ -105,6 +105,10 @@ document.addEventListener("DOMContentLoaded", () => {
           if (downloadBtn) {
             downloadBtn.style.setProperty('display', 'flex', 'important');
           }
+          const jspdfBtn = document.getElementById('jspdfBtn');
+          if (jspdfBtn) jspdfBtn.style.setProperty('display', 'flex', 'important');
+          const xlsxBtn = document.getElementById('xlsxBtn');
+          if (xlsxBtn) xlsxBtn.style.setProperty('display', 'flex', 'important');
         }
       } catch (e) {
         console.error("Error fetching user role:", e);
@@ -1009,19 +1013,24 @@ async function load() {
 
 async function fetchTeachers() {
   try {
-    const q = query(collection(db, "users"), where("role", "==", "teacher"));
-    const snap = await getDocs(q);
+    const [s1, s2, s3] = await Promise.all([
+      getDocs(query(collection(db, "users"), where("role", "==", "teacher"))),
+      getDocs(query(collection(db, "users"), where("role", "==", "program head"))),
+      getDocs(query(collection(db, "users"), where("role", "==", "Program Head")))
+    ]);
     teachers = [];
-    snap.forEach(d => {
+    const seen = new Set();
+    [...s1.docs, ...s2.docs, ...s3.docs].forEach(d => {
+      if (seen.has(d.id)) return;
+      seen.add(d.id);
       const t = d.data();
       teachers.push({
         name: t.username || t.displayName || t.fullName || (t.lastName ? `Teacher ${t.lastName}` : "Unknown Teacher"),
         forte: t.forte || "GENERAL",
         subjects: t.subjects || [],
-        avatar: t.photoURL || "" // Fetching the avatar
+        avatar: t.photoURL || ""
       });
     });
-
   } catch (e) {
     console.error("Error loading teachers:", e);
   }
@@ -1693,6 +1702,8 @@ function renderTable() {
     tbody.addEventListener('dragend', handleDragEnd);
     tbody.dataset.dragListenersAttached = "true";
   }
+  attachTooltips();
+  initDragSelect();
 }
 
 // ───────── PANEL ───────── */
@@ -2424,6 +2435,7 @@ function closePanel() {
   const overlay = document.getElementById('panelOverlay');
   if (overlay) overlay.style.display = "none";
   document.querySelectorAll('td').forEach(td => td.classList.remove('active-cell'));
+  document.querySelectorAll('td.drag-selecting').forEach(td => td.classList.remove('drag-selecting'));
 
   const suggArea = document.getElementById('conflictSuggestionsArea');
   if (suggArea) suggArea.style.display = 'none';
@@ -3165,6 +3177,162 @@ async function clearSection(schedId) {
   }
 }
 
+
+// -- Drag-to-select cells for time span picking ----------------------------
+function initDragSelect() {
+  if (tbody.dataset.dragSelectAttached) return;
+  tbody.dataset.dragSelectAttached = "true";
+
+  let isDragging = false;
+  let startTd = null;
+
+  const clearHighlight = () => {
+    document.querySelectorAll('td.drag-selecting').forEach(el => el.classList.remove('drag-selecting'));
+  };
+
+  const getCellsBetween = (a, b) => {
+    // Only same schedId + same day
+    if (!a || !b) return [];
+    if (a.dataset.schedId !== b.dataset.schedId || a.dataset.day !== b.dataset.day) return [];
+
+    const allCells = Array.from(document.querySelectorAll(
+      `td[data-sched-id="${a.dataset.schedId}"][data-day="${a.dataset.day}"]`
+    )).filter(td => td.dataset.block);
+
+    const idxA = allCells.indexOf(a);
+    const idxB = allCells.indexOf(b);
+    if (idxA === -1 || idxB === -1) return [];
+    const [lo, hi] = idxA <= idxB ? [idxA, idxB] : [idxB, idxA];
+    return allCells.slice(lo, hi + 1);
+  };
+
+  tbody.addEventListener('mousedown', e => {
+    const td = e.target.closest('td[data-block][data-sched-id]');
+    if (!td || td.classList.contains('occupied') || td.classList.contains('vacant-marked')) return;
+    isDragging = true;
+    startTd = td;
+    td.classList.add('drag-selecting');
+    e.preventDefault(); // prevent text selection
+  });
+
+  tbody.addEventListener('mousemove', e => {
+    if (!isDragging || !startTd) return;
+    const td = e.target.closest('td[data-block][data-sched-id]');
+    clearHighlight();
+    if (!td) return;
+    const cells = getCellsBetween(startTd, td);
+    // Cancel if any occupied cell in range
+    if (cells.some(c => c.classList.contains('occupied') || c.classList.contains('vacant-marked'))) return;
+    cells.forEach(c => c.classList.add('drag-selecting'));
+  });
+
+  const finishDrag = e => {
+    if (!isDragging || !startTd) return;
+    isDragging = false;
+
+    const td = e.target.closest('td[data-block][data-sched-id]');
+    const cells = td ? getCellsBetween(startTd, td) : [];
+    // keep highlight until panel is closed
+    startTd = null;
+
+    if (cells.length < 2) return; // single cell = normal click handles it
+
+    // Compute combined time block from first cell start to last cell end
+    const blocks = cells.map(c => c.dataset.block).filter(Boolean);
+    const starts = blocks.map(b => toMin(b.split('-')[0]));
+    const ends = blocks.map(b => toMin(b.split('-')[1]));
+    const minStart = Math.min(...starts);
+    const maxEnd = Math.max(...ends);
+    const combinedBlock = `${toTime(minStart)}-${toTime(maxEnd)}`;
+
+    const { schedId, day } = cells[0].dataset;
+    openPanel(schedId, day, combinedBlock);
+  };
+
+  tbody.addEventListener('mouseup', finishDrag);
+  document.addEventListener('mouseup', () => {
+    if (isDragging) { isDragging = false; startTd = null; clearHighlight(); }
+  });
+}
+// -- Tippy.js: Attach tooltips to occupied cells ----------------------------
+function attachTooltips() {
+  if (!window.tippy) return;
+  document.querySelectorAll('td.occupied').forEach(td => {
+    if (td._tippy) td._tippy.destroy();
+    const subject = td.querySelector('strong')?.textContent || '';
+    const spans = td.querySelectorAll('span');
+    const teacher = spans[0]?.textContent || '';
+    const room = spans[1]?.textContent || '';
+    const time = td.dataset.block || '';
+    tippy(td, {
+      content: '<b>' + subject + '</b><br>' + teacher + '<br>📍 ' + room + '<br>🕐 ' + time,
+      allowHTML: true,
+      placement: 'top',
+      theme: 'light-border',
+      arrow: true,
+      delay: [200, 0],
+    });
+  });
+}
+// -- jsPDF: Download all schedules as a single PDF --------------------------
+function downloadAsPDF() {
+  if (!schedules.length) { showToast("No schedules to export.", "info"); return; }
+  if (!window.jspdf) { showToast("jsPDF not loaded yet, try again.", "error"); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const DAYS_ORDER = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+
+  schedules.forEach((sched, idx) => {
+    if (idx > 0) doc.addPage();
+    doc.setFontSize(14); doc.setFont(undefined, "bold");
+    doc.text("CLASS SCHEDULE -- " + (sched.section || "N/A"), 14, 15);
+    doc.setFontSize(9); doc.setFont(undefined, "normal");
+    doc.text("STI College Santa Maria  |  AY 2025-2026", 14, 21);
+
+    const classes = (sched.classes || [])
+      .filter(c => c.subject && c.subject !== "VACANT" && c.subject !== "MARKED_VACANT")
+      .sort((a, b) => {
+        const di = d => DAYS_ORDER.indexOf(d.day);
+        return di(a) - di(b) || a.timeBlock.localeCompare(b.timeBlock);
+      });
+
+    const rows = classes.map(c => [c.day||"", c.timeBlock||"", c.subject||"", c.teacher||"", c.room||""]);
+
+    doc.autoTable({
+      startY: 26,
+      head: [["DAY","TIME","SUBJECT","TEACHER","ROOM"]],
+      body: rows.length ? rows : [["--","--","No classes scheduled","--","--"]],
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [0, 91, 171], textColor: 255, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [240, 246, 255] },
+    });
+  });
+
+  doc.save("schedules.pdf");
+  showToast("PDF downloaded! 📑", "success");
+}
+
+// -- SheetJS: Export all schedules to Excel ---------------------------------
+function exportToExcel() {
+  if (!schedules.length) { showToast("No schedules to export.", "info"); return; }
+  if (!window.XLSX) { showToast("SheetJS not loaded yet, try again.", "error"); return; }
+
+  const rows = [["Day","Time","Subject","Teacher","Room","Section"]];
+  schedules.forEach(sched => {
+    (sched.classes || [])
+      .filter(c => c.subject && c.subject !== "VACANT" && c.subject !== "MARKED_VACANT")
+      .forEach(c => rows.push([c.day||"", c.timeBlock||"", c.subject||"", c.teacher||"", c.room||"", sched.section||""]));
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Schedules");
+  XLSX.writeFile(wb, "schedules.xlsx");
+  showToast("Excel downloaded! 📊", "success");
+}
+
+window.downloadAsPDF = downloadAsPDF;
+window.exportToExcel = exportToExcel;
 window.copyDayInSection = copyDayInSection;
 window.pasteDayToSection = pasteDayToSection;
 window.clearDayInSection = clearDayInSection;
@@ -3205,7 +3373,7 @@ window.updateAtmosphere = function updateAtmosphere() {
 };
 
 setInterval(updateAtmosphere, 60000);
-document.addEventListener('DOMContentLoaded', () => { setTimeout(updateAtmosphere, 2000); });
+setTimeout(updateAtmosphere, 2000);
 
 window.handleColorSelect = function () {
   const select = document.getElementById("colorSelect");

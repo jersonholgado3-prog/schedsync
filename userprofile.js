@@ -23,11 +23,11 @@ export function initUserProfile(profileSelector = "#userProfile") {
   dropdown.id = 'user-dropdown-menu';
   dropdown.className = 'user-dropdown-container';
   dropdown.style.cssText = `
-    position: absolute;
-    top: 100%;
-    right: 0;
+    position: fixed;
+    top: auto;
+    right: auto;
     width: 240px;
-    margin-top: 10px;
+    margin-top: 0;
     border: 3px solid black;
     border-radius: 20px;
     box-shadow: 6px 6px 0px black;
@@ -41,18 +41,38 @@ export function initUserProfile(profileSelector = "#userProfile") {
   `;
 
   // 1. Setup Auth Listener
-  onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, async (user) => {
     if (user) {
-      if (userNameEl) userNameEl.textContent = user.displayName || user.email.split("@")[0] || "User";
+      // Get displayName and photoURL from Firestore first, fallback to Auth
+      let displayName = user.displayName || user.email.split("@")[0] || "User";
+      let photoURL = user.photoURL || "images/default_shark.jpg";
+      
+      // Try to get from Firestore for more accurate data
+      try {
+        const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js");
+        const { db } = await import("./js/config/firebase-config.js");
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          displayName = userData.displayName || userData.username || user.displayName || displayName;
+          photoURL = userData.photoURL || photoURL;
+        }
+      } catch (e) {
+        console.warn("Could not fetch user data from Firestore:", e);
+      }
+      
+      if (userNameEl) userNameEl.textContent = displayName;
       if (userAvatarEl) {
-        const pfp = user.photoURL || "images/default_shark.jpg";
-        userAvatarEl.innerHTML = `<img src="${pfp}" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+        userAvatarEl.innerHTML = `<img src="${photoURL}" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.src='images/default_shark.jpg'">`;
       }
     }
   });
 
   // 2. Render Dropdown Content (Once)
+  let dropdownRendered = false;
   const renderDropdownItems = () => {
+    if (dropdownRendered) return;
+    dropdownRendered = true;
     const userRole = localStorage.getItem('userRole') || 'student';
     const adminLink = userRole === 'admin'
       ? `<div class="dropdown-item dropdown-admin" onclick="window.location.href='permissions.html'">
@@ -147,25 +167,32 @@ export function initUserProfile(profileSelector = "#userProfile") {
     userProfileEl.prepend(burger);
   }
 
-  // Ensure parent is relative for absolute positioning
-  // Check if parent exists to avoid errors
-  if (userProfileEl.parentElement) {
-    userProfileEl.parentElement.style.position = 'relative';
-    userProfileEl.parentElement.appendChild(dropdown);
+  // Append to body to avoid layout interference
+  dropdown.style.position = 'fixed';
+  document.body.appendChild(dropdown);
+
+  function positionDropdown() {
+    const rect = userProfileEl.getBoundingClientRect();
+    dropdown.style.top = (rect.bottom + 8) + 'px';
+    dropdown.style.right = (window.innerWidth - rect.right) + 'px';
+    dropdown.style.left = 'auto';
   }
 
   // Toggle Visibility 🍔
   userProfileEl.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
-
-    const isShowing = dropdown.classList.contains('active');
-
-    if (isShowing) {
-      dropdown.classList.remove('active');
-    } else {
-      renderDropdownItems();
-      dropdown.classList.add('active');
+    try {
+      const isShowing = dropdown.classList.contains('active');
+      if (isShowing) {
+        dropdown.classList.remove('active');
+      } else {
+        renderDropdownItems();
+        positionDropdown();
+        dropdown.classList.add('active');
+      }
+    } catch (err) {
+      console.error('Dropdown error:', err);
     }
   });
 

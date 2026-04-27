@@ -161,31 +161,37 @@ button[type="submit"]:hover {
     width: 100%;
 }
 
+.password-input-wrapper input {
+    padding-right: 4rem !important;
+}
+
 .password-toggle {
     position: absolute;
-    right: 1.25rem;
-    top: 0;
-    bottom: 0;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     color: #6b7280;
-    transition: color 0.2s;
-    z-index: 5;
+    transition: all 0.2s;
+    z-index: 10;
 }
 
 .password-toggle:hover {
     color: #000;
+    transform: translateY(-50%) scale(1.1);
 }
 
 .dark .password-toggle:hover {
     color: #fff;
+    transform: translateY(-50%) scale(1.1);
 }
 
 .password-toggle svg {
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 20px;
+    height: 20px;
 }
 
 .password-toggle .eye-off {

@@ -621,4 +621,4 @@ function showDownloadFormatSelector(callback) {
 
 window.downloadSchedule = downloadSchedule;
 
-document.addEventListener("DOMContentLoaded", () => { initMobileNav(); });
+initMobileNav();
