@@ -222,6 +222,7 @@ function initSelectionUI() {
   const selectionBar = document.getElementById('selectionBar');
   const genEmailsBtn = document.getElementById('genEmailsBtn');
   const multiDeleteBtn = document.getElementById('multiDeleteBtn');
+  const multiArchiveBtn = document.getElementById('multiArchiveBtn');
   const cancelSelectionBtn = document.getElementById('cancelSelectionBtn');
 
   if (!selectionBar) return;
@@ -243,22 +244,46 @@ function initSelectionUI() {
     updateSelectionBar();
   };
 
+  multiArchiveBtn.onclick = async () => {
+    const selectedFaculty = allFaculty.filter(f => selectedIds.has(f.id));
+    const { showArchiveModal } = await import('./archive-modal.js');
+    const reason = await showArchiveModal(selectedFaculty.length, 'faculty members');
+    if (reason === null) return;
+
+    try {
+      showToast("Archiving faculty... ⏳", "info");
+      const { archiveItem } = await import('./archive-item.js');
+      
+      for (const f of selectedFaculty) {
+        await archiveItem('faculty', f.id, f, reason);
+        await deleteDoc(doc(db, 'faculty', f.id));
+      }
+
+      showToast(`{selectedFaculty.length} faculty archived successfully`, "success");
+      selectedIds.clear();
+      loadTeachers();
+    } catch (error) {
+      console.error("Bulk archive error:", error);
+      showToast("Failed to archive faculty", "error");
+    }
+  };
+
   multiDeleteBtn.onclick = async () => {
     const selectedFaculty = allFaculty.filter(f => selectedIds.has(f.id));
-    const confirmed = await showConfirm(`Delete ${selectedFaculty.length} members and their accounts?`, "Bulk Delete");
+    const confirmed = await showConfirm(Archive \ faculty members?, 'Move to Archives');
 
     if (confirmed) {
-      showToast("Deleting... ⏳", "info");
+      showToast('Archiving... ⏳', 'info');
+      const { archiveItem } = await import('./archive-item.js');
       for (const f of selectedFaculty) {
         try {
-          if (f.email && f.password) await deleteAuthAccount(f.email, f.password);
-          await deleteDoc(doc(db, "users", f.id));
-          if (f.authUid) await deleteDoc(doc(db, "users", f.authUid));
+          await archiveItem('faculty', f.id, f, '');
+          await deleteDoc(doc(db, 'faculty', f.id));
         } catch (err) {
-          console.error("Delete failed for:", f.username, err);
+          console.error('Archive failed for:', f.username, err);
         }
       }
-      showToast("Deletion complete.", "success");
+      showToast('Faculty archived successfully.', 'success');
       selectedIds.clear();
       updateSelectionBar();
       loadTeachers();

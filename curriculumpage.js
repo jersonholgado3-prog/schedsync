@@ -165,6 +165,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             termNameInput.value            = data.termName || "";
             subjectNameInput.value         = data.name || "";
             deleteSubjectBtn.style.display = 'block';
+
         } else {
             modalTitle.textContent         = "Add Subject";
             subjectIdInput.value           = "";
@@ -172,6 +173,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             termNameInput.value            = "General Subjects";
             subjectNameInput.value         = "";
             deleteSubjectBtn.style.display = 'none';
+
         }
         modal.style.display = 'flex';
     }
@@ -183,12 +185,46 @@ document.addEventListener('DOMContentLoaded', async () => {
     // CLEAR ALL
     // ─────────────────────────────────────────────────────────────────────────────
     clearAllBtn.addEventListener('click', async () => {
-        if (!confirm("Are you sure you want to WIPE ALL curriculum data? This cannot be undone! ⚠️")) return;
         try {
-            const snap           = await getDocs(collection(db, "courses"));
-            const deletePromises = snap.docs.map(d => deleteDoc(doc(db, "courses", d.id)));
-            await Promise.all(deletePromises);
-            showToast("All curriculum data cleared. 🗑️", "success");
+            const snap = await getDocs(collection(db, "courses"));
+            const courses = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            
+            if (courses.length === 0) {
+                showToast("No curriculum data to clear", "info");
+                return;
+            }
+            
+            const { showArchiveOrDeleteModal } = await import('./archive-or-delete-modal.js');
+            const action = await showArchiveOrDeleteModal(courses.length, 'courses');
+            
+            if (!action) return;
+            
+            if (action === 'archive') {
+                // Archive all courses
+                const { showArchiveModal } = await import('./archive-modal.js');
+                const reason = await showArchiveModal(courses.length, 'courses');
+                if (reason === null) return;
+                
+                showToast("Archiving all courses... ⏳", "info");
+                const { archiveItem } = await import('./archive-item.js');
+                
+                for (const course of courses) {
+                    await archiveItem('curriculum', course.id, course, reason);
+                    await deleteDoc(doc(db, "courses", course.id));
+                }
+                
+                showToast(`{courses.length} courses archived successfully`, "success");
+            } else if (action === 'delete') {
+                // Delete permanently
+                if (!confirm("⚠️ PERMANENTLY DELETE all curriculum? This CANNOT be undone!")) return;
+                
+                showToast("Deleting all courses... ⏳", "info");
+                const deletePromises = snap.docs.map(d => deleteDoc(doc(db, "courses", d.id)));
+                await Promise.all(deletePromises);
+                
+                showToast("All curriculum data deleted permanently 🗑️", "success");
+            }
+            
             loadSubjects();
         } catch (error) {
             console.error("Clear All failed:", error);
@@ -343,6 +379,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ─────────────────────────────────────────────────────────────────────────────
     // SUBJECT FORM SAVE
     // ─────────────────────────────────────────────────────────────────────────────
+    deleteSubjectBtn.addEventListener('click', async () => {
+        if (!confirm(`Delete "{subjectIdInput.value}"?`)) return;
+
+        try {
+            const courseDoc = await getDoc(doc(db, "courses", courseIdInput.value));
+            if (!courseDoc.exists()) return;
+            
+            const terms = courseDoc.data().terms || {};
+            if (terms[termNameInput.value]) {
+                terms[termNameInput.value] = terms[termNameInput.value].filter(s => s !== subjectIdInput.value);
+                await setDoc(doc(db, "courses", courseIdInput.value), { terms }, { merge: true });
+            }
+
+            showToast("Subject deleted", "success");
+            modal.style.display = 'none';
+            loadSubjects();
+        } catch (err) {
+            console.error("Delete error:", err);
+            showToast("Failed to delete", "error");
+        }
+    });
+
     subjectForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         try {

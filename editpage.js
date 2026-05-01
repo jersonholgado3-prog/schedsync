@@ -658,7 +658,7 @@ async function hasRoomConflict(n, excludeId) {
         if (overlaps(cBlock, nBlock)) {
           highlightConflict(s.id, c.day, c.timeBlock);
           return {
-            msg: `<b>ROOM CONFLICT!</b><br>Occupied by ${s.section}`,
+            msg: `<b>ROOM CONFLICT!</b><br>🚪 <b>${n.room}</b> is occupied`,
             schedId: s.id,
             day: c.day,
             block: c.timeBlock
@@ -675,8 +675,9 @@ async function hasRoomConflict(n, excludeId) {
     if (d.id === excludeId) continue;
     // Also skip if it's already in our local 'schedules' list (to avoid double reporting)
     if (schedules.some(s => s.id === d.id)) continue;
-
+    // 🛡️ Skip event schedules — events are NOT part of conflict detection
     const data = d.data();
+    if (data.section === "EVENTS" || data.section === "EVENT_HOST" || d.id === "DEFAULT_SECTION") continue;
     const existing = data.classes || [];
 
     for (const c of existing) {
@@ -691,7 +692,7 @@ async function hasRoomConflict(n, excludeId) {
       if (overlaps(cBlock, nBlock)) {
         highlightConflict(d.id, c.day, c.timeBlock);
         return {
-          msg: `<b>ROOM CONFLICT!</b><br>Taken by ${data.section}`,
+          msg: `<b>ROOM CONFLICT!</b><br>🚪 <b>${n.room}</b> is occupied`,
           schedId: d.id,
           day: c.day,
           block: c.timeBlock
@@ -722,7 +723,7 @@ async function hasTeacherConflict(n, excludeId) {
         if (overlaps(cBlock, nBlock)) {
           highlightConflict(s.id, c.day, c.timeBlock);
           return {
-            msg: `<b>TEACHER CONFLICT!</b><br>Busy with ${s.section}`,
+            msg: `<b>TEACHER CONFLICT!</b><br>👤 <b>${n.teacher}</b><br>📚 ${c.subject}`,
             schedId: s.id,
             day: c.day,
             block: c.timeBlock
@@ -738,8 +739,9 @@ async function hasTeacherConflict(n, excludeId) {
   for (const d of snap.docs) {
     if (d.id === excludeId) continue;
     if (schedules.some(s => s.id === d.id)) continue;
-
+    // 🛡️ Skip event schedules — events are NOT part of conflict detection
     const data = d.data();
+    if (data.section === "EVENTS" || data.section === "EVENT_HOST" || d.id === "DEFAULT_SECTION") continue;
     const existing = data.classes || [];
 
     for (const c of existing) {
@@ -754,7 +756,7 @@ async function hasTeacherConflict(n, excludeId) {
       if (overlaps(cBlock, nBlock)) {
         highlightConflict(d.id, c.day, c.timeBlock);
         return {
-          msg: `<b>TEACHER CONFLICT!</b><br>Busy with ${data.section}`,
+          msg: `<b>TEACHER CONFLICT!</b><br>👤 <b>${n.teacher}</b><br>📚 ${c.subject}`,
           schedId: d.id,
           day: c.day,
           block: c.timeBlock
@@ -802,42 +804,7 @@ function highlightConflict(id, day, block) {
 
 /* ───────── BLUEPRINT CONFLICT CHECK ───────── */
 async function hasBlueprintConflict(newBlock, excludeId) {
-  const room = newBlock.room;
-  // Guard: Skip if vacant or no room
-  if (!room || room === "NA" || newBlock.subject === "VACANT" || newBlock.subject === "MARKED_VACANT") return null;
-
-  // Find all published schedules that have classes in this room
-  const snap = await getPublishedSchedules();
-  const roomSchedules = snap.docs.filter(d => {
-    const classes = d.data().classes || [];
-    return classes.some(c => c.room === room && c.subject !== "VACANT" && c.subject !== "MARKED_VACANT");
-  });
-
-  if (roomSchedules.length === 0) return null; // No blueprint yet
-
-  // Find the blueprint: the schedule with the earliest createdAt for this room
-  const blueprintDoc = roomSchedules.reduce((earliest, current) => {
-    const earliestTime = earliest.data().createdAt || 0;
-    const currentTime = current.data().createdAt || 0;
-    return currentTime < earliestTime ? current : earliest;
-  });
-
-  // If the blueprint is the schedule we are editing, it's NOT a conflict
-  if (blueprintDoc.id === excludeId) return null;
-
-  const blueprintClasses = blueprintDoc.data().classes || [];
-
-  // Check if newBlock overlaps with any ACTUAL class in the blueprint on the same day
-  const newParsed = parseBlock(newBlock.timeBlock);
-  for (const bc of blueprintClasses) {
-    if (bc.day === newBlock.day && bc.subject !== "VACANT" && bc.subject !== "MARKED_VACANT") {
-      const bcParsed = parseBlock(bc.timeBlock);
-      if (overlaps(newParsed, bcParsed)) {
-        return `<b>SECTION BUSY!</b><br>Slot taken by ${bc.subject}`;
-      }
-    }
-  }
-
+  // 🛡️ Blueprint/section-busy check is disabled — rooms are shared freely
   return null;
 }
 

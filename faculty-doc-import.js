@@ -183,6 +183,7 @@ document.addEventListener("DOMContentLoaded", () => {
   input.addEventListener("change", async (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (file.size > 5 * 1024 * 1024) { alert('File too large. Maximum size is 5MB.'); input.value = ''; return; }
       await handleDocumentImport(file);
       input.value = ""; // reset so same file can be re-selected
     }

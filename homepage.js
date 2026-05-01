@@ -446,6 +446,7 @@ function initDraftSchedules(uid, role, hasPerm) {
 
       item.innerHTML = `
         <div class="draft-delete" onclick="event.stopPropagation(); window.deleteDraftGroup('${g.name}')" title="Delete Draft Group">✕</div>
+        <div class="draft-archive" onclick="event.stopPropagation(); window.archiveDraftGroup('${g.name}')" title="Archive Draft Group" style="position:absolute;top:8px;right:35px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:#fff;border:2px solid #3b82f6;border-radius:6px;cursor:pointer;font-size:14px;z-index:10;">📦</div>
         <div class="draft-icon-box">📝</div>
         <div class="draft-content">
           <div class="draft-title">${g.name}</div>
@@ -459,6 +460,31 @@ function initDraftSchedules(uid, role, hasPerm) {
     console.error("Drafts listener failed:", err);
     list.innerHTML = '<div class="widget-empty" style="color:#f87171">Failed to load drafts ❌</div>';
   });
+}
+
+async function archiveDraftGroup(name) {
+  const { showArchiveModal } = await import('./archive-modal.js');
+  const reason = await showArchiveModal(1, `draft group "{name}"`);
+  if (reason === null) return;
+  
+  try {
+    const user = auth.currentUser;
+    if (!user) return;
+    
+    const q = query(collection(db, 'schedules'), where('userId', '==', user.uid), where('status', '==', 'draft'), where('name', '==', name));
+    const snap = await getDocs(q);
+    
+    const { archiveItem } = await import('./archive-item.js');
+    for (const docSnap of snap.docs) {
+      await archiveItem('schedules', docSnap.id, docSnap.data(), reason);
+      await deleteDoc(docSnap.ref);
+    }
+    
+    showToast(`Draft group "{name}" archived`, 'success');
+  } catch (err) {
+    console.error('Archive draft error:', err);
+    showToast('Failed to archive draft', 'error');
+  }
 }
 
 async function deleteDraftGroup(name) {
@@ -487,6 +513,7 @@ async function deleteDraftGroup(name) {
   }
 }
 window.deleteDraftGroup = deleteDraftGroup;
+window.archiveDraftGroup = archiveDraftGroup;
 
 // --- EVENT CALENDAR LOGIC 📅 ---
 function initEventCalendar() {

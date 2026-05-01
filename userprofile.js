@@ -85,10 +85,7 @@ export function initUserProfile(profileSelector = "#userProfile") {
         👤 View Profile
       </div>
       ${adminLink}
-      <div class="dropdown-item" id="drop-toggle-mode">
-        🦈 Student Mode
-      </div>
-      <div class="dropdown-item" id="drop-toggle-theme">
+            <div class="dropdown-item" id="drop-toggle-theme">
         🌙 Dark Mode
       </div>
       <div class="dropdown-item" id="drop-logout" style="background: #ef4444; color: white;">

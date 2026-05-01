@@ -768,8 +768,8 @@ function EventModal({ onClose, initialData }) {
           }
         }
 
-        // Remove both main and sub event parts
-        classes = classes.filter(c => c.createdAt !== initialData.createdAt && c.createdAt !== (initialData.createdAt + 1));
+        // Remove ALL parts of this event (same grouping logic as save)
+        classes = classes.filter(c => Math.floor(c.createdAt / 1000) !== Math.floor(initialData.createdAt / 1000));
         await updateDoc(defaultRef, { classes });
 
         // --- 📅 CALENDAR CLEANUP ⚓ ---

@@ -1,46 +1,46 @@
-import './import-progress.js';
-
-// 0. UI Mode Helpers 🎮👔
-export const getUIMode = () => {
-    const saved = localStorage.getItem('uiMode');
-    if (saved) return saved;
-
-    // Default based on role
-    const role = localStorage.getItem('userRole') || 'student';
-    return (role === 'teacher' || role === 'admin') ? 'professional' : 'student';
-};
+// 0. UI Mode Helpers
+export const getUIMode = () => 'professional';
 
 export const setUIMode = (mode) => {
-    localStorage.setItem('uiMode', mode);
-    const isProfessional = mode === 'professional';
-    document.documentElement.classList.toggle('professional-mode', isProfessional);
-
-    // ✅ REFRESH UI ELEMENTS
-    if (isProfessional) {
-        // Remove student mode elements
-        document.getElementById('shark-container')?.remove();
-        document.getElementById('turtle-container')?.remove();
-        console.log("👔 Professional Mode Activated");
-    } else {
-        // Re-inject student mode elements if not on auth page
-        const path = window.location.pathname;
-        const isAuthPage = path.includes('login.html') || 
-                          path.includes('signup.html') || 
-                          path.includes('forgotpass.html') || 
-                          path.includes('teacherlogin.html') || 
-                          path.includes('index.html') ||
-                          path.endsWith('/');
-        
-        if (!isAuthPage) {
-            injectSecretShark();
-            injectTurtles();
-        }
-        console.log("🦈 Student Mode Activated");
-    }
-
-    // Dispatch global event for other components to react (e.g., userprofile.js text)
-    window.dispatchEvent(new CustomEvent('uimodechange', { detail: { mode } }));
+    localStorage.setItem('uiMode', 'professional');
+    document.documentElement.classList.add('professional-mode');
+    document.getElementById('shark-container')?.remove();
+    document.getElementById('turtle-container')?.remove();
+    window.dispatchEvent(new CustomEvent('uimodechange', { detail: { mode: 'professional' } }));
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const injectPoppinsFont = () => {
     if (document.getElementById('poppins-font-link')) return;

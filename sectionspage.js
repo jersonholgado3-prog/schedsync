@@ -37,6 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const selectionBar = document.getElementById("selectionBar");
     const selectedCountEl = document.getElementById("selectedCount");
     const multiDeleteBtn = document.getElementById("multiDeleteBtn");
+
     const multiSchedBtn = document.getElementById("multiSchedBtn");
     const cancelSelectionBtn = document.getElementById("cancelSelectionBtn");
     const genEmailsBtn = document.getElementById("genEmailsBtn");
@@ -420,6 +421,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         <input type="checkbox" class="grade-checkbox" ${allSelected ? 'checked' : ''}>
                         <span>Grade / Level: ${grade} (${groupData.length})</span>
                     </div>
+
+
                 </div>
                 <div class="sections-grid-inner grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                 </div>
@@ -440,8 +443,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 toggleGradeSelection(groupData, gradeCheckbox.checked);
             };
 
-            const gridInner = groupEl.querySelector(".sections-grid-inner");
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            const gridInner = groupEl.querySelector('.sections-grid-inner');
             groupData.forEach(section => {
                 const card = document.createElement("div");
                 card.className = `section-card relative group ${selectedIds.has(section.id) ? 'selected' : ''}`;
@@ -484,6 +502,24 @@ document.addEventListener("DOMContentLoaded", () => {
                         openEditModal(section);
                     };
                     card.appendChild(editBtn);
+
+                    const deleteBtn = document.createElement('div');
+                    deleteBtn.innerHTML = `🗑️`;
+                    deleteBtn.className = "absolute top-3 right-16 p-2 bg-white border-2 border-black rounded-lg shadow-[2px_2px_0px_black] hover:bg-red-100 hover:scale-110 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer z-10 opacity-0 group-hover:opacity-100";
+                    deleteBtn.title = "Delete Section";
+                    deleteBtn.onclick = async (e) => {
+                        e.stopPropagation();
+                        const { showArchiveModal } = await import('./archive-modal.js');
+                        const reason = await showArchiveModal(1, `section "${section.name}"`);
+                        if (reason === null) return;
+                        const { archiveItem } = await import('./archive-item.js');
+                        const success = await archiveItem('sections', section.id, section, reason, section.academicYear || '');
+                        if (success) { await deleteDoc(doc(db, 'sections', section.id)); loadSections(); }
+                    };
+                    card.appendChild(deleteBtn);
+
+
+
                 }
                 gridInner.appendChild(card);
             });
@@ -649,6 +685,35 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     multiDeleteBtn.onclick = async () => {
         if (!isAdmin) {
             showToast("Only admins can bulk delete.", "error");
@@ -656,34 +721,19 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const selectedSections = allSections.filter(s => selectedIds.has(s.id));
-        const confirmed = await showConfirm("DELETE SELECTED", `Delete ${selectedSections.length} sections and their associated Auth accounts?`);
+        const confirmed = await showConfirm("ARCHIVE SELECTED", `Move ${selectedSections.length} sections to Archives?`);
         
         if (confirmed) {
             try {
-                showToast("Processing bulk deletion... ⏳", "info");
+                showToast("Archiving sections... ⏳", "info");
+                const { archiveItem } = await import('./archive-item.js');
                 
                 for (const section of selectedSections) {
-                    // 1. Delete Auth
-                    if (section.sectionEmail && section.defaultPassword) {
-                        await deleteAuthAccount(section.sectionEmail, section.defaultPassword);
-                    }
-
-                    // 2. Delete Firestore Section
+                    await archiveItem('sections', section.id, section, '', section.academicYear || '');
                     await deleteDoc(doc(db, "sections", section.id));
-
-                    // 3. Delete User Profile
-                    if (section.sectionEmail) {
-                        const userQuery = query(collection(db, "users"), where("email", "==", section.sectionEmail));
-                        const userSnap = await getDocs(userQuery);
-                        if (!userSnap.empty) {
-                            const batch = writeBatch(db);
-                            userSnap.forEach(d => batch.delete(doc(db, "users", d.id)));
-                            await batch.commit();
-                        }
-                    }
                 }
 
-                showToast(`✅ Deleted ${selectedSections.length} sections and accounts.`, "success");
+                showToast(`✅ Archived ${selectedSections.length} sections.`, "success");
                 selectedIds.clear();
                 updateSelectionBar();
             } catch (error) {
@@ -764,7 +814,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     deleteSectionBtn.onclick = async () => {
         const id = document.getElementById("sectionId").value;
-        const confirmed = await showConfirm("DELETE SECTION", "Are you sure you want to delete this section? This will also remove the associated Firebase Auth account.");
+        const confirmed = await showConfirm("ARCHIVE SECTION", "Move this section to Archives? You can restore it later.");
         if (confirmed) {
             try {
                 // Get section data first to get the email and password
@@ -780,10 +830,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         await deleteAuthAccount(email, password);
                     }
 
-                    // 2. Delete the section document
+                    // 2. Archive the section
+                    const { archiveItem } = await import('./archive-item.js');
+                    await archiveItem('sections', id, sectionData, '', sectionData.academicYear || '');
                     await deleteDoc(doc(db, "sections", id));
-
-                    // 3. Delete the user profile document
                     if (email) {
                         const userQuery = query(collection(db, "users"), where("email", "==", email));
                         const userSnap = await getDocs(userQuery);
@@ -795,7 +845,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }
                 
-                showToast("Section and account deleted successfully", "success");
+                showToast("Section archived successfully", "success");
                 sectionModal.classList.add("hidden");
                 sectionModal.classList.remove("flex");
             } catch (error) {
