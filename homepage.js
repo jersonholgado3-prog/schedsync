@@ -18,7 +18,6 @@ import {
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { initUniversalSearch } from "./search.js";
 import { initUserProfile } from "./userprofile.js";
-import { syncStaticRooms } from './room-sync.js';
 import { initMobileNav } from "./js/ui/mobile-nav.js";
 import { showToast, showConfirm } from "./js/utils/ui-utils.js";
 

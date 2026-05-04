@@ -94,7 +94,7 @@
           </div>
           <div class="search-wrapper">
             <img src="images/SEARCH.png" class="search-icon" alt="Search">
-            <input type="text" class="search-button" placeholder="Search pages" aria-label="Search">
+            <input type="text" class="search-button" placeholder="Search" aria-label="Search">
           </div>
         </div>
 
@@ -170,6 +170,22 @@
 
       <div id="floatBtn" class="edit-button">
         <img src="images/EDIT.png" alt="Edit">
+
+      <!-- CHANGE PASSWORD MODAL -->
+      <div id="changePassModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;z-index:2000;">
+        <div id="changePassBox" style="background:#fff;border:3px solid #000;border-radius:20px;box-shadow:6px 6px 0 #000;padding:2rem;width:90%;max-width:400px;display:flex;flex-direction:column;gap:14px;font-family:Poppins,sans-serif;">
+          <div style="font-size:1.1rem;font-weight:800;text-transform:uppercase;">Change Password</div>
+          <input type="password" id="cpCurrent" placeholder="Current Password" style="padding:10px 12px;border:2px solid #000;border-radius:10px;font-size:0.9rem;outline:none;width:100%;box-sizing:border-box;">
+          <input type="password" id="cpNew" placeholder="New Password (min 6 chars)" style="padding:10px 12px;border:2px solid #000;border-radius:10px;font-size:0.9rem;outline:none;width:100%;box-sizing:border-box;">
+          <input type="password" id="cpConfirm" placeholder="Confirm New Password" style="padding:10px 12px;border:2px solid #000;border-radius:10px;font-size:0.9rem;outline:none;width:100%;box-sizing:border-box;">
+          <div style="display:flex;gap:10px;margin-top:4px;">
+            <button id="cpCancelBtn" style="flex:1;padding:10px;border:2px solid #000;border-radius:10px;background:#f1f5f9;font-weight:700;cursor:pointer;">Cancel</button>
+            <button id="cpSaveBtn" style="flex:1;padding:10px;border:2px solid #000;border-radius:10px;background:#000;color:#fff;font-weight:700;cursor:pointer;">Change</button>
+          </div>
+        </div>
+      </div>
+      <button id="changePassBtn" title="Change Password" style="position:fixed;bottom:6rem;right:1.5rem;width:56px;height:56px;border-radius:50%;border:3px solid #000;background:#fff;box-shadow:4px 4px 0 #000;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:1.4rem;z-index:40;">🔑</button>
+
       </div>
     </div>
     <script type="module" src="ui-effects.js"></script>
@@ -199,7 +215,7 @@
     </a>
     <!-- ADMIN ONLY 🛡️ shown via JS -->
     <a href="audit_logs.html" class="mob-nav-item admin-only" data-page="audit_logs" style="display:none">
-      <img src="images/SCHED.png" alt="Audit Logs" style="filter: hue-rotate(180deg);"><span>Audit</span>
+      <img src="images/AUDIT.png" alt="Audit Logs"><span>Audit</span>
     </a>
   </nav>
 </body>

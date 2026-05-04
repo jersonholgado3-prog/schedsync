@@ -59,15 +59,16 @@ export function showConfirm(titleOrMessage, messageOrCallback) {
     else { message = titleOrMessage; }
 
     return new Promise((resolve) => {
+        const _dark = document.documentElement.classList.contains("dark");
         const overlay = document.createElement("div");
         overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:99999;";
         overlay.innerHTML = `
-            <div style="background:#fff;border:3px solid #000;border-radius:20px;box-shadow:6px 6px 0 #000;padding:2rem;width:90%;max-width:400px;display:flex;flex-direction:column;gap:16px;font-family:Poppins,sans-serif;text-align:center;">
-                <div style="font-size:1.1rem;font-weight:800;text-transform:uppercase;">${title}</div>
-                <div style="font-size:0.9rem;color:#334155;line-height:1.5;">${message}</div>
+            <div style="background:${_dark?'#1e293b':'#fff'};border:3px solid #000;border-radius:20px;box-shadow:6px 6px 0 #000;padding:2rem;width:90%;max-width:400px;display:flex;flex-direction:column;gap:16px;font-family:Poppins,sans-serif;text-align:center;">
+                <div style="font-size:1.1rem;font-weight:800;text-transform:uppercase;color:${_dark?'#f1f5f9':'#000'}">${title}</div>
+                <div style="font-size:0.9rem;color:${_dark?'#94a3b8':'#334155'};line-height:1.5;">${message}</div>
                 <div style="display:flex;gap:10px;justify-content:center;">
-                    <button id="scCancelBtn" style="flex:1;padding:10px;border:2px solid #000;border-radius:10px;background:#f1f5f9;font-weight:700;cursor:pointer;">Cancel</button>
-                    <button id="scConfirmBtn" style="flex:1;padding:10px;border:2px solid #000;border-radius:10px;background:#000;color:#fff;font-weight:700;cursor:pointer;">Confirm</button>
+                    <button id="scCancelBtn" style="flex:1;padding:10px;border:2px solid ${_dark?'#475569':'#000'};border-radius:10px;background:${_dark?'#334155':'#f1f5f9'};color:${_dark?'#f1f5f9':'#000'};font-weight:700;cursor:pointer;">Cancel</button>
+                    <button id="scConfirmBtn" style="flex:1;padding:10px;border:2px solid #000;border-radius:10px;background:${_dark?'#f1f5f9':'#000'};color:${_dark?'#000':'#fff'};font-weight:700;cursor:pointer;">Confirm</button>
                 </div>
             </div>
         `;

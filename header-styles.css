@@ -427,7 +427,7 @@ body,
     display: flex !important;
     align-items: center !important;
     background-color: white !important;
-    border: 3px solid black !important;
+    border: 2px solid black !important;
     border-radius: 12px !important;
     width: 48px !important;
     height: 48px !important;
@@ -455,17 +455,16 @@ body,
     width: 0 !important;
     opacity: 0 !important;
     transition: all 0.3s !important;
-    font-weight: 600 !important;
+    font-weight: 700 !important;
     color: black !important;
     margin-left: 0 !important;
-    text-align: center !important;
-    /* ✅ CENTER PLACEHOLDER: Ensure text is centered */
+    text-align: left !important;
     padding: 0 !important;
 }
 
 .search-wrapper:focus-within,
 .search-wrapper.expanded {
-    width: 280px !important;
+    width: 250px !important;
     padding: 0 12px !important;
     justify-content: flex-start !important;
     gap: 8px !important;
@@ -478,6 +477,7 @@ body,
     opacity: 1 !important;
     margin-left: 10px !important;
     padding: 0 5px !important;
+    display: block !important;
 }
 
 .dark .search-button {

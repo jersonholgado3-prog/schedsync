@@ -6,6 +6,8 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth
 import { initUserProfile } from "./userprofile.js";
 import { initMobileNav } from "./js/ui/mobile-nav.js";
 import { showToast, showConfirm } from "./js/utils/ui-utils.js";
+import { startImportProgress, tickImportProgress, clearImportProgress, isCancelled } from "./import-progress.js";
+import { initUniversalSearch } from "./search.js";
 
 // Secondary App Configuration for creating users without logging out admin 🛡️⚓
 const secondaryConfig = {
@@ -20,6 +22,7 @@ const secondaryConfig = {
 document.addEventListener("DOMContentLoaded", () => {
     initUserProfile("#userProfile");
     initMobileNav();
+    initUniversalSearch(db);
 
     const sectionsGrid = document.getElementById("sections-grid");
     const sectionModal = document.getElementById("sectionModal");
@@ -589,6 +592,8 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             let succeeded = 0;
             let failed = 0;
+            startImportProgress(sectionsToProcess.length);
+
 
             for (const section of sectionsToProcess) {
                 const sanitizedName = section.name.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
@@ -642,6 +647,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     await batch.commit();
                     succeeded++;
+                    tickImportProgress();
+
 
                     // 4. Cleanup this specific temp app immediately
                     await deleteApp(tempApp);
@@ -656,6 +663,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     failed++;
                 }
             }
+
+            clearImportProgress();
 
             showToast(`✅ Successfully created ${succeeded} accounts!`, "success");
             selectedIds.clear();
@@ -899,8 +908,8 @@ document.addEventListener("DOMContentLoaded", () => {
     sectionSearch.oninput = (e) => {
         const query = e.target.value.toLowerCase();
         const filtered = allSections.filter(s => 
-            s.name.toLowerCase().includes(query) || 
-            s.strand.toLowerCase().includes(query)
+            (s.name || '').toLowerCase().includes(query) || 
+            (s.strand || '').toLowerCase().includes(query)
         );
         renderSections(filtered);
     };

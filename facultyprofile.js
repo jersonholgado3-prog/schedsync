@@ -149,6 +149,7 @@ function populateProfile(data) {
     }
 
     fetchTeacherSchedule(currentTeacherName);
+    setupResetPasswordBtn(data);
 }
 
 function showErrorMessage(msg) {
@@ -578,3 +579,38 @@ function showDownloadFormatSelector(callback) {
 }
 
 window.downloadSchedule = downloadSchedule;
+
+
+/* ───────── ADMIN RESET PASSWORD ───────── */
+async function setupResetPasswordBtn(data) {
+  const isAdmin = localStorage.getItem('userRole') === 'admin';
+  const btn = document.getElementById('resetPassBtn');
+  if (!btn || !isAdmin) return;
+  btn.style.display = 'inline-block';
+
+  btn.onclick = async () => {
+    const name = data.username || data.name || '';
+    const lastName = name.trim().split(' ').pop().toUpperCase();
+    const defaultPass = lastName + '@SCHEDSYNC';
+    const uid = data.authUid;
+
+    if (!uid) { showToast('No Auth UID found for this user.', 'error'); return; }
+
+    const confirmed = await showConfirm('Reset Password?', 'Reset to default: ' + defaultPass + '?');
+    if (!confirmed) return;
+
+    try {
+      const { adminResetPassword } = await import('./admin-reset.js');
+      await adminResetPassword(uid, defaultPass);
+
+      // Update stored password in Firestore
+      const { updateDoc, doc: _doc } = await import("https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js");
+      await updateDoc(_doc(db, 'users', window._currentTeacherId), { password: defaultPass });
+
+      showToast('Password reset to: ' + defaultPass, 'success');
+    } catch (err) {
+      console.error('Reset failed:', err);
+      showToast('Reset failed: ' + err.message, 'error');
+    }
+  };
+}

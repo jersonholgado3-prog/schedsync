@@ -3,7 +3,6 @@ import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc
 import { toMin, parseBlock, normalizeDay } from "./js/utils/time-utils.js";
 import { initUniversalSearch } from './search.js';
 import { initUserProfile } from "./userprofile.js";
-import { syncStaticRooms } from './room-sync.js';
 import { initMobileNav } from "./js/ui/mobile-nav.js";
 import { showToast, showConfirm } from "./js/utils/ui-utils.js";
 
@@ -16,67 +15,85 @@ document.addEventListener("DOMContentLoaded", () => {
   listenForRooms();
   // removed updateRoomOccupancies() initial call as it's handled by listenForRooms onSnapshot 🚀⚓
 
-  // Automatic Background Sync
-  const autoSyncRooms = async () => {
-    try {
-      const count = await syncStaticRooms(db);
-      if (count > 0) console.log(`Auto-synced ${count} new rooms to search.`);
-    } catch (err) {
-      console.warn("Auto-sync failed:", err);
+  // Show Select button for admins only
+  if (localStorage.getItem('userRole') === 'admin') {
+    const btn = document.getElementById('selectModeBtn');
+    if (btn) btn.classList.replace('hidden', 'flex');
+  }
+
+  // Select mode state
+  let selectMode = false;
+  const selectedIds = new Set();
+
+  window.toggleSelectMode = () => {
+    selectMode = !selectMode; window._selectMode = selectMode;
+    const btn = document.getElementById('selectModeBtn');
+    if (btn) btn.textContent = selectMode ? '✕ Cancel' : '☑️ Select';
+    if (!selectMode) exitSelectMode();
+    else enterSelectMode();
+  };
+
+  window.exitSelectMode = () => {
+    window._selectMode = false;
+    selectMode = false;
+    selectedIds.clear();
+    const btn = document.getElementById('selectModeBtn');
+    if (btn) btn.textContent = '☑️ Select';
+    document.getElementById('bulkDeleteBar').classList.add('hidden');
+    document.querySelectorAll('.room-pill').forEach(pill => {
+      pill.classList.remove('ring-2', 'ring-blue-500', 'ring-offset-2', 'opacity-60');
+      const cb = pill.querySelector('.room-select-cb');
+      if (cb) cb.remove();
+    });
+  };
+
+  window.enterSelectMode = function() {
+    document.querySelectorAll('.room-pill').forEach(pill => {
+      if (!pill.dataset.docId) return;
+      if (pill.querySelector('.room-select-cb')) return;
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.className = 'room-select-cb absolute top-2 left-2 w-4 h-4 cursor-pointer z-20';
+      cb.addEventListener('change', () => {
+        if (cb.checked) { selectedIds.add(pill.dataset.docId); pill.classList.add('ring-2', 'ring-blue-500', 'ring-offset-2'); }
+        else { selectedIds.delete(pill.dataset.docId); pill.classList.remove('ring-2', 'ring-blue-500', 'ring-offset-2'); }
+        const bar = document.getElementById('bulkDeleteBar');
+        const count = document.getElementById('bulkCount');
+        if (selectedIds.size > 0) { bar.classList.remove('hidden'); bar.classList.add('flex'); }
+        else { bar.classList.add('hidden'); bar.classList.remove('flex'); }
+        if (count) count.textContent = `${selectedIds.size} selected`;
+      });
+      pill.appendChild(cb);
+    });
+  }
+
+  window.bulkDeleteSelected = async () => {
+    if (selectedIds.size === 0) return;
+    const confirmed = await window.showConfirm('Delete Rooms?', `Delete ${selectedIds.size} selected room(s)?`);
+    if (!confirmed) return;
+    const { deleteDoc, doc } = await import("https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js");
+    for (const id of [...selectedIds]) {
+      await deleteDoc(doc(db, 'rooms', id));
     }
+    showToast(`Deleted ${selectedIds.size} room(s) ✅`, 'success');
+    exitSelectMode();
   };
 
-  // Run sync after a short delay to ensure DOM is ready
-  setTimeout(autoSyncRooms, 2000);
-
-  // Root Cause Fix: Strict Whitelist Cleanup 🛡️⚓🛡️
-  const cleanCorruptedRooms = async () => {
-    // OFFICIAL WHITE-LIST 📜⚓
-    const OFFICIAL_ROOMS = [
-      "Room 101", "Room 102", "Room 103", "Room 104", "Room 105",
-      "Room 201", "Room 202", "Room 203", "Room 204", "Room 205", "Room 206", "Room 207", "Room 208", "Room 209", "Room 210", "Room 211",
-      "Room 301", "Room 302", "Room 303", "Room 304", "Room 305", "Room 306", "Room 307", "Room 308",
-      "Room 401", "Room 402", "Room 403", "Room 404", "Room 405", "Room 406",
-      "Computer Laboratory 1", "Computer Laboratory 2", "Computer Laboratory 3", "Computer Laboratory 4",
-      "Kitchen", "Bar", "PE Area", "Court", "MPH"
-    ].map(r => r.toUpperCase().trim());
-
-    try {
-      const snap = await getDocs(collection(db, "rooms"));
-      let fixCount = 0;
-      let purgeCount = 0;
-      const allRoomNames = [];
-
-      for (const d of snap.docs) {
-        const rawName = d.data().name || "";
-        // Sanitization 🧼
-        const cleanName = rawName.replace(/\s*\|?\s*\d{1,3}%\s*(?:OCCUPIED)?$/i, "").trim();
-        
-        // 1. Corruption Check 🛡️⚓
-        // If the name is empty or just generic percentage noise, it's a ghost.
-        if (!cleanName || /^\d{1,3}%$/.test(cleanName)) {
-          const { deleteDoc, doc } = await import("https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js");
-          await deleteDoc(doc(db, "rooms", d.id));
-          purgeCount++;
-          continue;
-        }
-
-        // 2. Fix corrupted names 🧼
-        if (cleanName !== rawName) {
-          const { updateDoc, doc } = await import("https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js");
-          await updateDoc(doc(db, "rooms", d.id), { name: cleanName });
-          fixCount++;
-        }
-        allRoomNames.push(cleanName);
-      }
-
-      console.log("SchedSync ROOM AUDIT (Official):", allRoomNames);
-      if (purgeCount > 0) console.log(`SchedSync PURGE: Deleted ${purgeCount} non-official rooms (ghosts) 🗑️⚓`);
-      if (fixCount > 0) console.log(`SchedSync CLEANUP: Fixed ${fixCount} official room names 🧼⚓`);
-
-    } catch (err) { console.warn("Cleanup/Purge script failed", err); }
+  window.selectAll = () => {
+    const allSelected = document.querySelectorAll('.room-pill[data-doc-id]').length === selectedIds.size;
+    document.querySelectorAll('.room-pill[data-doc-id]').forEach(pill => {
+      const cb = pill.querySelector('.room-select-cb');
+      if (!cb) return;
+      cb.checked = !allSelected;
+      cb.dispatchEvent(new Event('change'));
+    });
+    const btn = document.getElementById('selectAllBtn');
+    if (btn) btn.textContent = allSelected ? 'Select All' : 'Deselect All';
   };
-  setTimeout(cleanCorruptedRooms, 5000);
+
+
+
+
 
   // Modal logic
   window.openAddRoomModal = () => {
@@ -92,13 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   window.toggleFloorSelect = () => {
-    const type = document.getElementById("modalRoomType").value;
-    const container = document.getElementById("floorSelectContainer");
-    if (type === "classroom") {
-      container.classList.remove("hidden");
-    } else {
-      container.classList.add("hidden");
-    }
+    // All types can have a floor
   };
 
   document.getElementById("saveRoomBtn").addEventListener("click", async () => {
@@ -127,9 +138,11 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
+      const firestoreType = ['classroom'].includes(type) ? 'classroom' : ['laboratory'].includes(type) ? 'laboratory' : 'other';
       await addDoc(collection(db, "rooms"), {
-        type,
-        floor: type === "classroom" ? parseInt(floor) : null,
+        type: firestoreType,
+        subtype: type,
+        floor: parseInt(floor),
         name,
         createdAt: serverTimestamp()
       });
@@ -140,6 +153,28 @@ document.addEventListener("DOMContentLoaded", () => {
       showToast("Error adding room: " + error.message, "error");
     }
   });
+
+  // Bulk import from document (called by room-doc-import.js)
+  window.importRoomsFromDoc = async (rooms) => {
+    let added = 0, skipped = 0;
+    const existingSnap = await getDocs(collection(db, "rooms"));
+    const existingNames = new Set(existingSnap.docs.map(d => d.data().name.toLowerCase()));
+    for (const room of rooms) {
+      if (existingNames.has(room.name.toLowerCase())) { skipped++; continue; }
+      const firestoreType = ['classroom'].includes(type) ? 'classroom' : ['laboratory'].includes(type) ? 'laboratory' : 'other';
+      await addDoc(collection(db, "rooms"), {
+        type: firestoreType,
+        subtype: type,
+        floor: parseInt(floor),
+        name,
+        createdAt: serverTimestamp()
+      });
+      existingNames.add(room.name.toLowerCase());
+      added++;
+    }
+    showToast(`Imported ${added} room(s)${skipped ? `, skipped ${skipped} duplicates` : ""} ✅`, "success");
+  };
+
 });
 
 /* ───────── OCCUPANCY LOGIC 🛡️⚓ ───────── */
@@ -238,7 +273,7 @@ function listenForRooms() {
   const q = query(collection(db, "rooms"), orderBy("name"));
 
   // 🦴 SHOW SKELETONS while loading
-  const dynamicIds = ["floor-1-dynamic", "floor-2-dynamic", "floor-3-dynamic", "floor-4-dynamic", "laboratories-dynamic", "kitchen-bar-dynamic", "event-spaces-dynamic"];
+  const dynamicIds = ["floor-1-dynamic", "floor-2-dynamic", "floor-3-dynamic", "floor-4-dynamic"];
   dynamicIds.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = '<div class="skeleton-text skeleton" style="width: 100px; height: 40px; border-radius: 50px;"></div>';
@@ -246,7 +281,7 @@ function listenForRooms() {
 
   onSnapshot(q, (snapshot) => {
     // Clear dynamic containers
-    const dynamicIds = ["floor-1-dynamic", "floor-2-dynamic", "floor-3-dynamic", "floor-4-dynamic", "laboratories-dynamic", "kitchen-bar-dynamic", "event-spaces-dynamic"];
+  const dynamicIds = ["floor-1-dynamic", "floor-2-dynamic", "floor-3-dynamic", "floor-4-dynamic"];
     dynamicIds.forEach(id => {
       const el = document.getElementById(id);
       if (el) el.innerHTML = "";
@@ -254,12 +289,10 @@ function listenForRooms() {
 
     snapshot.forEach((doc) => {
       const room = doc.data();
-      const pill = createRoomPill(room.name, doc.id);
+      const pill = createRoomPill(room.name, doc.id, room.capacity);
       pill.classList.add("room-pill-dynamic");
 
-      const containerId = room.type === "classroom" ? `floor-${room.floor}-dynamic` :
-                        (room.name.toLowerCase().includes("kitchen") || room.name.toLowerCase().includes("bar")) ? "kitchen-bar-dynamic" :
-                        room.type === "laboratory" ? "laboratories-dynamic" : "event-spaces-dynamic";
+      const containerId = `floor-${room.floor || 1}-dynamic`;
       
       const container = document.getElementById(containerId);
       if (container) container.appendChild(pill);
@@ -270,7 +303,12 @@ function listenForRooms() {
       pill.style.cursor = "pointer";
       pill.onclick = (e) => {
         if (e.target.closest('.delete-room-btn')) return;
-        const labelEl = pill.querySelector(".room-pill-text-label");
+        if (window._selectMode) {
+          const cb = pill.querySelector('.room-select-cb');
+          if (cb) { cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); }
+          return;
+        }
+        const labelEl = pill.querySelector('.room-pill-text-label');
         const roomNameRaw = labelEl ? labelEl.textContent.trim() : pill.firstChild.textContent.trim();
         window.location.href = `roomprofile.html?room=${encodeURIComponent(roomNameRaw)}`;
       };
@@ -278,12 +316,18 @@ function listenForRooms() {
 
     // 🛡️ TRIGGER OCCUPANCY: Use cached schedules if available 
     updateRoomOccupancies();
+    updateSectionVisibility();
+    if (window._selectMode && window.enterSelectMode) window.enterSelectMode();
+
+
   });
 }
 
-function createRoomPill(name, docId) {
+function createRoomPill(name, docId, capacity) {
   const div = document.createElement("div");
   div.className = "room-pill transition-all active:scale-95 group relative";
+  if (docId) div.dataset.docId = docId;
+
   div.style.cursor = "pointer";
 
   // Icon based on name 🦈⚓
@@ -301,6 +345,14 @@ function createRoomPill(name, docId) {
   span.className = "room-pill-text-label";
   span.textContent = name.replace(/\s*\|?\s*\d{1,3}%\s*(?:OCCUPIED)?$/i, "").trim();
   div.appendChild(span);
+
+  if (capacity) {
+    const capBadge = document.createElement("span");
+    capBadge.className = "room-cap-badge";
+    capBadge.textContent = capacity + " seats";
+    div.appendChild(capBadge);
+  }
+
 
 
   // ADMIN DELETE BUTTON 🗑️⚓🛡️
@@ -331,4 +383,24 @@ function createRoomPill(name, docId) {
   }
 
   return div;
+}
+
+function updateSectionVisibility() {
+  const floorPairs = [
+    { card: "card-floor-12", panels: ["panel-floor-1", "panel-floor-2"], dynamics: ["floor-1-dynamic", "floor-2-dynamic"] },
+    { card: "card-floor-34", panels: ["panel-floor-3", "panel-floor-4"], dynamics: ["floor-3-dynamic", "floor-4-dynamic"] },
+  ];
+  for (const { card, panels, dynamics } of floorPairs) {
+    let cardHasContent = false;
+    panels.forEach((panelId, i) => {
+      const panel = document.getElementById(panelId);
+      const dynamic = document.getElementById(dynamics[i]);
+      if (!panel || !dynamic) return;
+      const hasRooms = dynamic.children.length > 0;
+      panel.style.display = hasRooms ? "" : "none";
+      if (hasRooms) cardHasContent = true;
+    });
+    const cardEl = document.getElementById(card);
+    if (cardEl) cardEl.style.display = cardHasContent ? "" : "none";
+  }
 }

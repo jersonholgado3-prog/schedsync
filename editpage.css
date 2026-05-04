@@ -344,23 +344,6 @@ body {
         display: none !important;
     }
 
-    .search-wrapper {
-        height: 45px !important;
-        width: 45px !important;
-        border-radius: 12px !important;
-        box-shadow: 3px 3px 0px black !important;
-        margin-left: 0 !important;
-    }
-
-    .search-wrapper.expanded {
-        position: fixed !important;
-        top: 10px;
-        left: 10px;
-        width: calc(100vw - 20px) !important;
-        height: 60px !important;
-        z-index: 3000;
-    }
-
     .main-content-wrapper {
         margin-left: 0 !important;
         width: 100% !important;
@@ -480,64 +463,14 @@ body {
     flex-shrink: 0 !important;
 }
 
-.search-wrapper {
-    width: 48px;
-    height: 48px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 3px solid black;
-    border-radius: 12px;
-    background-color: white;
-    box-shadow: 4px 4px 0px black;
-    cursor: pointer;
-    position: relative;
-}
-
-.search-wrapper.expanded {
-    width: 180px;
-}
-
-.search-button {
-    border: none;
-    background: transparent;
-    width: 100%;
-    outline: none;
-    font-size: 1rem;
-    font-weight: 700;
-    margin-left: 0.8rem;
-    opacity: 0;
-    transition: opacity 0.2s;
-    color: black;
-    display: none;
-}
-
-.search-wrapper.expanded .search-button {
-    opacity: 1;
-    display: block;
-}
-
-.search-icon {
-    width: 24px;
-    height: 24px;
-    flex-shrink: 0;
-}
-
 /* DARK MODE OVERRIDES ðŸŒ‘ */
-.dark .search-wrapper,
 .dark .notification-icon-wrapper {
     background-color: #1e293b !important;
     border-color: #334155 !important;
     box-shadow: 4px 4px 0px #000 !important;
 }
 
-.dark .search-button {
-    color: white !important;
-}
-
 .dark .notification-icon-wrapper img,
-.dark .search-icon,
 .dark .hamburger-btn svg,
 .dark .burger-icon,
 .dark .user-avatar svg {

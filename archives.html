@@ -104,7 +104,10 @@
 
         <!-- Search & Filters -->
         <div class="archive-controls">
-          <input type="text" id="searchInput" placeholder="🔍 Search archives..." class="search-input">
+          <div class="search-wrapper">
+            <img src="images/SEARCH.png" class="search-icon" alt="Search">
+            <input type="text" id="searchInput" class="search-button" placeholder="Search archives..." aria-label="Search">
+          </div>
           <select id="yearFilter" class="filter-select">
             <option value="">All Years</option>
           </select>

@@ -1,6 +1,6 @@
 import { initMobileNav } from "./js/ui/mobile-nav.js";
 import { db, auth, app } from "./js/config/firebase-config.js";
-import { onAuthStateChanged, updateProfile, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import { onAuthStateChanged, updateProfile, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { doc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { initUserProfile } from "./userprofile.js";
 import { initUniversalSearch } from "./search.js";
@@ -346,3 +346,63 @@ function renderTable(classes) {
 }
 
 
+
+/* ───────── CHANGE PASSWORD ───────── */
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById('changePassBtn');
+  const modal = document.getElementById('changePassModal');
+  const box = document.getElementById('changePassBox');
+  if (!btn || !modal) return;
+
+  // Show button only when logged in
+  onAuthStateChanged(auth, user => {
+    if (user) { btn.style.display = 'flex'; }
+  });
+
+  const openModal = () => {
+    const dark = document.documentElement.classList.contains('dark');
+    if (box) box.style.background = dark ? '#1e293b' : '#fff';
+    ['cpCurrent','cpNew','cpConfirm'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.style.background = dark ? '#0f172a' : '#fff'; el.style.color = dark ? '#f1f5f9' : '#000'; el.style.borderColor = dark ? '#475569' : '#000'; }
+    });
+    modal.style.display = 'flex';
+    document.getElementById('cpCurrent').focus();
+  };
+  const closeModal = () => {
+    modal.style.display = 'none';
+    ['cpCurrent','cpNew','cpConfirm'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  };
+
+  btn.onclick = openModal;
+  document.getElementById('cpCancelBtn').onclick = closeModal;
+  modal.onclick = e => { if (e.target === modal) closeModal(); };
+
+  document.getElementById('cpSaveBtn').onclick = async () => {
+    const currentPass = document.getElementById('cpCurrent').value;
+    const newPass = document.getElementById('cpNew').value;
+    const confirmPass = document.getElementById('cpConfirm').value;
+
+    if (!currentPass || !newPass || !confirmPass) { showToast('Fill in all fields.', 'warning'); return; }
+    if (newPass.length < 6) { showToast('New password must be at least 6 characters.', 'warning'); return; }
+    if (newPass !== confirmPass) { showToast('Passwords do not match.', 'error'); return; }
+
+    const user = auth.currentUser;
+    if (!user) { showToast('Not logged in.', 'error'); return; }
+
+    try {
+      const cred = EmailAuthProvider.credential(user.email, currentPass);
+      await reauthenticateWithCredential(user, cred);
+      await updatePassword(user, newPass);
+      closeModal();
+      showToast('Password changed! Please log in again.', 'success');
+      setTimeout(() => { signOut(auth); window.location.href = 'login.html'; }, 2000);
+    } catch (err) {
+      if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        showToast('Current password is incorrect.', 'error');
+      } else {
+        showToast('Failed: ' + err.message, 'error');
+      }
+    }
+  };
+});

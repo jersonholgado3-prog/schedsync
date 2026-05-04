@@ -7,6 +7,8 @@
     <title>Faculty Profile - SchedSync</title>
     <link rel="stylesheet" href="header-styles.css" />
     <link rel="stylesheet" href="maangas-styles.css" />
+    <link rel="stylesheet" href="toast.css">
+    <script src="toast.js"></script>
     <link rel="stylesheet" href="export-styles.css" />
     <script>
         (function () {
@@ -44,7 +46,7 @@
                 <a href="curriculumpage.html" class="sidebar-link"><img src="images/SCHED.png" alt="Curriculum" style="filter: hue-rotate(180deg);"><span>Curriculum</span></a>
                 <div id="adminSidebarLinks" style="display: none;">
                               <a href="archives.html" class="sidebar-link"><img src="images/ARCHIVE.png" alt="Archives"><span>Archives</span></a>
-          <a href="audit_logs.html" class="sidebar-link"><img src="images/SCHED.png" alt="Audit" style="filter: hue-rotate(180deg);"><span>Audit Logs</span></a>
+          <a href="audit_logs.html" class="sidebar-link"><img src="images/AUDIT.png" alt="Audit"><span>Audit Logs</span></a>
                 </div>
             </nav>
         </aside>
@@ -64,7 +66,7 @@
                     </div>
                     <div class="search-wrapper">
                         <img src="images/SEARCH.png" class="search-icon" alt="Search">
-                        <input type="text" class="search-button" placeholder="Search pages" aria-label="Search">
+                        <input type="text" class="search-button" placeholder="Search" aria-label="Search">
                     </div>
                 </div>
                 <div class="page-title">Faculty Profile</div>
@@ -114,6 +116,7 @@
                                         <span>Role:</span>
                                         <span id="roleDisplay">-</span>
                                         <button id="changeRoleBtn" style="display:none; margin-left:auto; padding:4px 12px; border:2px solid #000; border-radius:8px; font-weight:800; font-size:12px; cursor:pointer; background:#f1f5f9; box-shadow:2px 2px 0 #000;">Change Role</button>
+                                        <button id="resetPassBtn" style="display:none; padding:4px 12px; border:2px solid #ef4444; border-radius:8px; font-weight:800; font-size:12px; cursor:pointer; background:#fef2f2; color:#ef4444; box-shadow:2px 2px 0 #000;">Reset Password</button>
                                     </div>
                                     <div class="profile-info-line" id="programInfoLine" style="display:none;">
                                         <span>Program:</span>

@@ -25,6 +25,7 @@
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="campuspage_styles.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 
 <body class="bg-white text-black font-bold">
@@ -95,7 +96,7 @@
           </div>
           <div class="search-wrapper">
             <img src="images/SEARCH.png" class="search-icon" alt="Search">
-            <input type="text" class="search-button" placeholder="Search rooms" aria-label="Search">
+            <input type="text" class="search-button" placeholder="Search" aria-label="Search">
           </div>
         </div>
 
@@ -126,81 +127,39 @@
           <section>
             <div class="flex justify-between items-center mb-4 ml-2">
               <h2 class="text-2xl">Classrooms</h2>
+              <div class="flex gap-2 items-center">
+                <button id="selectModeBtn" class="hidden items-center gap-2 px-4 py-2 text-sm font-bold border-2 border-black rounded-xl shadow-[2px_2px_0px_black] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all active:scale-95 bg-white dark:bg-gray-800"
+                  onclick="toggleSelectMode()">☑️ Select</button>
+                <button id="roomImportDocBtn"
+                  class="flex items-center gap-2 px-4 py-2 text-sm font-bold border-2 border-black rounded-xl shadow-[2px_2px_0px_black] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all active:scale-95 bg-white dark:bg-gray-800">
+                  📂 Import Rooms
+                </button>
+                <input type="file" id="roomDocImportInput" accept=".xlsx,.csv,.pdf,.docx,.doc" style="display:none">
+              </div>
             </div>
             <div class="space-y-8">
               <!-- 1st and 2nd Floor Row -->
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-8 campus-card items-stretch">
-                <div class="md:border-r-2 md:border-black md:pr-8">
-                  <h3 class="text-xl mb-4 text-center">1ST FLOOR CLASSROOMS</h3>
-                  <div class="space-y-2">
-                    <div id="floor-1-dynamic" class="grid grid-cols-2 lg:grid-cols-3 gap-4"></div>
-                  </div>
-
+              <div id="card-floor-12" class="grid grid-cols-1 md:grid-cols-2 gap-8 campus-card items-stretch">
+                <div id="panel-floor-1" class="md:border-r-2 md:border-black md:pr-8">
+                  <h3 class="text-xl mb-4 text-center">1ST FLOOR</h3>
+                  <div id="floor-1-dynamic" class="grid grid-cols-2 lg:grid-cols-3 gap-4"></div>
                 </div>
-
-                <div>
-                  <h3 class="text-xl mb-4 text-center">2ND FLOOR CLASSROOMS</h3>
-                  <div class="space-y-2">
-                    <div id="floor-2-dynamic" class="grid grid-cols-2 lg:grid-cols-3 gap-4"></div>
-                  </div>
-
+                <div id="panel-floor-2">
+                  <h3 class="text-xl mb-4 text-center">2ND FLOOR</h3>
+                  <div id="floor-2-dynamic" class="grid grid-cols-2 lg:grid-cols-3 gap-4"></div>
                 </div>
               </div>
 
               <!-- 3rd and 4th Floor Row -->
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-8 campus-card items-stretch">
-                <div class="md:border-r-2 md:border-black md:pr-8">
-                  <h3 class="text-xl mb-4 text-center">3RD FLOOR CLASSROOMS</h3>
-                  <div class="space-y-2">
-                    <div id="floor-3-dynamic" class="grid grid-cols-2 lg:grid-cols-3 gap-4"></div>
-                  </div>
-
+              <div id="card-floor-34" class="grid grid-cols-1 md:grid-cols-2 gap-8 campus-card items-stretch">
+                <div id="panel-floor-3" class="md:border-r-2 md:border-black md:pr-8">
+                  <h3 class="text-xl mb-4 text-center">3RD FLOOR</h3>
+                  <div id="floor-3-dynamic" class="grid grid-cols-2 lg:grid-cols-3 gap-4"></div>
                 </div>
-
-                <div>
-                  <h3 class="text-xl mb-4 text-center">4TH FLOOR CLASSROOMS</h3>
-                  <div class="space-y-2">
-                    <div id="floor-4-dynamic" class="grid grid-cols-2 lg:grid-cols-3 gap-4"></div>
-                  </div>
-
+                <div id="panel-floor-4">
+                  <h3 class="text-xl mb-4 text-center">4TH FLOOR</h3>
+                  <div id="floor-4-dynamic" class="grid grid-cols-2 lg:grid-cols-3 gap-4"></div>
                 </div>
-              </div>
-            </div>
-          </section>
-
-          <!-- LABORATORIES -->
-          <section>
-            <h2 class="text-2xl mb-4 ml-2">Laboratories</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 campus-card">
-
-              <div class="md:border-r-2 md:border-black md:pr-8">
-                <h3 class="text-xl mb-4 text-center">LABORATORIES</h3>
-                <div class="space-y-2">
-                  <div id="laboratories-dynamic" class="grid grid-cols-2 lg:grid-cols-3 gap-4"></div>
-                </div>
-
-              </div>
-
-              <div>
-                <h3 class="text-xl mb-4 text-center">KITCHEN AND BAR</h3>
-                <div class="space-y-2">
-                  <div id="kitchen-bar-dynamic" class="grid grid-cols-2 lg:grid-cols-3 gap-4"></div>
-                </div>
-
-              </div>
-            </div>
-          </section>
-
-          <!-- EVENT SPACES SECTION -->
-          <section>
-            <h2 class="text-2xl mb-4 ml-2">Event Spaces</h2>
-            <div class="grid grid-cols-1 gap-8 campus-card">
-              <div>
-                <h3 class="text-xl mb-4 text-center">PE AREA AND MPH</h3>
-                <div class="space-y-2">
-                  <div id="event-spaces-dynamic" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4"></div>
-                </div>
-
               </div>
             </div>
           </section>
@@ -215,6 +174,14 @@
         +
       </button>
 
+      <!-- BULK DELETE BAR (admin only, shown in select mode) -->
+      <div id="bulkDeleteBar" class="hidden fixed bottom-24 md:bottom-16 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 bg-white border-2 border-black rounded-2xl shadow-[4px_4px_0px_black]">
+        <span id="bulkCount" class="font-bold text-sm">0 selected</span>
+        <button onclick="selectAll()" id="selectAllBtn" class="px-4 py-2 text-sm font-bold border-2 border-black rounded-xl shadow-[2px_2px_0px_black] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all">Select All</button>
+        <button onclick="bulkDeleteSelected()" class="px-4 py-2 bg-red-500 text-white text-sm font-bold border-2 border-black rounded-xl shadow-[2px_2px_0px_black] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all">🗑️ Delete</button>
+        <button onclick="exitSelectMode()" class="px-4 py-2 text-sm font-bold border-2 border-black rounded-xl shadow-[2px_2px_0px_black] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all">Cancel</button>
+      </div>
+
       <!-- ADD ROOM MODAL -->
       <div id="addRoomModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[2000]">
         <div class="add-room-modal-box">
@@ -223,12 +190,15 @@
           <div class="space-y-4">
             <div>
               <label class="block text-sm font-bold mb-2">Room Type</label>
-              <select id="modalRoomType"
-                class="modal-input"
-                onchange="toggleFloorSelect()">
+              <select id="modalRoomType" class="modal-input" onchange="toggleFloorSelect()">
                 <option value="classroom">Classroom</option>
                 <option value="laboratory">Laboratory</option>
-                <option value="other">Other (PE, MPH, etc.)</option>
+                <option value="kitchen">Kitchen</option>
+                <option value="bar">Bar</option>
+                <option value="pe">PE Area</option>
+                <option value="court">Court</option>
+                <option value="mph">MPH</option>
+                <option value="other">Other</option>
               </select>
             </div>
 
@@ -244,7 +214,7 @@
 
             <div>
               <label class="block text-sm font-bold mb-2">Room Name/Number</label>
-              <input type="text" id="modalRoomName" placeholder="e.g. 101 or Comp Lab 5"
+              <input type="text" id="modalRoomName" placeholder="e.g. 101 or Computer Lab 1"
                 class="modal-input outline-none">
             </div>
 
@@ -264,6 +234,7 @@
     <script type="module" src="role-restriction.js"></script>
     <script type="module" src="campuspage.js"></script>
     <script type="module" src="campusmodal.js"></script>
+    <script type="module" src="room-doc-import.js"></script>
     <script type="module" src="realtime-notifications.js"></script>
     <script type="module" src="ui-effects.js"></script>
   <!-- ?? MOBILE BOTTOM NAVIGATION BAR ? -->
@@ -292,7 +263,7 @@
     </a>
     <!-- ADMIN ONLY 🛡️ shown via JS -->
     <a href="audit_logs.html" class="mob-nav-item admin-only" data-page="audit_logs" style="display:none">
-      <img src="images/SCHED.png" alt="Audit Logs" style="filter: hue-rotate(180deg);"><span>Audit</span>
+      <img src="images/AUDIT.png" alt="Audit Logs"><span>Audit</span>
     </a>
   </nav>
 </body>

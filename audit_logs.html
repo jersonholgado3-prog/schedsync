@@ -393,9 +393,9 @@
 
                     <!-- Filter Bar -->
                     <div class="filter-bar">
-                        <div class="search-input-group">
-                            <span>🔍</span>
-                            <input type="text" id="logSearch" placeholder="Search by user or action...">
+                        <div class="search-wrapper">
+                            <img src="images/SEARCH.png" class="search-icon" alt="Search">
+                            <input type="text" id="logSearch" class="search-button" placeholder="Search logs..." aria-label="Search">
                         </div>
                         <select id="actionFilter" class="filter-select">
                             <option value="ALL">All Actions</option>
@@ -598,7 +598,7 @@
     </a>
     <!-- ADMIN ONLY 🛡️ shown via JS -->
     <a href="audit_logs.html" class="mob-nav-item admin-only active" data-page="audit_logs" style="display:none">
-      <img src="images/SCHED.png" alt="Audit Logs" style="filter: hue-rotate(180deg);"><span>Audit</span>
+      <img src="images/AUDIT.png" alt="Audit Logs"><span>Audit</span>
     </a>
   </nav>
 </body>

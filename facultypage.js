@@ -227,7 +227,7 @@ function initSelectionUI() {
 
   if (!selectionBar) return;
 
-  genEmailsBtn.onclick = async () => {
+  if (genEmailsBtn) genEmailsBtn.onclick = async () => {
     const selectedFaculty = allFaculty.filter(f => selectedIds.has(f.id));
     const toProcess = selectedFaculty.filter(f => !f.email);
 
@@ -244,7 +244,7 @@ function initSelectionUI() {
     updateSelectionBar();
   };
 
-  multiArchiveBtn.onclick = async () => {
+  if (multiArchiveBtn) multiArchiveBtn.onclick = async () => {
     const selectedFaculty = allFaculty.filter(f => selectedIds.has(f.id));
     const { showArchiveModal } = await import('./archive-modal.js');
     const reason = await showArchiveModal(selectedFaculty.length, 'faculty members');
@@ -270,7 +270,7 @@ function initSelectionUI() {
 
   multiDeleteBtn.onclick = async () => {
     const selectedFaculty = allFaculty.filter(f => selectedIds.has(f.id));
-    const confirmed = await showConfirm(Archive \ faculty members?, 'Move to Archives');
+    const confirmed = await showConfirm(`Archive ${selectedFaculty.length} faculty members?`, 'Move to Archives');
 
     if (confirmed) {
       showToast('Archiving... ⏳', 'info');

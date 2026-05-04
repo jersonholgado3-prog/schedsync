@@ -1,6 +1,7 @@
 import { auth, db } from "./js/config/firebase-config.js";
 import { doc, getDoc, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { initUserProfile } from "./userprofile.js";
+import { showToast, showConfirm } from "./js/utils/ui-utils.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
     initUserProfile("#userProfile");
@@ -36,6 +37,30 @@ document.addEventListener("DOMContentLoaded", async () => {
                         credentialSection.style.display = "block";
                         emailLabel.innerHTML = `<strong>Email:</strong> ${data.sectionEmail}`;
                         passwordLabel.innerHTML = `<strong>Password:</strong> ${data.defaultPassword || "Not Set"}`;
+
+                        // Reset Password button
+                        const resetBtn = document.getElementById('resetSectionPassBtn');
+                        if (resetBtn) {
+                            resetBtn.onclick = async () => {
+                                const sectionName = data.name || '';
+                                const sanitized = sectionName.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                                const defaultPass = 'SCHEDSYNC' + sanitized;
+                                const uid = data.authUid;
+                                if (!uid) { showToast('No Auth UID found.', 'error'); return; }
+                                const confirmed = await showConfirm('Reset Password?', 'Reset to default: ' + defaultPass + '?');
+                                if (!confirmed) return;
+                                try {
+                                    const { adminResetPassword } = await import('./admin-reset.js');
+                                    await adminResetPassword(uid, defaultPass);
+                                    const { updateDoc, doc: _doc } = await import("https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js");
+                                    await updateDoc(_doc(db, 'sections', sectionId), { defaultPassword: defaultPass });
+                                    passwordLabel.innerHTML = `<strong>Password:</strong> ${defaultPass}`;
+                                    showToast('Password reset to: ' + defaultPass, 'success');
+                                } catch (err) {
+                                    showToast('Reset failed: ' + err.message, 'error');
+                                }
+                            };
+                        }
                     }
                 }
             }
