@@ -367,6 +367,16 @@ function initDraftSchedules(uid, role, hasPerm) {
   const list = document.getElementById('drafts-list');
   if (!list) return;
 
+  // 🛡️ ROLE GUARD: Students should NOT see drafts (they can't edit anyway) ⚓
+  if (role === 'student') {
+    list.innerHTML = `
+      <div class="widget-empty">
+        <div style="font-size: 40px; margin-bottom: 10px;">📅</div>
+        Log in as Faculty to create drafts.
+      </div>`;
+    return;
+  }
+
   // 🦴 SHOW SKELETONS while loading
   list.innerHTML = `
     <div class="skeleton-item skeleton" style="height:100px"></div>

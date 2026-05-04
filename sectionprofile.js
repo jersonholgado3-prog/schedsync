@@ -8,6 +8,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const urlParams = new URLSearchParams(window.location.search);
     const sectionId = urlParams.get("id");
+    let userRole = 'student';
+    let hasEditPermission = false;
 
     if (!sectionId) {
         document.getElementById("displaySectionName").textContent = "Section Not Found";
@@ -32,40 +34,46 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const user = auth.currentUser;
                 if (user) {
                     const userDoc = await getDoc(doc(db, "users", user.uid));
-                    if (userDoc.exists() && userDoc.data().role === 'admin') {
-                        credentialSection.style.display = "block";
-                        emailLabel.innerHTML = `<strong>Email:</strong> ${data.sectionEmail}`;
-                        passwordLabel.innerHTML = `<strong>Password:</strong> ${data.defaultPassword || "Not Set"}`;
+                    if (userDoc.exists()) {
+                        const userData = userDoc.data();
+                        userRole = userData.role || 'student';
+                        hasEditPermission = userData.editPermission === true;
 
-                        // Reset Password button
-                        const resetBtn = document.getElementById('resetSectionPassBtn');
-                        if (resetBtn) {
-                            resetBtn.onclick = async () => {
-                                const sectionName = data.name || '';
-                                const sanitized = sectionName.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-                                const defaultPass = 'SCHEDSYNC' + sanitized;
-                                const uid = data.authUid;
-                                if (!uid) { showToast('No Auth UID found.', 'error'); return; }
-                                const confirmed = await showConfirm('Reset Password?', 'Reset to default: ' + defaultPass + '?');
-                                if (!confirmed) return;
-                                try {
-                                    const { adminResetPassword } = await import('./admin-reset.js');
-                                    await adminResetPassword(uid, defaultPass);
-                                    const { updateDoc, doc: _doc } = await import("https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js");
-                                    await updateDoc(_doc(db, 'sections', sectionId), { defaultPassword: defaultPass });
-                                    passwordLabel.innerHTML = `<strong>Password:</strong> ${defaultPass}`;
-                                    showToast('Password reset to: ' + defaultPass, 'success');
-                                } catch (err) {
-                                    showToast('Reset failed: ' + err.message, 'error');
-                                }
-                            };
+                        if (userRole === 'admin') {
+                            credentialSection.style.display = "block";
+                            emailLabel.innerHTML = `<strong>Email:</strong> ${data.sectionEmail}`;
+                            passwordLabel.innerHTML = `<strong>Password:</strong> ${data.defaultPassword || "Not Set"}`;
+
+                            // Reset Password button
+                            const resetBtn = document.getElementById('resetSectionPassBtn');
+                            if (resetBtn) {
+                                resetBtn.onclick = async () => {
+                                    const sectionName = data.name || '';
+                                    const sanitized = sectionName.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                                    const defaultPass = 'SCHEDSYNC' + sanitized;
+                                    const uid = data.authUid;
+                                    if (!uid) { showToast('No Auth UID found.', 'error'); return; }
+                                    const confirmed = await showConfirm('Reset Password?', 'Reset to default: ' + defaultPass + '?');
+                                    if (!confirmed) return;
+                                    try {
+                                        const { adminResetPassword } = await import('./admin-reset.js');
+                                        await adminResetPassword(uid, defaultPass);
+                                        const { updateDoc, doc: _doc } = await import("https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js");
+                                        await updateDoc(_doc(db, 'sections', sectionId), { defaultPassword: defaultPass });
+                                        passwordLabel.innerHTML = `<strong>Password:</strong> ${defaultPass}`;
+                                        showToast('Password reset to: ' + defaultPass, 'success');
+                                    } catch (err) {
+                                        showToast('Reset failed: ' + err.message, 'error');
+                                    }
+                                };
+                            }
                         }
                     }
                 }
             }
 
             // Fetch Schedule for this section
-            fetchSectionSchedule(data.name);
+            fetchSectionSchedule(data.name, userRole, hasEditPermission);
         } else {
             document.getElementById("displaySectionName").textContent = "Section Not Found";
         }
@@ -74,7 +82,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
-async function fetchSectionSchedule(sectionName) {
+async function fetchSectionSchedule(sectionName, userRole = 'student', hasEditPermission = false) {
     const container = document.getElementById("sectionScheduleContainer");
     try {
         // Query schedules where section field matches this section name
@@ -117,11 +125,15 @@ async function fetchSectionSchedule(sectionName) {
             const statusLabel = sg.status === "published" ? "✅ Published" : "📝 Draft";
             const headerDiv = document.createElement("div");
             headerDiv.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding:12px 16px;background:#f1f5f9;border:2.5px solid #000;border-radius:16px;box-shadow:3px 3px 0 #000;";
+            
+            const isEditor = (userRole !== 'student') && (userRole === 'admin' || userRole === 'program head' || hasEditPermission);
+            const editBtn = isEditor ? `<a href="editpage.html?name=${encodeURIComponent(sg.name)}" style="padding:5px 14px;background:#005BAB;color:white;border:2px solid #000;border-radius:8px;font-size:0.75rem;font-weight:800;text-decoration:none;box-shadow:2px 2px 0 #000;">✏️ Edit</a>` : "";
+
             headerDiv.innerHTML = `
                 <div style="font-weight:900;font-size:1.05rem;">${sg.name}</div>
                 <div style="display:flex;align-items:center;gap:10px;">
                     <span style="padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:800;background:${statusColor};color:white;border:1.5px solid #000;">${statusLabel}</span>
-                    <a href="editpage.html?name=${encodeURIComponent(sg.name)}" style="padding:5px 14px;background:#005BAB;color:white;border:2px solid #000;border-radius:8px;font-size:0.75rem;font-weight:800;text-decoration:none;box-shadow:2px 2px 0 #000;">✏️ Edit</a>
+                    ${editBtn}
                 </div>
             `;
             schedBlock.appendChild(headerDiv);

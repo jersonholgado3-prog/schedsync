@@ -34,12 +34,15 @@ const secondaryConfig = {
 
 let allFaculty = [];
 let selectedIds = new Set();
+const userRole = localStorage.getItem('userRole') || 'student';
+const hasEditPermission = localStorage.getItem('editPermission') === 'true';
+const isEditor = userRole === 'admin' || userRole === 'program head' || hasEditPermission;
 
 // --- DRAG & DROP LOGIC ---
 
 function initDragAndDrop() {
   const overlay = document.getElementById('dropZoneOverlay');
-  if (!overlay) return;
+  if (!overlay || !isEditor) return;
 
   ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
     document.addEventListener(eventName, (e) => {
@@ -225,7 +228,7 @@ function initSelectionUI() {
   const multiArchiveBtn = document.getElementById('multiArchiveBtn');
   const cancelSelectionBtn = document.getElementById('cancelSelectionBtn');
 
-  if (!selectionBar) return;
+  if (!selectionBar || !isEditor) return;
 
   if (genEmailsBtn) genEmailsBtn.onclick = async () => {
     const selectedFaculty = allFaculty.filter(f => selectedIds.has(f.id));
@@ -259,7 +262,7 @@ function initSelectionUI() {
         await deleteDoc(doc(db, 'faculty', f.id));
       }
 
-      showToast(`{selectedFaculty.length} faculty archived successfully`, "success");
+      showToast(`${selectedFaculty.length} faculty archived successfully`, "success");
       selectedIds.clear();
       loadTeachers();
     } catch (error) {
@@ -430,7 +433,7 @@ async function loadTeachers() {
       card.dataset.description = `${subjects} ${employmentStatus} ${roleLabel}`;
 
       card.onclick = (e) => {
-        if (selectedIds.size > 0 || e.target.classList.contains('faculty-checkbox')) {
+        if (isEditor && (selectedIds.size > 0 || e.target.classList.contains('faculty-checkbox'))) {
           toggleFacultySelection(d.id, card);
         } else {
           window.location.href = "facultyprofile.html?id=" + d.id;
@@ -503,7 +506,7 @@ function lockImportUI(message) {
     const banner = document.createElement('div');
     banner.id = 'import-lock-banner';
     banner.style.cssText = 'background:#fef2f2;border:2px solid #ef4444;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;font-weight:700;color:#b91c1c;display:flex;align-items:center;gap:8px;';
-    banner.innerHTML = '<span>ðŸš«</span><span>' + msg + '</span>';
+    banner.innerHTML = '<span>🚫</span><span>' + msg + '</span>';
     const toolbar = document.querySelector('.import-toolbar');
     if (toolbar) toolbar.insertAdjacentElement('beforebegin', banner);
   }

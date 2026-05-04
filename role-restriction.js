@@ -99,9 +99,15 @@ function applyRestrictions(role, hasPermission) {
         adminLinks.style.display = (role === 'admin') ? 'block' : 'none';
     }
 
-    // Hide curriculum link from students
+    // Hide curriculum and archives from students
     if (role === "student") {
         document.querySelectorAll("a[href*='curriculumpage']").forEach(el => el.style.display = "none");
+        document.querySelectorAll("a[href*='archives']").forEach(el => el.style.display = "none");
+    }
+
+    // Hide archives from non-admins (teachers/students)
+    if (role !== "admin") {
+        document.querySelectorAll("a[href*='archives']").forEach(el => el.style.display = "none");
     }
 
     // Toggle .admin-only class elements (like in mobile bottom nav)

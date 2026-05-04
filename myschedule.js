@@ -289,17 +289,8 @@ function renderSection(status, schedules, type = null) {
         buttonsHtml = `<button class="action-button request-permission-btn" style="background: #1e293b; font-size: 11px; padding: 4px 12px; font-weight: 800; border-radius: 8px; border: 2px solid black; box-shadow: 2px 2px 0px black; color: white; text-transform: uppercase; cursor: pointer;" onclick="event.stopPropagation(); window.requestEditPermission()">Ask to Edit</button>`;
       }
     } else {
-      // Student without permission (checked at top level essentially, but let's be safe) 🛡️
-      if (hasPermission) {
-        // If a student somehow got permission 🦈
-        const addSectionBtn = `<button class="action-button add-section" onclick="event.stopPropagation(); addSectionToGroup('${safeName}')">+ SECTION</button>`;
-        buttonsHtml = `
-                    ${addSectionBtn}
-                    <button class="action-button edit" style="padding: 4px 16px; font-size: 14px;" onclick="event.stopPropagation(); editGroup('${safeName}')">EDIT ALL</button>
-                `;
-      } else {
-        buttonsHtml = `<button class="action-button request-permission-btn" style="background: #1e293b; font-size: 11px; padding: 4px 12px; font-weight: 800; border-radius: 8px; border: 2px solid black; box-shadow: 2px 2px 0px black; color: white; text-transform: uppercase; cursor: pointer;" onclick="event.stopPropagation(); window.requestEditPermission()">Ask to Edit</button>`;
-      }
+      // Student: Strictly read-only 🛡️
+      buttonsHtml = `<button class="action-button request-permission-btn" style="background: #1e293b; font-size: 11px; padding: 4px 12px; font-weight: 800; border-radius: 8px; border: 2px solid black; box-shadow: 2px 2px 0px black; color: white; text-transform: uppercase; cursor: pointer;" onclick="event.stopPropagation(); window.requestEditPermission()">Ask to Edit</button>`;
     }
 
     folderFn.innerHTML = `
@@ -339,7 +330,7 @@ function renderSection(status, schedules, type = null) {
 
       // Logic for More Menu actions
       const isOwner = s.userId === currentUser.uid;
-      const canEditDelete = (currentUserRole === 'admin' || isOwner || hasPermission);
+      const canEditDelete = (currentUserRole !== 'student' && (currentUserRole === 'admin' || isOwner || hasPermission));
 
       const editOption = canEditDelete ? `<div class="menu-item" onclick="editSchedule('${s.id}')">💾 Edit Section</div>` : `<div class="menu-item" onclick="editSchedule('${s.id}')">👁️ View Section</div>`;
       const deleteOption = canEditDelete ? `<div class="menu-item delete" onclick="removeSchedule('${s.id}')">🗑️ Delete Section</div>` : "";

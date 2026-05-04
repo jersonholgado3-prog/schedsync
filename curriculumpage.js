@@ -21,7 +21,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (userDoc.exists()) {
                 const role = userDoc.data().role || 'student';
                 if (role === 'student') { window.location.href = 'homepage.html'; return; }
-                if (role === 'admin') isAdmin = true;
+                const hasEditPermission = userDoc.data().editPermission === true;
+                if (role === 'admin' || role === 'program head' || hasEditPermission) isAdmin = true;
             }
             loadSubjects();
         } else {

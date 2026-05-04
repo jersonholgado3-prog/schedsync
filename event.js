@@ -24,7 +24,11 @@ let allEvents = [];
 let itemsToShow = 5;
 const eventsContainer = document.getElementById("eventsContainer");
 const loadMoreBtn = document.querySelector(".load-more-btn");
-const isAdmin = () => localStorage.getItem("userRole") === "admin";
+const isEditor = () => {
+  const role = localStorage.getItem("userRole") || "student";
+  const hasEditPermission = localStorage.getItem("editPermission") === "true";
+  return role === "admin" || role === "program head" || hasEditPermission;
+};
 
 // --- LOAD MORE LOGIC ---
 if (loadMoreBtn) {
@@ -141,8 +145,8 @@ function renderEvents(events) {
       </div>
     `;
 
-    // ADMIN ACTIONS
-    if (isAdmin()) {
+    // EDITOR ACTIONS
+    if (isEditor()) {
       const actions = document.createElement("div");
       actions.className = "absolute right-4 top-1/2 -translate-y-1/2 flex gap-2 z-10 sm:opacity-0 group-hover:opacity-100 transition-opacity";
 
@@ -308,7 +312,7 @@ onAuthStateChanged(auth, (user) => {
   if (user) {
     const roleBtn = document.getElementById("openCreateEvent");
     if (roleBtn) {
-      roleBtn.style.display = isAdmin() ? "flex" : "none";
+      roleBtn.style.display = isEditor() ? "flex" : "none";
     }
     listenForEvents();
 

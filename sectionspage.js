@@ -57,6 +57,9 @@ document.addEventListener("DOMContentLoaded", () => {
     
     let currentUser = null;
     let selectedScheduleType = "regular";
+    const userRole = localStorage.getItem('userRole') || 'student';
+    const hasEditPermission = localStorage.getItem('editPermission') === 'true';
+    const isEditor = userRole === 'admin' || userRole === 'program head' || hasEditPermission;
 
     // UI Elements
     const scheduleModal = document.getElementById("scheduleModal");
@@ -446,22 +449,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 toggleGradeSelection(groupData, gradeCheckbox.checked);
             };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
             const gridInner = groupEl.querySelector('.sections-grid-inner');
             groupData.forEach(section => {
                 const card = document.createElement("div");
@@ -520,9 +507,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         if (success) { await deleteDoc(doc(db, 'sections', section.id)); loadSections(); }
                     };
                     card.appendChild(deleteBtn);
-
-
-
                 }
                 gridInner.appendChild(card);
             });
@@ -563,6 +547,13 @@ document.addEventListener("DOMContentLoaded", () => {
             selectedCountEl.textContent = selectedIds.size;
         } else {
             selectionBar.classList.remove('active');
+        }
+
+        // 🛡️ ROLE GUARD: Hide restricted buttons for non-editors ⚓
+        if (!isEditor) {
+            if (genEmailsBtn) genEmailsBtn.style.display = 'none';
+            if (multiDeleteBtn) multiDeleteBtn.style.display = 'none';
+            if (multiSchedBtn) multiSchedBtn.style.display = 'none';
         }
     }
 
@@ -693,35 +684,6 @@ document.addEventListener("DOMContentLoaded", () => {
             if (secondaryApp) await deleteApp(secondaryApp).catch(() => {});
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     multiDeleteBtn.onclick = async () => {
         if (!isAdmin) {
