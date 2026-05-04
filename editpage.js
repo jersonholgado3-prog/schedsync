@@ -183,6 +183,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // --- Keyboard Shortcuts (Ctrl+C, Ctrl+V, Ctrl+S) 🎹🦈 ---
       document.addEventListener('keydown', async (e) => {
+        // 🛡️ ROLE GUARD: Only Editors can use shortcuts ⚓
+        const role = (currentUserRole || localStorage.getItem('userRole') || '').toLowerCase();
+        const hasPermission = localStorage.getItem('editPermission') === 'true';
+        const isEditor = role === 'admin' || role === 'program head' || hasPermission;
+        if (!isEditor) return;
+
         // Only run if not in an input/textarea
         if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
 
@@ -542,6 +548,13 @@ function handleDragLeave(e) {
 
 async function handleDrop(e) {
   e.preventDefault();
+  
+  // 🛡️ ROLE GUARD: Only Editors can drop/move items ⚓
+  const role = (currentUserRole || localStorage.getItem('userRole') || '').toLowerCase();
+  const hasPermission = localStorage.getItem('editPermission') === 'true';
+  const isEditor = role === 'admin' || role === 'program head' || hasPermission;
+  if (!isEditor) return;
+
   const target = e.target.closest('td, #deleteBtn');
   if (!target || !draggedSource) return;
 
@@ -1437,9 +1450,16 @@ function renderTable() {
               <button class="day-action" onclick="window.downloadSchedule('${s.id}')" title="Download This Section" style="background: #22c55e; color: white; border: 3px solid black; padding: 0.4rem 1.2rem; border-radius: 50px; cursor: pointer; box-shadow: 4px 4px 0px black; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
                 <span style="font-size: 1rem;">📄</span> DOWNLOAD
               </button>
-              <button class="day-action delete-target" onclick="window.clearSection('${s.id}')" title="Clear Entire Section" style="background: #ef4444; color: white; border: 3px solid black; padding: 0.4rem 1.2rem; border-radius: 50px; cursor: pointer; box-shadow: 4px 4px 0px black; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
-                <span style="font-size: 1rem;">🗑️</span> CLEAR SECTION
-              </button>
+              ${(() => {
+                const role = (currentUserRole || localStorage.getItem('userRole') || '').toLowerCase();
+                const hasPermission = localStorage.getItem('editPermission') === 'true';
+                const isEditor = role === 'admin' || role === 'program head' || hasPermission;
+                return isEditor ? `
+                <button class="day-action delete-target" onclick="window.clearSection('${s.id}')" title="Clear Entire Section" style="background: #ef4444; color: white; border: 3px solid black; padding: 0.4rem 1.2rem; border-radius: 50px; cursor: pointer; box-shadow: 4px 4px 0px black; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
+                  <span style="font-size: 1rem;">🗑️</span> CLEAR SECTION
+                </button>
+                ` : '';
+              })()}
             </div>
           </div>
         </td>
@@ -1457,9 +1477,16 @@ function renderTable() {
       toolbarHtml += `
         <td style="border-bottom: 1px solid #000; border-right: 1px solid #000; text-align: center; vertical-align: middle; padding: 0.4rem;">
           <div class="day-actions" style="display: flex; justify-content: center; gap: 1rem;">
-            <span class="day-action" onclick="window.copyDayInSection('${s.id}', '${d}')" title="Copy ${d} in ${s.section}" style="cursor: pointer; font-size: 1.4rem; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2) rotate(5deg)'" onmouseout="this.style.transform='scale(1)'">📋</span>
-            <span class="day-action paste ${isPasteReady ? 'ready' : ''}" onclick="window.pasteDayToSection('${s.id}', '${d}')" title="Paste to ${d} in ${s.section}" style="cursor: pointer; font-size: 1.4rem; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2) rotate(-5deg)'" onmouseout="this.style.transform='scale(1)'">📥</span>
-            <span class="day-action delete-target" onclick="window.clearDayInSection('${s.id}', '${d}')" title="Clear ${d} in ${s.section}" style="cursor: pointer; font-size: 1.4rem; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2) rotate(5deg)'" onmouseout="this.style.transform='scale(1)'">🗑️</span>
+            ${(() => {
+              const role = (currentUserRole || localStorage.getItem('userRole') || '').toLowerCase();
+              const hasPermission = localStorage.getItem('editPermission') === 'true';
+              const isEditor = role === 'admin' || role === 'program head' || hasPermission;
+              return isEditor ? `
+              <span class="day-action" onclick="window.copyDayInSection('${s.id}', '${d}')" title="Copy ${d} in ${s.section}" style="cursor: pointer; font-size: 1.4rem; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2) rotate(5deg)'" onmouseout="this.style.transform='scale(1)'">📋</span>
+              <span class="day-action paste ${isPasteReady ? 'ready' : ''}" onclick="window.pasteDayToSection('${s.id}', '${d}')" title="Paste to ${d} in ${s.section}" style="cursor: pointer; font-size: 1.4rem; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2) rotate(-5deg)'" onmouseout="this.style.transform='scale(1)'">📥</span>
+              <span class="day-action delete-target" onclick="window.clearDayInSection('${s.id}', '${d}')" title="Clear ${d} in ${s.section}" style="cursor: pointer; font-size: 1.4rem; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2) rotate(5deg)'" onmouseout="this.style.transform='scale(1)'">🗑️</span>
+              ` : '<span style="font-size: 0.7rem; font-weight: 800; opacity: 0.5;">VIEW ONLY</span>';
+            })()}
           </div>
         </td>
       `;
@@ -1596,18 +1623,20 @@ function renderTable() {
         }
 
         td.onclick = async () => {
-          // 1. Resilient Role Detection 🛡️
           const rawRole = currentUserRole || localStorage.getItem('userRole');
           const role = (rawRole || "").toLowerCase();
           const hasEditPermission = localStorage.getItem('editPermission') === 'true';
+          const isEditor = role === 'admin' || role === 'program head' || hasEditPermission;
 
-          // If teacher without permission, only show comment panel 🛡️
-          if (role === 'teacher' && !hasEditPermission) {
-            window.openCommentPanel(s.id, day, clickBlock, 'force');
+          // 🛡️ VIEW-ONLY USERS: Occupied cells open comment panel, empty cells do nothing ⚓
+          if (!isEditor) {
+            if (td.classList.contains('occupied')) {
+              window.openCommentPanel(s.id, day, clickBlock, 'force');
+            }
             return;
           }
 
-          // For everyone else
+          // For editors only
           openPanel(s.id, day, clickBlock);
         };
 
@@ -1675,10 +1704,13 @@ function renderTable() {
 
 // ───────── PANEL ───────── */
 function openPanel(id, day, block) {
-  // Guard! Permissions Check
+  // 🛡️ Guard! Double-layer Permissions Check ⚓
   const hasPermission = localStorage.getItem('editPermission') === 'true';
-  if (currentUserRole === 'teacher' && !hasPermission) {
-    showToast("You don't have edit permission. Click to leave a comment instead!", "info");
+  const role = (currentUserRole || localStorage.getItem('userRole') || '').toLowerCase();
+  const isEditor = role === 'admin' || role === 'program head' || hasPermission;
+
+  if (!isEditor) {
+    showToast("View-only mode: You don't have permission to edit.", "info");
     return;
   }
 
