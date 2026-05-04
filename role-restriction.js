@@ -99,6 +99,11 @@ function applyRestrictions(role, hasPermission) {
         adminLinks.style.display = (role === 'admin') ? 'block' : 'none';
     }
 
+    // Hide curriculum link from students
+    if (role === "student") {
+        document.querySelectorAll("a[href*='curriculumpage']").forEach(el => el.style.display = "none");
+    }
+
     // Toggle .admin-only class elements (like in mobile bottom nav)
     document.querySelectorAll('.admin-only').forEach(el => {
         if (role === 'admin') {

@@ -18,8 +18,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             const userDoc = await getDoc(doc(db, "users", user.uid));
-            if (userDoc.exists() && userDoc.data().role === 'admin') {
-                isAdmin = true;
+            if (userDoc.exists()) {
+                const role = userDoc.data().role || 'student';
+                if (role === 'student') { window.location.href = 'homepage.html'; return; }
+                if (role === 'admin') isAdmin = true;
             }
             loadSubjects();
         } else {

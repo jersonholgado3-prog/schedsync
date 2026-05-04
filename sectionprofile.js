@@ -1,5 +1,5 @@
 import { auth, db } from "./js/config/firebase-config.js";
-import { doc, getDoc, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { initUserProfile } from "./userprofile.js";
 import { showToast, showConfirm } from "./js/utils/ui-utils.js";
 
@@ -22,14 +22,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             document.getElementById("displaySectionName").textContent = data.name;
             document.getElementById("strandLabel").innerHTML = `<strong>Strand/Program:</strong> ${data.strand}`;
             document.getElementById("gradeLabel").innerHTML = `<strong>Grade Level:</strong> ${data.gradeLevel}`;
-            
+
             // Display Credentials for Admin Only
             const credentialSection = document.getElementById("credentialSection");
             const emailLabel = document.getElementById("emailLabel");
             const passwordLabel = document.getElementById("passwordLabel");
 
             if (data.sectionEmail && credentialSection) {
-                // Check role from users collection
                 const user = auth.currentUser;
                 if (user) {
                     const userDoc = await getDoc(doc(db, "users", user.uid));
@@ -78,51 +77,112 @@ document.addEventListener("DOMContentLoaded", async () => {
 async function fetchSectionSchedule(sectionName) {
     const container = document.getElementById("sectionScheduleContainer");
     try {
-        // Query schedules where section matches
+        // Query schedules where section field matches this section name
+        // Each schedule doc has: scheduleName, section, status, classes[]
+        // classes[] contains: {day, timeBlock, subject, teacher, room}
         const q = query(collection(db, "schedules"), where("section", "==", sectionName));
         const snap = await getDocs(q);
 
         container.innerHTML = "";
-        
+
         if (snap.empty) {
-            container.innerHTML = '<div class="text-center py-10 opacity-50">No classes scheduled for this section.</div>';
+            container.innerHTML = '<div style="text-align:center;padding:2.5rem;opacity:0.5;font-size:1rem;">📭 No schedule found for this section yet.</div>';
             return;
         }
 
-        const schedules = snap.docs.map(d => d.data());
-        
-        // Group by day
-        const days = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
-        
-        days.forEach(day => {
-            const dayClasses = schedules.filter(s => s.day && s.day.toUpperCase() === day);
-            if (dayClasses.length > 0) {
+        const scheduleDocs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        // Group by scheduleName
+        const scheduleGroups = {};
+        scheduleDocs.forEach(sdoc => {
+            const name = sdoc.scheduleName || "Untitled Schedule";
+            if (!scheduleGroups[name]) {
+                scheduleGroups[name] = { name, status: sdoc.status || "draft", classes: [] };
+            }
+            if (Array.isArray(sdoc.classes)) {
+                sdoc.classes.forEach(cls => {
+                    scheduleGroups[name].classes.push(cls);
+                });
+            }
+        });
+
+        const dayOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+        Object.values(scheduleGroups).forEach(sg => {
+            const schedBlock = document.createElement("div");
+            schedBlock.style.cssText = "margin-bottom:2.5rem;";
+
+            // Schedule header
+            const statusColor = sg.status === "published" ? "#16a34a" : "#f59e0b";
+            const statusLabel = sg.status === "published" ? "✅ Published" : "📝 Draft";
+            const headerDiv = document.createElement("div");
+            headerDiv.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding:12px 16px;background:#f1f5f9;border:2.5px solid #000;border-radius:16px;box-shadow:3px 3px 0 #000;";
+            headerDiv.innerHTML = `
+                <div style="font-weight:900;font-size:1.05rem;">${sg.name}</div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:800;background:${statusColor};color:white;border:1.5px solid #000;">${statusLabel}</span>
+                    <a href="editpage.html?name=${encodeURIComponent(sg.name)}" style="padding:5px 14px;background:#005BAB;color:white;border:2px solid #000;border-radius:8px;font-size:0.75rem;font-weight:800;text-decoration:none;box-shadow:2px 2px 0 #000;">✏️ Edit</a>
+                </div>
+            `;
+            schedBlock.appendChild(headerDiv);
+
+            // Filter out VACANT classes
+            const nonVacant = sg.classes.filter(c => c.subject && c.subject !== "VACANT");
+
+            if (nonVacant.length === 0) {
+                const emptyMsg = document.createElement("div");
+                emptyMsg.style.cssText = "text-align:center;padding:1.5rem;opacity:0.5;font-size:0.9rem;border:2px dashed #cbd5e1;border-radius:12px;";
+                emptyMsg.textContent = "This schedule has no assigned classes yet.";
+                schedBlock.appendChild(emptyMsg);
+                container.appendChild(schedBlock);
+                return;
+            }
+
+            // Group by day
+            const byDay = {};
+            nonVacant.forEach(cls => {
+                const day = cls.day || "Unknown";
+                if (!byDay[day]) byDay[day] = [];
+                byDay[day].push(cls);
+            });
+
+            const sortedDays = Object.keys(byDay).sort(
+                (a, b) => (dayOrder.indexOf(a) === -1 ? 99 : dayOrder.indexOf(a)) -
+                           (dayOrder.indexOf(b) === -1 ? 99 : dayOrder.indexOf(b))
+            );
+
+            sortedDays.forEach(day => {
                 const daySection = document.createElement("div");
-                daySection.className = "mb-6";
-                daySection.innerHTML = `<h4 class="text-lg font-bold mb-3 border-b-2 border-black pb-1">${day}</h4>`;
-                
+                daySection.style.cssText = "margin-bottom:1.25rem;";
+                daySection.innerHTML = `<div style="font-weight:900;font-size:0.85rem;color:#005BAB;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.6rem;padding-bottom:4px;border-bottom:2.5px solid #000;">${day}</div>`;
+
                 const grid = document.createElement("div");
-                grid.className = "grid grid-cols-1 md:grid-cols-2 gap-4";
-                
-                dayClasses.sort((a,b) => a.startTime.localeCompare(b.startTime)).forEach(cls => {
+                grid.style.cssText = "display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;";
+
+                // Sort by timeBlock
+                byDay[day].sort((a, b) => (a.timeBlock || "").localeCompare(b.timeBlock || ""));
+
+                byDay[day].forEach(cls => {
                     const card = document.createElement("div");
-                    card.className = "p-4 bg-gray-50 dark:bg-slate-700 border-2 border-black rounded-xl shadow-[4px_4px_0px_black]";
+                    card.style.cssText = "padding:10px 13px;background:white;border:2px solid #000;border-radius:12px;box-shadow:3px 3px 0 #000;";
                     card.innerHTML = `
-                        <div class="font-black text-blue-600 dark:text-blue-400">${cls.subject}</div>
-                        <div class="text-sm mt-1">🕒 ${cls.startTime} - ${cls.endTime}</div>
-                        <div class="text-sm">📍 Room: ${cls.room}</div>
-                        <div class="text-sm">👨‍🏫 Instructor: ${cls.instructor || "TBA"}</div>
+                        <div style="font-weight:800;color:#005BAB;font-size:0.85rem;margin-bottom:5px;">${cls.subject}</div>
+                        <div style="font-size:0.75rem;color:#64748b;">🕒 ${cls.timeBlock || "N/A"}</div>
+                        ${cls.teacher && cls.teacher !== "NA" ? `<div style="font-size:0.75rem;color:#64748b;margin-top:3px;">👨‍🏫 ${cls.teacher}</div>` : ""}
+                        ${cls.room ? `<div style="font-size:0.75rem;color:#64748b;margin-top:3px;">📍 ${(cls.room || "").replace(/\s*\|?\s*\d{1,3}%\s*(?:OCCUPIED)?$/i, "").trim()}</div>` : ""}
                     `;
                     grid.appendChild(card);
                 });
-                
+
                 daySection.appendChild(grid);
-                container.appendChild(daySection);
-            }
+                schedBlock.appendChild(daySection);
+            });
+
+            container.appendChild(schedBlock);
         });
 
     } catch (error) {
         console.error("Error fetching section schedule:", error);
-        container.innerHTML = '<div class="text-red-500">Error loading schedule.</div>';
+        container.innerHTML = '<div style="color:#ef4444;padding:1rem;font-weight:700;">Error loading schedule. Please try again.</div>';
     }
 }

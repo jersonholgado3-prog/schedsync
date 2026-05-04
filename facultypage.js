@@ -352,6 +352,9 @@ function toggleFacultySelection(id, card) {
   updateSelectionBar();
   const checkbox = card.querySelector('.faculty-checkbox');
   if (checkbox) checkbox.checked = selectedIds.has(id);
+  // Update photo overlay visibility
+  const overlay = card.querySelector('.faculty-select-overlay');
+  if (overlay) overlay.style.display = selectedIds.has(id) ? 'flex' : 'none';
 }
 
 // --- EXISTING FUNCTIONS ---
@@ -438,9 +441,10 @@ async function loadTeachers() {
         <div class="checkbox-wrapper">
           <input type="checkbox" class="faculty-checkbox" ${isSelected ? 'checked' : ''}>
         </div>
-        <div class="faculty-photo">
+        <div class="faculty-photo" style="position:relative;">
           <img src="${d.photoURL || 'images/default_shark.jpg'}"
             onerror="this.src='images/default_shark.jpg'">
+          <div class="faculty-select-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:50%;background:rgba(0,91,171,0.75);display:${isSelected ? 'flex' : 'none'};align-items:center;justify-content:center;font-size:2rem;color:white;font-weight:900;pointer-events:none;">✓</div>
         </div>
         <div class="faculty-name">${teacherName}</div>
         <div class="faculty-details">

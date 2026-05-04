@@ -451,6 +451,7 @@ function initDraftSchedules(uid, role, hasPerm) {
           <div class="draft-title">${g.name}</div>
           <div class="draft-msg">Sections: ${sectionsStr}</div>
           <div class="draft-meta">Updated: ${g.updated}</div>
+          <button class="draft-resume-btn" onclick="event.stopPropagation(); window.location.href='editpage.html?name=${encodeURIComponent(g.name)}'" style="margin-top:8px;padding:5px 12px;background:#005BAB;color:white;border:2px solid #000;border-radius:8px;font-size:0.75rem;font-weight:800;cursor:pointer;box-shadow:2px 2px 0 #000;display:inline-flex;align-items:center;gap:5px;">✏️ Resume Edit</button>
         </div>
       `;
       list.appendChild(item);
