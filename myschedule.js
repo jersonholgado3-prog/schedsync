@@ -103,6 +103,17 @@ async function renderAll(shouldFetch = true) {
       // Update cache in case role-restriction needs it
       localStorage.setItem('userRole', currentUserRole);
       localStorage.setItem('editPermission', String(hasPermission));
+
+      // 🛡️ Students should not access myschedule — redirect to their section
+      if (currentUserRole === 'student') {
+        const section = userData.section;
+        if (section) {
+          window.location.href = `sectionspage.html`;
+        } else {
+          window.location.href = `homepage.html`;
+        }
+        return;
+      }
     }
 
     if (shouldFetch) {

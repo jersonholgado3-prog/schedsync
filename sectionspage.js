@@ -457,9 +457,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     <div class="checkbox-wrapper">
                         <input type="checkbox" class="section-checkbox" ${selectedIds.has(section.id) ? 'checked' : ''}>
                     </div>
+                    <img class="section-card-photo" src="images/default_shark.jpg" alt="photo" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid #000;margin:0 auto 8px;display:block;">
                     <div class="section-name">${section.name}</div>
                     <div class="section-strand">${section.strand}</div>
                 `;
+                if (section.authUid) {
+                    getDoc(doc(db, "users", section.authUid)).then(usnap => {
+                        if (usnap.exists() && usnap.data().photoURL) {
+                            card.querySelector('.section-card-photo').src = usnap.data().photoURL;
+                        }
+                    });
+                }
                 
                 // Clicking the checkbox
                 const checkbox = card.querySelector('.section-checkbox');

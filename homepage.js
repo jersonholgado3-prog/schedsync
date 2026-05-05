@@ -99,10 +99,12 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("SchedSync: No user authenticated.");
       if (greetingEl) greetingEl.textContent = "Good Day!";
       // Clear loading states if no user
-      ['announcements-list', 'drafts-list', 'events-list'].forEach(id => {
+      ['announcements-list', 'events-list'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.innerHTML = '<div class="widget-empty">Please log in to view data.</div>';
       });
+      const draftWidget = document.getElementById('draftWidget');
+      if (draftWidget) draftWidget.style.display = 'none';
     }
   });
 });
@@ -289,7 +291,16 @@ function initAnnouncements(role) {
       return;
     }
 
-    if (window.initHeroCarousel) window.initHeroCarousel(items);
+    if (window.initHeroCarousel) {
+      const seen = new Set();
+      const uniqueItems = items.filter(d => {
+        const key = d.title + d.message;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      window.initHeroCarousel(uniqueItems);
+    }
 
     const isAdmin = role === 'admin';
 
@@ -367,13 +378,10 @@ function initDraftSchedules(uid, role, hasPerm) {
   const list = document.getElementById('drafts-list');
   if (!list) return;
 
-  // 🛡️ ROLE GUARD: Students should NOT see drafts (they can't edit anyway) ⚓
+  // 🛡️ ROLE GUARD: Students should NOT see drafts
   if (role === 'student') {
-    list.innerHTML = `
-      <div class="widget-empty">
-        <div style="font-size: 40px; margin-bottom: 10px;">📅</div>
-        Log in as Faculty to create drafts.
-      </div>`;
+    const widget = document.getElementById('draftWidget');
+    if (widget) widget.style.display = 'none';
     return;
   }
 

@@ -26,6 +26,10 @@ export function initUniversalSearch(db, options = {}) {
   if (input.dataset.searchInitialized) return;
   input.dataset.searchInitialized = "true";
 
+  // Clear any browser-autofilled value on load
+  input.value = '';
+  setTimeout(() => { input.value = ''; }, 100);
+
   // Create Results Dropdown
   const resultsDropdown = document.createElement("div");
   resultsDropdown.className = "search-results-dropdown hidden";
@@ -78,7 +82,7 @@ export function initUniversalSearch(db, options = {}) {
       // 3. Fetch Schedules (Published Only 🛡️)
       try {
         const schedSnap = await getDocs(query(
-          collection(db, "schedules"), 
+          collection(db, "schedules"),
           where("status", "==", "published"),
           limit(50)
         ));

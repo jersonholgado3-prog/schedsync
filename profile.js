@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initUniversalSearch(db);
 
     // ✅ PROFILE EDIT BUTTON LOGIC
-    const editBtn = document.getElementById('floatBtn');
+    const editBtn = document.getElementById('profileEditBtn');
     if (editBtn) {
         editBtn.addEventListener('click', async () => {
             const currentName = document.getElementById("userNameLarge").textContent;
@@ -129,9 +129,25 @@ function renderProfile(data) {
     const extraLabel = document.getElementById("extraLabel");
     const extraValue = document.getElementById("extraValue");
 
-    if (role === 'teacher') {
+    if (role === 'teacher' || role === 'program head') {
+        const subjects = data.subjects || [];
         roleLabel.innerHTML = "<strong>Subjects:</strong>";
-        roleValue.textContent = (data.subjects || []).join(", ") || "None selected";
+        const preview = subjects.slice(0, 2).join(", ") || "None selected";
+        const hasMore = subjects.length > 2;
+        roleValue.innerHTML = `
+            <span class="subj-preview">${preview}${hasMore ? ` <span style="color:#005BAB;cursor:pointer;font-weight:700;" id="subjToggle">+${subjects.length - 2} more -</span>` : ''}</span>
+            ${hasMore ? `<div id="subjFull" style="display:none;margin-top:4px;">${subjects.join(", ")} <span style="color:#005BAB;cursor:pointer;font-weight:700;" id="subjCollapse">▴ less</span></div>` : ''}
+        `;
+        if (hasMore) {
+            document.getElementById('subjToggle')?.addEventListener('click', () => {
+                document.getElementById('subjFull').style.display = 'block';
+                document.querySelector('.subj-preview').style.display = 'none';
+            });
+            document.getElementById('subjCollapse')?.addEventListener('click', () => {
+                document.getElementById('subjFull').style.display = 'none';
+                document.querySelector('.subj-preview').style.display = '';
+            });
+        }
         extraLabel.innerHTML = "<strong>Status:</strong>";
         extraValue.textContent = data.employmentStatus || "N/A";
 
@@ -247,27 +263,25 @@ function renderTable(classes) {
     theadTr.innerHTML = `<th>TIME</th>`;
 
     DAYS.forEach(d => {
-        colgroup.insertAdjacentHTML("beforeend", `<col class="day" style="width: calc((100% - 150px)/${DAYS.length})">`);
+        colgroup.insertAdjacentHTML("beforeend", `<col class="day" style="width: calc((100% - 110px)/${DAYS.length})">`);
         theadTr.insertAdjacentHTML("beforeend", `<th>${d.slice(0, 3).toUpperCase()}</th>`);
     });
 
     // 3. 🔑 DYNAMIC MATRIX SYSTEM
     const timePoints = new Set();
-    const START_MIN = 450; // 7:30 AM
-    const END_MIN = 1200;  // 8:00 PM
-    const INTERVAL = 90;
-
-    for (let m = START_MIN; m <= END_MIN; m += INTERVAL) {
-        timePoints.add(m);
-    }
 
     classes.forEach(c => {
-        if (c.timeBlock) {
+        if (c.timeBlock && c.subject !== "MARKED_VACANT" && c.subject !== "VACANT") {
             const block = parseBlock(c.timeBlock);
             timePoints.add(block.start);
             timePoints.add(block.end);
         }
     });
+
+    if (timePoints.size === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;">No schedule available</td></tr>';
+        return;
+    }
 
     const sortedPoints = Array.from(timePoints).sort((a, b) => a - b);
     const matrixIntervals = [];
@@ -275,7 +289,6 @@ function renderTable(classes) {
     for (let i = 0; i < sortedPoints.length - 1; i++) {
         const start = sortedPoints[i];
         const end = sortedPoints[i + 1];
-        if (start >= END_MIN) break;
         matrixIntervals.push({
             start: start,
             end: end,
@@ -314,8 +327,8 @@ function renderTable(classes) {
                 if (spanCount > 1) td.rowSpan = spanCount;
 
                 if (c.subject === "MARKED_VACANT" || c.subject === "VACANT") {
-                    td.textContent = "VACANT";
-                    td.classList.add("vacant-marked");
+                    td.innerHTML = "&nbsp;";
+                    td.classList.add("vacant-empty");
                 } else {
                     // Context-aware display
                     const role = currentUserData?.role || "student";
@@ -335,7 +348,7 @@ function renderTable(classes) {
                     }
                 }
             } else {
-                td.textContent = "";
+                td.innerHTML = "&nbsp;";
                 td.classList.add("vacant-empty");
             }
             tr.appendChild(td);
@@ -343,6 +356,53 @@ function renderTable(classes) {
 
         tbody.appendChild(tr);
     });
+
+    // Mobile card view
+    const role = currentUserData?.role || "student";
+    renderCardView(classes, document.querySelector('.table-scroll'), (c) => `
+        <div style="font-weight:800;color:#005BAB;font-size:0.85rem;margin-bottom:5px;">${c.subject}</div>
+        <div style="font-size:0.75rem;color:#64748b;">🕒 ${c.timeBlock||"N/A"}</div>
+        ${role==='teacher'
+            ? `<div style="font-size:0.75rem;color:#64748b;margin-top:3px;">📚 ${c.section||""}</div>`
+            : `<div style="font-size:0.75rem;color:#64748b;margin-top:3px;">👨‍🏫 ${c.teacher||""}</div>`}
+        ${c.room?`<div style="font-size:0.75rem;color:#64748b;margin-top:3px;">📍 ${c.room}</div>`:""}
+    `);
+}
+
+function renderCardView(classes, container, cardContentFn) {
+    if (!container) return;
+    container.querySelector('.schedule-card-wrap')?.remove();
+    const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    const nonVacant = classes.filter(c => c.subject && c.subject !== "VACANT" && c.subject !== "MARKED_VACANT");
+    const byDay = {};
+    nonVacant.forEach(c => { const d=c.day||"Unknown"; if(!byDay[d]) byDay[d]=[]; byDay[d].push(c); });
+    const cardWrap = document.createElement("div");
+    cardWrap.className = "schedule-card-wrap";
+    Object.keys(byDay).sort((a,b)=>(DAYS.indexOf(a)===-1?99:DAYS.indexOf(a))-(DAYS.indexOf(b)===-1?99:DAYS.indexOf(b))).forEach(day => {
+        const sec = document.createElement("div");
+        sec.style.cssText = "margin-bottom:0.75rem;";
+        const header = document.createElement("div");
+        header.style.cssText = "font-weight:900;font-size:0.85rem;color:#005BAB;text-transform:uppercase;letter-spacing:0.08em;padding:8px 12px;border:2px solid #000;border-radius:10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;";
+        header.innerHTML = `<span>${day}</span><span>+</span>`;
+        const grid = document.createElement("div");
+        grid.style.cssText = "display:none;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:8px;";
+        byDay[day].sort((a,b)=>(a.timeBlock||"").localeCompare(b.timeBlock||"")).forEach(c => {
+            const card = document.createElement("div");
+            card.className = "class-card";
+            card.style.cssText = "padding:10px 13px;background:white;border:2px solid #000;border-radius:12px;box-shadow:3px 3px 0 #000;";
+            card.innerHTML = cardContentFn(c);
+            grid.appendChild(card);
+        });
+        header.addEventListener("click", () => {
+            const open = grid.style.display !== "none";
+            grid.style.display = open ? "none" : "grid";
+            header.querySelector("span:last-child").textContent = open ? "+" : "-";
+        });
+        sec.appendChild(header);
+        sec.appendChild(grid);
+        cardWrap.appendChild(sec);
+    });
+    container.appendChild(cardWrap);
 }
 
 

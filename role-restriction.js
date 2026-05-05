@@ -45,6 +45,20 @@ if ((cachedRole === 'student' && !cachedPermission) || (cachedRole === 'teacher'
     observer.observe(document.body, { childList: true, subtree: true });
 }
 
+// 🛡️ Student-specific early hide for curriculum, myschedule, and draft widget
+if (cachedRole === 'student') {
+    const studentStyle = document.createElement('style');
+    studentStyle.id = 'student-nav-hide';
+    studentStyle.textContent = `
+        a[href*="curriculumpage"],
+        a[href*="myschedule"],
+        #draftWidget {
+            display: none !important;
+        }
+    `;
+    document.head.appendChild(studentStyle);
+}
+
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         try {
@@ -82,8 +96,8 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function applyRestrictions(role, hasPermission) {
-    // Program Heads should have same permissions as teachers/admins
-    const isEditor = role === 'admin' || role === 'program head' || hasPermission;
+    // Only admin or users with explicit editPermission can edit
+    const isEditor = role === 'admin' || hasPermission;
     
     if (!isEditor) {
         injectHiderStyle();
@@ -99,10 +113,17 @@ function applyRestrictions(role, hasPermission) {
         adminLinks.style.display = (role === 'admin') ? 'block' : 'none';
     }
 
-    // Hide curriculum and archives from students
+    // Hide My Schedule, Curriculum, Archives from students (sidebar + mobile nav)
     if (role === "student") {
+        document.querySelectorAll("a[href*='myschedule']").forEach(el => el.style.display = "none");
         document.querySelectorAll("a[href*='curriculumpage']").forEach(el => el.style.display = "none");
         document.querySelectorAll("a[href*='archives']").forEach(el => el.style.display = "none");
+    }
+
+    // Hide schedule editing links from teachers without edit permission
+    if (!isEditor) {
+        document.querySelectorAll("a[href*='newschedule']").forEach(el => el.style.display = "none");
+        document.querySelectorAll("a[href*='myschedule']").forEach(el => el.style.display = "none");
     }
 
     // Hide archives from non-admins (teachers/students)
@@ -123,8 +144,8 @@ function applyRestrictions(role, hasPermission) {
 
 function sweep() {
     const role = localStorage.getItem('userRole') || 'student';
-    // Program Heads should NOT be restricted
-    if (role === 'admin' || role === 'program head') return;
+    const perm = localStorage.getItem('editPermission') === 'true';
+    if (role === 'admin' || perm) return;
 
     // 1. Hide Editor elements
     document.querySelectorAll('div[onclick*="sectionspage.html"], div[onclick*="editpage.html"]').forEach(el => {
@@ -153,6 +174,7 @@ function restoreVisibility() {
     observer.disconnect();
     const style = document.getElementById('role-flicker-prevention');
     if (style) style.remove();
+    document.getElementById('student-nav-hide')?.remove();
     // Show all elements previously hidden 🔓
     document.querySelectorAll('[data-role-hidden="true"]').forEach(el => {
         el.style.display = '';

@@ -1280,8 +1280,11 @@ export const initResumeEditLink = () => {
     const activeSession = localStorage.getItem('activeEditSession');
     const sidebarMenu = document.querySelector('.sidebar-menu');
     const isEditPage = window.location.pathname.includes('editpage.html');
+    const role = localStorage.getItem('userRole');
+    const editPermission = localStorage.getItem('editPermission') === 'true';
+    const canEdit = role === 'admin' || editPermission;
 
-    if (activeSession && sidebarMenu && !isEditPage) {
+    if (activeSession && sidebarMenu && !isEditPage && canEdit) {
         // Remove existing one if any
         document.querySelector('.resume-edit-container')?.remove();
 

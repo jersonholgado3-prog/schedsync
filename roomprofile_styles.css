@@ -29,6 +29,8 @@
             min-width: 0;
             height: 100vh;
             overflow-y: auto;
+            margin-left: 70px;
+            width: calc(100% - 70px);
         }
 
         .divider {
@@ -57,6 +59,11 @@
         }
 
         @media (max-width: 768px), (max-width: 950px) and (orientation: landscape) {
+            .main-content-wrapper {
+                margin-left: 0;
+                width: 100%;
+            }
+
             .main-layout {
                 flex-direction: column;
             }
@@ -194,7 +201,7 @@
         .content-box {
             border: 3px solid black;
             border-radius: 30px;
-            overflow: hidden;
+            overflow: visible;
             background: #fff;
             width: 100%;
             padding: 2rem;
@@ -276,15 +283,24 @@
         /* TABLE STYLES */
         .table-scroll {
             border: 2px solid black;
-            height: 500px;
             overflow: auto;
             border-radius: 20px;
         }
 
+        .schedule-card-wrap { display: none; }
+
+        @media (max-width: 768px) {
+            .table-scroll table, .table-scroll thead, .table-scroll tbody { display: none; }
+            .schedule-card-wrap { display: block; padding: 1rem; }
+            .dark .class-card { background:#1e293b !important; border-color:#334155 !important; box-shadow:3px 3px 0 #334155 !important; color:#f1f5f9 !important; }
+            .dark .class-card div { color:#cbd5e1 !important; }
+            .dark .class-card div:first-child { color:#60a5fa !important; }
+        }
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 600px; /* Force minimum width for readability 🛡️ */
+            table-layout: fixed;
+            min-width: 600px;
         }
 
         @media (max-width: 768px) {
@@ -301,6 +317,8 @@
             font-size: 14px;
             text-align: center;
             vertical-align: middle;
+            word-break: break-word;
+            overflow-wrap: break-word;
         }
 
         th {
@@ -755,3 +773,13 @@
             }
         }
 
+
+/* ── Responsive schedule: table on desktop, cards on mobile ── */
+.schedule-card-wrap { display: none; }
+@media (max-width: 768px) {
+    .table-scroll { display: none !important; }
+    .schedule-card-wrap { display: block !important; padding: 1rem; }
+    .dark .class-card { background:#1e293b !important; border-color:#334155 !important; box-shadow:3px 3px 0 #334155 !important; }
+    .dark .class-card div { color:#cbd5e1 !important; }
+    .dark .class-card div:first-child { color:#60a5fa !important; }
+}

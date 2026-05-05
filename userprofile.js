@@ -63,7 +63,8 @@ export function initUserProfile(profileSelector = "#userProfile") {
       
       if (userNameEl) userNameEl.textContent = displayName;
       if (userAvatarEl) {
-        userAvatarEl.innerHTML = `<img src="${photoURL}" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.src='images/default_shark.jpg'">`;
+        const validUrl = photoURL && (photoURL.startsWith('http') || photoURL.startsWith('data:')) ? photoURL : 'images/default_shark.jpg';
+        userAvatarEl.innerHTML = `<img src="${validUrl}" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.src='images/default_shark.jpg'">`;
       }
     }
   });

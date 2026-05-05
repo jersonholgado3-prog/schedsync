@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="toast.css">
   <link rel="stylesheet" href="confirm-modal.css">
   <script src="toast.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
+  <script type="module" src="role-restriction.js"></script>
   <script type="module" src="profile.js"></script>
   <link rel="stylesheet" href="header-styles.css" />
   <script>
@@ -94,7 +96,7 @@
           </div>
           <div class="search-wrapper">
             <img src="images/SEARCH.png" class="search-icon" alt="Search">
-            <input type="text" class="search-button" placeholder="Search" aria-label="Search">
+            <input type="search" class="search-button" placeholder="Search" aria-label="Search" autocomplete="new-password">
           </div>
         </div>
 
@@ -168,8 +170,9 @@
         </main>
       </div>
 
-      <div id="floatBtn" class="edit-button">
+      <div id="profileEditBtn" class="edit-button" style="display:none;">
         <img src="images/EDIT.png" alt="Edit">
+      </div>
 
       <!-- CHANGE PASSWORD MODAL -->
       <div id="changePassModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;z-index:2000;">
@@ -185,8 +188,6 @@
         </div>
       </div>
       <button id="changePassBtn" title="Change Password" style="position:fixed;bottom:6rem;right:1.5rem;width:56px;height:56px;border-radius:50%;border:3px solid #000;background:#fff;box-shadow:4px 4px 0 #000;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:1.4rem;z-index:40;">🔑</button>
-
-      </div>
     </div>
     <script type="module" src="ui-effects.js"></script>
   <!-- ?? MOBILE BOTTOM NAVIGATION BAR ? -->

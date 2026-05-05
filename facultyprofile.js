@@ -46,7 +46,8 @@ function populateProfile(data) {
     currentTeacherName = data.username || data.name || "Unnamed Teacher";
     console.log("currentTeacherName:", currentTeacherName); // Debug log
     
-    const subjects = (data.subjects || []).join(", ");
+    const subjectList = data.subjects || [];
+    const subjects = subjectList.join(", ");
     const status = data.employmentStatus || data.status || "N/A";
     const program = data.program || '';
 
@@ -64,7 +65,24 @@ function populateProfile(data) {
     
     console.log("subjectsEl:", subjectsEl, "statusEl:", statusEl);
     
-    if (subjectsEl) subjectsEl.textContent = subjects || "None selected";
+    if (subjectsEl) {
+        const preview = subjectList.slice(0, 2).join(", ") || "None selected";
+        const hasMore = subjectList.length > 2;
+        subjectsEl.innerHTML = `
+            <span class="subj-preview">${preview}${hasMore ? ` <span style="color:#005BAB;cursor:pointer;font-weight:700;" id="subjToggle">+${subjectList.length - 2} more -</span>` : ''}</span>
+            ${hasMore ? `<div id="subjFull" style="display:none;margin-top:4px;">${subjects} <span style="color:#005BAB;cursor:pointer;font-weight:700;" id="subjCollapse">▴ less</span></div>` : ''}
+        `;
+        if (hasMore) {
+            document.getElementById('subjToggle')?.addEventListener('click', () => {
+                document.getElementById('subjFull').style.display = 'block';
+                subjectsEl.querySelector('.subj-preview').style.display = 'none';
+            });
+            document.getElementById('subjCollapse')?.addEventListener('click', () => {
+                document.getElementById('subjFull').style.display = 'none';
+                subjectsEl.querySelector('.subj-preview').style.display = '';
+            });
+        }
+    }
     if (statusEl) statusEl.textContent = status;
     
     // Show program field if program head
@@ -346,9 +364,51 @@ function renderTable(classes) {
 
         tbody.appendChild(tr);
     });
+
+    // Mobile card view
+    renderCardView(classes, document.querySelector('.table-scroll'), (c) => `
+        <div style="font-weight:800;color:#005BAB;font-size:0.85rem;margin-bottom:5px;">${c.subject}</div>
+        <div style="font-size:0.75rem;color:#64748b;">🕒 ${c.timeBlock||"N/A"}</div>
+        <div style="font-size:0.75rem;color:#64748b;margin-top:3px;">📚 ${c.section||""}</div>
+        ${c.room?`<div style="font-size:0.75rem;color:#64748b;margin-top:3px;">📍 ${c.room}</div>`:""}
+    `);
 }
 
-/* ───────── DOWNLOAD LOGIC ───────── */
+function renderCardView(classes, container, cardContentFn) {
+    if (!container) return;
+    container.querySelector('.schedule-card-wrap')?.remove();
+    const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    const nonVacant = classes.filter(c => c.subject && c.subject !== "VACANT" && c.subject !== "MARKED_VACANT");
+    const byDay = {};
+    nonVacant.forEach(c => { const d=c.day||"Unknown"; if(!byDay[d]) byDay[d]=[]; byDay[d].push(c); });
+    const cardWrap = document.createElement("div");
+    cardWrap.className = "schedule-card-wrap";
+    Object.keys(byDay).sort((a,b)=>(DAYS.indexOf(a)===-1?99:DAYS.indexOf(a))-(DAYS.indexOf(b)===-1?99:DAYS.indexOf(b))).forEach(day => {
+        const sec = document.createElement("div");
+        sec.style.cssText = "margin-bottom:0.75rem;";
+        const header = document.createElement("div");
+        header.style.cssText = "font-weight:900;font-size:0.85rem;color:#005BAB;text-transform:uppercase;letter-spacing:0.08em;padding:8px 12px;border:2px solid #000;border-radius:10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;";
+        header.innerHTML = `<span>${day}</span><span class="day-chevron">+</span>`;
+        const grid = document.createElement("div");
+        grid.style.cssText = "display:none;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:8px;";
+        byDay[day].sort((a,b)=>(a.timeBlock||"").localeCompare(b.timeBlock||"")).forEach(c => {
+            const card = document.createElement("div");
+            card.className = "class-card";
+            card.style.cssText = "padding:10px 13px;background:white;border:2px solid #000;border-radius:12px;box-shadow:3px 3px 0 #000;";
+            card.innerHTML = cardContentFn(c);
+            grid.appendChild(card);
+        });
+        header.addEventListener("click", () => {
+            const collapsed = grid.style.display === "none";
+            grid.style.display = collapsed ? "grid" : "none";
+            header.querySelector(".day-chevron").textContent = collapsed ? "-" : "+";
+        });
+        sec.appendChild(header);
+        sec.appendChild(grid);
+        cardWrap.appendChild(sec);
+    });
+    container.appendChild(cardWrap);
+}
 function downloadSchedule(format = null) {
     if (!format) {
         showDownloadFormatSelector((f) => downloadSchedule(f));
