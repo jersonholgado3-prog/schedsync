@@ -86,11 +86,9 @@
           <button type="submit" id="studentLoginBtn" class="btn btn-login">Log In</button>
         </form>
 
-        <button type="button" id="adminLoginBtn" class="btn btn-admin">Admin Login</button>
 
-        <p class="signup-text">
-          Don't have an account? <a href="signup.html" class="signup-link">Sign Up</a>
-        </p>
+
+
       </div>
     </div>
   </section>
@@ -152,19 +150,12 @@
 
     const loginForm = document.getElementById('loginForm');
     const loginBtn = document.getElementById('studentLoginBtn');
-    const adminLoginBtn = document.getElementById('adminLoginBtn');
 
     // Rate Limiting Variable 🛡️
     let loginAttempts = parseInt(sessionStorage.getItem('_la') || '0');
     let isLocked = sessionStorage.getItem('_il') === '1';
 
     // Handle Admin Login button click
-    if (adminLoginBtn && loginForm) {
-      adminLoginBtn.addEventListener('click', () => {
-        loginForm.dispatchEvent(new Event('submit'));
-      });
-    }
-
     if (loginForm) {
       loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -222,10 +213,7 @@
             localStorage.removeItem('manual_logout');
             if (userData.section) localStorage.setItem('userSection', userData.section);
 
-            // If it's a teacher and they haven't finished setup, go to teacherlogin ⚓
-            if (userData.role === 'teacher' && !userData.isProfileComplete) {
-              targetUrl = 'teacherlogin.html';
-            }
+
           } else {
             localStorage.setItem('userRole', 'student');
           }

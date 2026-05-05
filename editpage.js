@@ -100,15 +100,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }
           }
 
-          // Show Download button for everyone in Edit Page by default (Logic can be refined later if needed)
+          // Show Download button for everyone in Edit Page by default
           const downloadBtn = document.querySelector('.download-all-header-btn:not(#requestPermissionBtnHeader)');
           if (downloadBtn) {
             downloadBtn.style.setProperty('display', 'flex', 'important');
           }
-          const jspdfBtn = document.getElementById('jspdfBtn');
-          if (jspdfBtn) jspdfBtn.style.setProperty('display', 'flex', 'important');
-          const xlsxBtn = document.getElementById('xlsxBtn');
-          if (xlsxBtn) xlsxBtn.style.setProperty('display', 'flex', 'important');
         }
       } catch (e) {
         console.error("Error fetching user role:", e);
@@ -963,9 +959,9 @@ async function load() {
             q = collection(db, "schedules");
         }
       } else {
-        // Teacher: See own only, and filter by name if present
+        // Teacher/Program Head: filter by name if present (view mode), else own only
         if (filterName) {
-            q = query(collection(db, "schedules"), where("userId", "==", currentUser.uid), where("scheduleName", "==", filterName));
+            q = query(collection(db, "schedules"), where("scheduleName", "==", filterName));
         } else {
             q = query(collection(db, "schedules"), where("userId", "==", currentUser.uid));
         }
@@ -976,6 +972,8 @@ async function load() {
         const data = d.data();
         // Filter out events
         if (data.section !== "EVENTS" && data.section !== "EVENT_HOST" && d.id !== "DEFAULT_SECTION") {
+          // Non-admins can only see published schedules (or their own drafts)
+          if (currentUserRole !== 'admin' && data.status === 'draft' && data.userId !== currentUser.uid) return;
           schedules.push({ id: d.id, ...data });
         }
       });
@@ -1705,12 +1703,12 @@ function renderTable() {
 // ───────── PANEL ───────── */
 function openPanel(id, day, block) {
   // 🛡️ Guard! Double-layer Permissions Check ⚓
-  const hasPermission = localStorage.getItem('editPermission') === 'true';
   const role = (currentUserRole || localStorage.getItem('userRole') || '').toLowerCase();
-  const isEditor = role === 'admin' || role === 'program head' || hasPermission;
+  const isEditor = role === 'admin';
 
+  // Non-editors go straight to comment panel
   if (!isEditor) {
-    showToast("View-only mode: You don't have permission to edit.", "info");
+    window.openCommentPanel(id, day, block, 'force');
     return;
   }
 
@@ -1849,6 +1847,11 @@ function openPanel(id, day, block) {
   } else {
     if (teacherLabel) teacherLabel.textContent = "Teacher";
     if (teacherInput) teacherInput.placeholder = "Search teacher...";
+  }
+
+  // Lock panel for non-editors AFTER fields are populated
+  if (!isEditor) {
+    window.enableTeacherReadOnlyMode();
   }
 }
 
@@ -2060,9 +2063,8 @@ async function saveClass() {
     }
 
     pushToHistory(); // Capture state before modification ⚓
-    if (currentUserRole === 'teacher' && localStorage.getItem('editPermission') !== 'true') {
-      if (window.requestEditPermission) window.requestEditPermission();
-      else alert("Please request permission to edit!");
+    if ((currentUserRole || '').toLowerCase() !== 'admin') {
+      showToast("You don't have permission to edit schedules.", "error");
       return;
     }
     const ref = doc(db, "schedules", selected.id);
@@ -2441,9 +2443,8 @@ function closePanel() {
 }
 
 function markAsVacant() {
-  if (currentUserRole === 'teacher' && localStorage.getItem('editPermission') !== 'true') {
-    if (window.requestEditPermission) window.requestEditPermission();
-    else showToast("Please request permission to edit!", "info");
+  if ((currentUserRole || '').toLowerCase() !== 'admin') {
+    showToast("You don't have permission to edit schedules.", "error");
     return;
   }
   document.getElementById("subject").value = "MARKED_VACANT";
@@ -2453,9 +2454,8 @@ function markAsVacant() {
 }
 
 function deleteClass(targetEl = null) {
-  if (currentUserRole === 'teacher' && localStorage.getItem('editPermission') !== 'true') {
-    if (window.requestEditPermission) window.requestEditPermission();
-    else showToast("Please request permission to edit!", "info");
+  if ((currentUserRole || '').toLowerCase() !== 'admin') {
+    showToast("You don't have permission to edit schedules.", "error");
     return;
   }
 
@@ -3346,6 +3346,35 @@ window.listenForComments = listenForComments;
 window.saveClass = saveClass;
 window.save = save;
 
+window.enableTeacherReadOnlyMode = function() {
+  const panel = document.getElementById('editPanel');
+  if (!panel) return;
+  // Block all form fields
+  panel.querySelectorAll('input, select, textarea').forEach(el => {
+    el.disabled = true;
+    el.style.pointerEvents = 'none';
+    el.style.cursor = 'not-allowed';
+    el.style.opacity = '0.65';
+  });
+  // Block custom dropdown divs
+  panel.querySelectorAll('.custom-dropdown').forEach(el => {
+    el.style.pointerEvents = 'none';
+    el.innerHTML = '';
+  });
+  // Block the whole panel body from interaction
+  const formBody = panel.querySelector('.panel-body') || panel.querySelector('form') || panel;
+  formBody.style.cursor = 'not-allowed';
+  // Update title
+  const title = panel.querySelector('h2');
+  if (title) title.textContent = 'Class Details';
+  // Hide everything except Comments and Cancel
+  panel.querySelectorAll('.footer .btn').forEach(btn => {
+    if (!btn.classList.contains('comment-switch-btn') && !btn.classList.contains('cancel')) {
+      btn.style.display = 'none';
+    }
+  });
+};
+
 window.updateAtmosphere = function updateAtmosphere() {
   const now = new Date();
   const hour = now.getHours();
@@ -3549,7 +3578,7 @@ window.openCommentPanel = async function (schedId, day, block, force = false) {
     if (submitBtn) submitBtn.style.display = 'block';
     if (inputLabel) inputLabel.textContent = cellComments.length > 0 ? "Post a Reply" : "Your Comment";
     if (backBtn) backBtn.style.display = 'inline-block';
-  } else if (role === 'teacher' && (allCellComments.length === 0 || isParticipant)) {
+  } else if ((role === 'teacher' || role === 'program head' || role === 'head teacher') && (allCellComments.length === 0 || isParticipant)) {
     if (inputArea) inputArea.style.display = 'block';
     if (submitBtn) submitBtn.style.display = 'block';
     if (inputLabel) inputLabel.textContent = allCellComments.length === 0 ? "Your Suggestion" : "Post a Reply";

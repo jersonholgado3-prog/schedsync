@@ -128,13 +128,14 @@
           <div id="selectionBar" class="selection-bar admin-only" style="display:none">
             <div class="selection-count"><span id="selectedCount">0</span> Selected</div>
             <div class="selection-actions">
+              <button id="selectAllBtn" class="action-btn gen-btn">Select All</button>
               <button id="multiDeleteBtn" class="action-btn delete-btn">Delete</button>
               <button id="cancelSelectionBtn" class="action-btn cancel-btn">Cancel</button>
             </div>
           </div>
 
-          <div class="import-toolbar admin-only" style="display:none">
-            <button id="deleteAllBtn" class="action-btn delete-btn">🗑️ Delete All</button>
+          <div class="import-toolbar admin-only" style="display:none; justify-content: flex-end;">
+            <button id="selectModeBtn" class="action-btn gen-btn">☑️ Select</button>
             <button id="uploadDocBtn" class="action-btn gen-btn">📄 Upload Document</button>
             <input type="file" id="docImportInput" accept=".pdf,.xlsx,.csv" style="display:none">
           </div>

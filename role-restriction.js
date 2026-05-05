@@ -43,6 +43,10 @@ function injectHiderStyle() {
 if ((cachedRole === 'student' && !cachedPermission) || (cachedRole === 'teacher' && !cachedPermission)) {
     injectHiderStyle();
     observer.observe(document.body, { childList: true, subtree: true });
+    // Also hide draft widget early for non-editors
+    const s = document.createElement('style');
+    s.textContent = `#draftWidget { display: none !important; }`;
+    document.head.appendChild(s);
 }
 
 // 🛡️ Student-specific early hide for curriculum, myschedule, and draft widget
@@ -123,7 +127,7 @@ function applyRestrictions(role, hasPermission) {
     // Hide schedule editing links from teachers without edit permission
     if (!isEditor) {
         document.querySelectorAll("a[href*='newschedule']").forEach(el => el.style.display = "none");
-        document.querySelectorAll("a[href*='myschedule']").forEach(el => el.style.display = "none");
+        document.querySelectorAll("#draftWidget").forEach(el => el.style.display = "none");
     }
 
     // Hide archives from non-admins (teachers/students)
@@ -134,8 +138,9 @@ function applyRestrictions(role, hasPermission) {
     // Toggle .admin-only class elements (like in mobile bottom nav)
     document.querySelectorAll('.admin-only').forEach(el => {
         if (role === 'admin') {
-            // Keep flex for mob-nav-item, block for others
-            el.style.display = el.classList.contains('mob-nav-item') ? 'flex' : 'block';
+            if (el.classList.contains('selection-bar')) return; // controlled by facultypage.js
+            const isFlexEl = el.classList.contains('mob-nav-item') || el.classList.contains('import-toolbar');
+            el.style.display = isFlexEl ? 'flex' : 'block';
         } else {
             el.style.display = 'none';
         }

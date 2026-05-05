@@ -496,11 +496,10 @@
 
 .faculty-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1.5rem;
-    padding: 2rem;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1rem;
+    padding: 1.5rem;
     width: 100%;
-    max-width: 1200px;
     margin: 0 auto;
 }
 
@@ -673,15 +672,12 @@
     border: 3px solid black;
     border-radius: 20px;
     padding: 1rem 2rem;
-    margin: 1rem 2rem;
+    margin: 1rem auto;
     box-shadow: 6px 6px 0px black;
-    position: sticky;
-    top: 80px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: calc(100% - 320px);
+    position: relative;
+    width: calc(100% - 4rem);
+    max-width: 900px;
     z-index: 999;
-    transition: all 0.3s ease;
 }
 
 .selection-bar.active {

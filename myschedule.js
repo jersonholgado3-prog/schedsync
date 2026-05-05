@@ -269,35 +269,38 @@ function renderSection(status, schedules, type = null) {
     const hasPermission = localStorage.getItem('editPermission') === 'true';
 
     if (currentUserRole !== 'student') {
+      const viewSchedBtn = `<button class="view-sched-btn" style="background:#005BAB;color:white;font-size:11px;padding:4px 12px;font-weight:800;border-radius:8px;border:2px solid black;box-shadow:2px 2px 0px black;text-transform:uppercase;cursor:pointer;" onclick="event.stopPropagation(); window.location.href='editpage.html?name=${encodeURIComponent(safeName)}'">📅 View Schedules</button>`;
+
       if (currentUserRole === 'admin' || hasPermission) {
         const addSectionBtn = `<button class="action-button add-section" onclick="event.stopPropagation(); addSectionToGroup('${safeName}')">+ SECTION</button>`;
 
-        if (status === "draft") {
-          // Check if user owns at least one item in the group 🛡️
-          const ownsAny = groupSchedules.some(s => s.userId === currentUser.uid);
+        if (status === "draft") {          const ownsAny = groupSchedules.some(s => s.userId === currentUser.uid);
           if (currentUserRole === 'admin' || ownsAny || hasPermission) {
             const overrideBadge = groupSchedules[0].targetDate ? `<span class="override-badge-mini" style="background:#ef4444; color:white; font-size:10px; padding:2px 6px; border-radius:4px; margin-right:8px; font-weight:900;">DATED</span>` : '';
             buttonsHtml = `
                     ${overrideBadge}
+                    ${viewSchedBtn}
                     ${addSectionBtn}
                     <button class="action-button publish" style="padding: 4px 16px; font-size: 14px;" onclick="event.stopPropagation(); publishGroup('${safeName}')">PUBLISH</button>
                     <button class="action-button edit" style="padding: 4px 16px; font-size: 14px;" onclick="event.stopPropagation(); editGroup('${safeName}')">EDIT ALL</button>
                     <button class="action-button delete-group" style="padding: 4px 16px; font-size: 14px; background: #ef4444; color: white; border-color: black;" onclick="event.stopPropagation(); deleteGroup('${safeName}')">DELETE ALL</button>
                 `;
           } else {
-            buttonsHtml = `<span style="font-size: 11px; color: #64748b; font-weight: 800; text-transform: uppercase;">View Only</span>`;
+            buttonsHtml = `${viewSchedBtn}<span style="font-size: 11px; color: #64748b; font-weight: 800; text-transform: uppercase;">View Only</span>`;
           }
         } else if (status === "published") {
           buttonsHtml = `
+                  ${viewSchedBtn}
                   ${addSectionBtn}
                   <button class="action-button unpublish" style="padding: 4px 16px; font-size: 14px;" onclick="event.stopPropagation(); unpublishGroup('${safeName}')">UNPUBLISH</button>
                   <button class="action-button edit" style="padding: 4px 16px; font-size: 14px;" onclick="event.stopPropagation(); editGroup('${safeName}')">EDIT ALL</button>
                   ${(currentUserRole === 'admin' || hasPermission || groupSchedules.some(s => s.userId === currentUser.uid)) ? `<button class="action-button delete-group" style="padding: 4px 16px; font-size: 14px; background: #ef4444; color: white; border-color: black;" onclick="event.stopPropagation(); deleteGroup('${safeName}')">DELETE ALL</button>` : ''}
               `;
         }
-      } else if (currentUserRole === 'teacher') {
-        // Teacher without permission 🛡️
-        buttonsHtml = `<button class="action-button request-permission-btn" style="background: #1e293b; font-size: 11px; padding: 4px 12px; font-weight: 800; border-radius: 8px; border: 2px solid black; box-shadow: 2px 2px 0px black; color: white; text-transform: uppercase; cursor: pointer;" onclick="event.stopPropagation(); window.requestEditPermission()">Ask to Edit</button>`;
+      } else if (currentUserRole === 'teacher' || currentUserRole === 'program head') {
+        buttonsHtml = `
+          ${viewSchedBtn}
+          <button class="action-button request-permission-btn" style="background: #1e293b; font-size: 11px; padding: 4px 12px; font-weight: 800; border-radius: 8px; border: 2px solid black; box-shadow: 2px 2px 0px black; color: white; text-transform: uppercase; cursor: pointer;" onclick="event.stopPropagation(); window.requestEditPermission()">Ask to Edit</button>`;
       }
     } else {
       // Student: Strictly read-only 🛡️
@@ -1353,3 +1356,84 @@ window.deleteHistoryEntry = deleteHistoryEntry;
    START
    ============================= */
 // renderAll is now managed inside onAuthStateChanged logic at the top
+
+window.openViewSchedulesModal = async function(scheduleName) {
+    // Filter schedules in this folder
+    const folderSchedules = schedules.filter(s => (s.scheduleName || "Untitled Schedule") === scheduleName);
+    const bySection = {};
+    folderSchedules.forEach(s => {
+        const sec = s.section || "Unknown";
+        const classes = (s.classes || []).filter(c =>
+            c.subject && c.subject !== "VACANT" && c.subject !== "MARKED_VACANT"
+        );
+        if (classes.length) bySection[sec] = classes;
+    });
+
+    const sections = Object.keys(bySection).sort();
+    if (folderSchedules.length === 0) { showToast("No schedules found in this folder.", "info"); return; }
+
+    const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    const toMinL = t => { if(!t) return 0; const [h,m]=(t||"").split(":").map(Number); return h*60+m; };
+    const toTimeL = m => `${String(Math.floor(m/60)).padStart(2,"0")}:${String(m%60).padStart(2,"0")}`;
+    const to12L = t => { if(!t) return ""; let [h,m]=t.split(":"); h=+h; return `${((h+11)%12)+1}:${m} ${h>=12?"PM":"AM"}`; };
+    const parseBlk = b => { if(!b) return null; const [s,e]=b.split("-"); return {start:toMinL(s.trim()),end:toMinL(e.trim())}; };
+
+    const buildTable = (classes) => {
+        const pts = new Set();
+        classes.forEach(c => { const b=parseBlk(c.timeBlock); if(b){pts.add(b.start);pts.add(b.end);} });
+        const sorted = Array.from(pts).sort((a,b)=>a-b);
+        const intervals = [];
+        for(let i=0;i<sorted.length-1;i++) intervals.push({start:sorted[i],end:sorted[i+1],label:`${to12L(toTimeL(sorted[i]))} - ${to12L(toTimeL(sorted[i+1]))}`});
+        if(!intervals.length) return '<p style="opacity:0.5;padding:1rem;">No classes.</p>';
+
+        let html = `<div style="overflow-x:auto;border:2px solid #e2e8f0;border-radius:12px;margin-bottom:1.5rem;">
+        <table style="width:100%;border-collapse:collapse;table-layout:fixed;min-width:500px;">
+        <colgroup><col style="width:110px">${DAYS.map(()=>`<col>`).join("")}</colgroup>
+        <thead><tr style="background:#f8fafc;">
+            <th style="padding:8px 4px;font-size:11px;border:1px solid #e2e8f0;text-align:center;">TIME</th>
+            ${DAYS.map(d=>`<th style="padding:8px 4px;font-size:11px;font-weight:800;border:1px solid #e2e8f0;text-align:center;">${d.slice(0,3).toUpperCase()}</th>`).join("")}
+        </tr></thead><tbody>`;
+
+        intervals.forEach((interval,i) => {
+            html += `<tr><td style="font-size:11px;text-align:center;padding:6px;border:1px solid #e2e8f0;white-space:nowrap;">${interval.label}</td>`;
+            DAYS.forEach(day => {
+                const c = classes.find(x => x.day===day && parseBlk(x.timeBlock)?.start===interval.start);
+                const occ = classes.some(x => { const b=parseBlk(x.timeBlock); return b && x.day===day && b.start<interval.start && b.end>interval.start; });
+                if(occ) return;
+                if(c) {
+                    const b=parseBlk(c.timeBlock);
+                    let span=0;
+                    for(let k=i;k<intervals.length;k++){ const m=intervals[k]; if(b&&m.start>=b.start&&m.end<=b.end) span++; else break; }
+                    const rs = span>1?`rowspan="${span}"`:"";
+                    const bg=c.color||"#bfdbfe";
+                    html += `<td ${rs} style="border:1px solid #e2e8f0;text-align:center;vertical-align:middle;padding:5px;background:${bg};word-break:break-word;font-size:11px;">
+                        <div style="font-weight:800;">${c.subject}</div>
+                        <div style="font-size:10px;opacity:0.8;">${c.room||""}</div>
+                    </td>`;
+                } else {
+                    html += `<td style="border:1px solid #e2e8f0;"></td>`;
+                }
+            });
+            html += `</tr>`;
+        });
+        html += `</tbody></table></div>`;
+        return html;
+    };
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.85);backdrop-filter:blur(8px);display:flex;justify-content:center;align-items:flex-start;z-index:2000001;overflow-y:auto;padding:2rem;`;
+    overlay.innerHTML = `
+        <div style="background:white;border:4px solid black;border-radius:24px;box-shadow:10px 10px 0 #000;width:100%;max-width:1100px;padding:2rem;position:relative;">
+            <button id="closeViewSched" style="position:absolute;top:16px;right:16px;background:#f1f5f9;border:2px solid black;width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:18px;font-weight:900;box-shadow:2px 2px 0 #000;">×</button>
+            <h2 style="font-size:1.4rem;font-weight:900;color:#005BAB;margin-bottom:1.5rem;text-transform:uppercase;">📅 My Assigned Schedules</h2>
+            ${sections.map(sec => `
+                <div style="margin-bottom:2rem;">
+                    <div style="font-weight:900;font-size:1rem;padding:8px 14px;background:#005BAB;color:white;border-radius:10px;margin-bottom:0.75rem;display:inline-block;">${sec}</div>
+                    ${buildTable(bySection[sec])}
+                </div>
+            `).join("")}
+        </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#closeViewSched').onclick = () => overlay.remove();
+    overlay.onclick = e => { if(e.target===overlay) overlay.remove(); };
+};

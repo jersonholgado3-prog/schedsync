@@ -34,9 +34,10 @@ const secondaryConfig = {
 
 let allFaculty = [];
 let selectedIds = new Set();
+let selectionMode = false;
 const userRole = localStorage.getItem('userRole') || 'student';
 const hasEditPermission = localStorage.getItem('editPermission') === 'true';
-const isEditor = userRole === 'admin' || userRole === 'program head' || hasEditPermission;
+const isEditor = userRole === 'admin';
 
 // --- DRAG & DROP LOGIC ---
 
@@ -230,6 +231,13 @@ function initSelectionUI() {
 
   if (!selectionBar || !isEditor) return;
 
+  const selectModeBtn = document.getElementById('selectModeBtn');
+  if (selectModeBtn) selectModeBtn.onclick = () => {
+    selectionMode = true;
+    updateSelectionBar();
+    loadTeachers();
+  };
+
   if (genEmailsBtn) genEmailsBtn.onclick = async () => {
     const selectedFaculty = allFaculty.filter(f => selectedIds.has(f.id));
     const toProcess = selectedFaculty.filter(f => !f.email);
@@ -295,11 +303,20 @@ function initSelectionUI() {
 
   cancelSelectionBtn.onclick = () => {
     selectedIds.clear();
+    selectionMode = false;
     updateSelectionBar();
     loadTeachers();
   };
 
-  document.getElementById('deleteAllBtn').onclick = async () => {
+  const selectAllBtn = document.getElementById('selectAllBtn');
+  if (selectAllBtn) selectAllBtn.onclick = () => {
+    allFaculty.forEach(f => selectedIds.add(f.id));
+    updateSelectionBar();
+    loadTeachers();
+  };
+
+  const deleteAllBtn = document.getElementById('deleteAllBtn');
+  if (deleteAllBtn) deleteAllBtn.onclick = async () => {
     if (allFaculty.length === 0) { showToast("No faculty to delete.", "info"); return; }
     const confirmed = await showConfirm(`Delete ALL ${allFaculty.length} faculty members and their accounts? This cannot be undone.`, "Delete All Faculty");
     if (!confirmed) return;
@@ -336,11 +353,11 @@ async function deleteAuthAccount(email, password) {
 function updateSelectionBar() {
   const selectionBar = document.getElementById('selectionBar');
   const selectedCountEl = document.getElementById('selectedCount');
-  if (selectedIds.size > 0) {
-    selectionBar.classList.add('active');
+  if (selectionMode) {
+    selectionBar.style.display = 'flex';
     selectedCountEl.textContent = selectedIds.size;
   } else {
-    selectionBar.classList.remove('active');
+    selectionBar.style.display = 'none';
   }
 }
 
@@ -433,7 +450,7 @@ async function loadTeachers() {
       card.dataset.description = `${subjects} ${employmentStatus} ${roleLabel}`;
 
       card.onclick = (e) => {
-        if (isEditor && (selectedIds.size > 0 || e.target.classList.contains('faculty-checkbox'))) {
+        if (isEditor && selectionMode) {
           toggleFacultySelection(d.id, card);
         } else {
           window.location.href = "facultyprofile.html?id=" + d.id;
@@ -441,18 +458,15 @@ async function loadTeachers() {
       };
 
       card.innerHTML = `
-        <div class="checkbox-wrapper">
-          <input type="checkbox" class="faculty-checkbox" ${isSelected ? 'checked' : ''}>
-        </div>
+        ${isEditor && selectionMode ? `<div class="checkbox-wrapper" style="display:none"><input type="checkbox" class="faculty-checkbox" ${isSelected ? 'checked' : ''}></div>` : ''}
         <div class="faculty-photo" style="position:relative;">
           <img src="${d.photoURL || 'images/default_shark.jpg'}"
             onerror="this.src='images/default_shark.jpg'">
-          <div class="faculty-select-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:50%;background:rgba(0,91,171,0.75);display:${isSelected ? 'flex' : 'none'};align-items:center;justify-content:center;font-size:2rem;color:white;font-weight:900;pointer-events:none;">✓</div>
+          <div class="faculty-select-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:50%;background:rgba(0,91,171,0.75);display:${isSelected && isEditor && selectionMode ? 'flex' : 'none'};align-items:center;justify-content:center;font-size:2rem;color:white;font-weight:900;pointer-events:none;">✓</div>
         </div>
         <div class="faculty-name">${teacherName}</div>
         <div class="faculty-details">
-          ${subjects ? `<strong>Subjects:</strong> ${subjects}` : "No subjects assigned"}
-          ${role !== 'teacher' ? `<br><strong>Role:</strong> ${roleLabel}` : ""}
+          ${role !== 'teacher' ? `<strong>Role:</strong> ${roleLabel}<br>` : ""}
           ${isAdmin && d.email ? `<br><strong>Email:</strong> ${d.email}` : ""}
           ${isAdmin && d.password ? `<br><strong>Password:</strong> ${d.password}` : ""}
         </div>
