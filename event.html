@@ -132,7 +132,15 @@
 
       <div class="main-layout">
         <div class="content-area p-8">
-          <div class="event-list-header">
+          <div id="eventSelectionBar" style="display:none;">
+            <span id="eventSelectedCount" style="font-weight:800;">0 Selected</span>
+            <div style="display:flex;gap:8px;">
+              <button id="eventSelectAllBtn" style="padding:6px 16px;background:#005BAB;color:white;border:2px solid black;border-radius:10px;font-weight:700;cursor:pointer;">Select All</button>
+              <button id="eventDeleteSelectedBtn" style="padding:6px 16px;background:#ef4444;color:white;border:2px solid black;border-radius:10px;font-weight:700;cursor:pointer;">🗑️ Delete</button>
+              <button id="eventCancelSelectBtn" style="padding:6px 16px;border:2px solid black;border-radius:10px;font-weight:700;cursor:pointer;">Cancel</button>
+            </div>
+          </div>
+            <div class="event-list-header">
             <div class="col-from">From</div>
             <div class="col-title">Event Title</div>
             <div class="col-content">Content</div>
@@ -148,6 +156,7 @@
               <div class="create-event-plus-circle"><span>+</span></div>
               <span>Create new Event</span>
             </div>
+            <button id="eventSelectModeBtn" class="admin-only" style="display:none;padding:8px 18px;border:2px solid black;border-radius:12px;font-weight:700;cursor:pointer;background:white;box-shadow:3px 3px 0 black;">☑️ Select</button>
           </div>
         </div>
       </div>

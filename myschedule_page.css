@@ -1664,3 +1664,13 @@ body {
     }
 }
 
+
+/* 🌙 Dark mode inputs */
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark select,
+.dark textarea {
+    background: #1e293b;
+    color: #f1f5f9;
+    border-color: #334155;
+}
+.dark input::placeholder, .dark textarea::placeholder { color: #64748b; }

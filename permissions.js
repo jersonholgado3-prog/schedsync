@@ -61,7 +61,7 @@ function loadPendingRequests() {
             const card = document.createElement('div');
             card.className = 'user-card';
             card.innerHTML = `
-    < div class="user-header" >
+    <div class="user-header">
                     <div class="avatar">
                         <img src="${data.photoURL || 'images/default_shark.jpg'}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
                     </div>
@@ -69,7 +69,7 @@ function loadPendingRequests() {
                         <h3>${(data.username || data.email || 'User').split('@')[0]}</h3>
                         <p>Requested: ${date}</p>
                     </div>
-                </div >
+                </div>
     <div style="display:flex; gap:10px;">
         <button class="action-btn btn-accept" onclick="acceptRequest('${docSnap.id}', '${data.userId}')">
             ✅ ACCEPT
@@ -104,7 +104,7 @@ function loadActivePermissions() {
             const card = document.createElement('div');
             card.className = 'user-card';
             card.innerHTML = `
-    < div class="user-header" >
+    <div class="user-header">
                     <div class="avatar">
                         <img src="${data.photoURL || 'images/default_shark.jpg'}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
                     </div>
@@ -112,7 +112,7 @@ function loadActivePermissions() {
                         <h3>${(data.displayName || data.email || 'User').split('@')[0]}</h3>
                         <p>${data.role.toUpperCase()}</p>
                     </div>
-                </div >
+                </div>
     <button class="action-btn btn-revoke" onclick="revokePermission('${docSnap.id}', '${data.displayName}')">
         ❌ REVOKE ACCESS
     </button>

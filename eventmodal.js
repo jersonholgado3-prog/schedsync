@@ -6,6 +6,7 @@ const h = React.createElement; // Helper for creating elements
 import { auth, db, app } from "./js/config/firebase-config.js";
 import { addDoc, collection, doc, updateDoc, setDoc, deleteDoc, arrayUnion, getDocs, getDoc, query, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { showToast, showConfirm } from "./js/utils/ui-utils.js";
+import { archiveItem } from "./archive-item.js";
 
 console.log("Loading EventModal script...");
 
@@ -771,6 +772,9 @@ function EventModal({ onClose, initialData }) {
         // Remove ALL parts of this event (same grouping logic as save)
         classes = classes.filter(c => Math.floor(c.createdAt / 1000) !== Math.floor(initialData.createdAt / 1000));
         await updateDoc(defaultRef, { classes });
+
+        // Archive the event
+        await archiveItem('events', String(initialData.createdAt), initialData, 'Deleted by admin');
 
         // --- 📅 CALENDAR CLEANUP ⚓ ---
         const calQuery = query(collection(db, "academic_calendar"), where("eventRootId", "==", String(initialData.createdAt)));

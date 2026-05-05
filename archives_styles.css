@@ -279,3 +279,26 @@
 
 .archive-item { cursor: pointer; display: flex; align-items: center; gap: 12px; }
 .archive-item.selected { background: #eff6ff; border-color: #3b82f6 !important; }
+
+
+.dark .archive-item {
+    background: #1e293b;
+    border-color: #334155;
+    color: #f1f5f9;
+}
+.dark .archive-item:hover { border-color: #475569; }
+.dark .archive-item-title { color: #f1f5f9; }
+.dark .archive-item-meta { color: #94a3b8; }
+.dark .restore { border-color: #10b981; color: #10b981; background: transparent; }
+.dark .archive-btn.delete {
+    background: #334155;
+    border-color: #475569;
+    color: #94a3b8;
+}
+
+
+.dark .tab-btn { color: #94a3b8; }
+.dark .tab-btn:hover { color: #f1f5f9; }
+.dark .tab-btn.active { color: #818cf8; border-bottom-color: #818cf8; }
+.dark .content-section, .dark .archives-content { background: transparent; }
+.dark input.search-button, .dark select { background: #1e293b; color: #f1f5f9; border-color: #334155; }

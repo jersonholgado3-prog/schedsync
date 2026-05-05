@@ -56,7 +56,7 @@ function showConfirm(message, subMessage = "") {
         overlay.className = "confirm-overlay";
 
         overlay.innerHTML = `
-    < div class="confirm-box" >
+    <div class="confirm-box">
                 <div style="margin-bottom: 20px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
@@ -70,7 +70,7 @@ function showConfirm(message, subMessage = "") {
     <button class="confirm-btn cancel">Cancel</button>
     <button class="confirm-btn confirm">Confirm</button>
 </div>
-            </div >
+            </div>
     `;
 
         document.body.appendChild(overlay);

@@ -15,7 +15,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { toMin, toTime, to12, parseBlock, overlaps, cleanSection, normalizeDay, normalizeTimeBlock } from "./js/utils/time-utils.js";
-import { showToast, showConfirm, showPrompt } from "./js/utils/ui-utils.js";
+import { showToast, showConfirm, showPrompt, showLoading, hideLoading } from "./js/utils/ui-utils.js";
 import { initUserProfile } from "./userprofile.js";
 import { initMobileNav } from "./js/ui/mobile-nav.js";
 import { initUniversalSearch } from "./search.js";
@@ -42,6 +42,7 @@ function pushToHistory() {
 
 let currentUser = null;
 let currentUserRole = null;
+let hasEditPermission = false; // Set from Firestore only — do not read from localStorage for security checks
 let comments = []; // Global store
 let isSaving = false; // 🔒 Prevents double-clicks/duplicate saves
 
@@ -61,6 +62,16 @@ document.addEventListener("DOMContentLoaded", () => {
   setupCustomDropdown('subject', 'subject-dropdown', getSubjectOptions);
   setupCustomDropdown('teacher', 'teacher-dropdown', getTeacherOptions);
   setupCustomDropdown('room', 'room-dropdown', getRoomOptions);
+  // Force disable browser autocomplete
+  ['subject', 'teacher', 'room'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.setAttribute('autocomplete', 'off');
+      el.setAttribute('autocorrect', 'off');
+      el.setAttribute('autocapitalize', 'off');
+      el.setAttribute('spellcheck', 'false');
+    }
+  });
 
   onAuthStateChanged(auth, async (user) => {
     panel.classList.remove("open"); // Ensure closed on fresh load 🛡️
@@ -84,6 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const userData = udoc.data();
           currentUserRole = userData.role;
           const hasPermission = userData.editPermission === true;
+          hasEditPermission = hasPermission; // Set module-level from Firestore
 
 
           // Update localStorage for sync with role-restriction
@@ -181,7 +193,7 @@ document.addEventListener("DOMContentLoaded", () => {
       document.addEventListener('keydown', async (e) => {
         // 🛡️ ROLE GUARD: Only Editors can use shortcuts ⚓
         const role = (currentUserRole || localStorage.getItem('userRole') || '').toLowerCase();
-        const hasPermission = localStorage.getItem('editPermission') === 'true';
+        const hasPermission = hasEditPermission;
         const isEditor = role === 'admin' || role === 'program head' || hasPermission;
         if (!isEditor) return;
 
@@ -486,6 +498,10 @@ if (!tbody || !colgroup || !theadTr) {
 let draggedSource = null;
 
 function handleDragStart(e) {
+  if (e.target.classList.contains('resize-handle')) {
+    e.preventDefault();
+    return;
+  }
   const td = e.target.closest('td');
   if (!td || td.classList.contains('vacant-empty') || !td.classList.contains('occupied')) {
     e.preventDefault();
@@ -547,7 +563,7 @@ async function handleDrop(e) {
   
   // 🛡️ ROLE GUARD: Only Editors can drop/move items ⚓
   const role = (currentUserRole || localStorage.getItem('userRole') || '').toLowerCase();
-  const hasPermission = localStorage.getItem('editPermission') === 'true';
+  const hasPermission = hasEditPermission;
   const isEditor = role === 'admin' || role === 'program head' || hasPermission;
   if (!isEditor) return;
 
@@ -826,6 +842,7 @@ let dynamicSubjects_raw = []; // 📦 Stores full course docs (with terms) for h
 async function load() {
   if (isLoaded || !currentUser) return;
   isLoaded = true;
+  showLoading('Loading schedule...');
   try {
     // --- Load Dynamic Curriculum ---
     const courseQ = query(collection(db, "courses"));
@@ -981,9 +998,11 @@ async function load() {
 
     fetchTeachers(); // Fetch teachers in background
     console.log(`SchedSync: Data loaded, schedules count: ${schedules.length}. Triggering renderTable...`);
+    hideLoading();
     renderTable();
   } catch (e) {
     console.error("SchedSync: Failed to load schedules:", e);
+    hideLoading();
     showToast("Failed to load schedule data. Please refresh.", "error");
     isLoaded = false; // Allow retry on next trigger
   }
@@ -1365,6 +1384,139 @@ function getRoomOptions(query) {
 }
 
 
+/* ───────── RESIZE HANDLES ───────── */
+let resizeState = null;
+
+function initResizeHandles() {
+  document.querySelectorAll('.resize-handle').forEach(handle => {
+    handle.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const td = handle.closest('td');
+      if (!td) return;
+
+      td.setAttribute('draggable', 'false');
+
+      resizeState = {
+        schedId: td.dataset.schedId,
+        day: td.dataset.day,
+        originalBlock: td.dataset.block,
+        td: td,
+        currentEndMin: null,
+        hasMoved: false
+      };
+
+      document.body.style.cursor = 'ns-resize';
+      document.addEventListener('mousemove', handleResizeMove);
+      document.addEventListener('mouseup', handleResizeEnd);
+    });
+  });
+}
+
+// Floating label showing current end time
+let resizeLabel = null;
+function showResizeLabel(text, x, y) {
+  if (!resizeLabel) {
+    resizeLabel = document.createElement('div');
+    resizeLabel.style.cssText = 'position:fixed;z-index:99999;background:#005BAB;color:white;font-weight:800;font-size:0.8rem;padding:4px 10px;border-radius:8px;border:2px solid #000;pointer-events:none;box-shadow:2px 2px 0 #000;';
+    document.body.appendChild(resizeLabel);
+  }
+  resizeLabel.textContent = text;
+  resizeLabel.style.left = (x + 14) + 'px';
+  resizeLabel.style.top = (y - 10) + 'px';
+  resizeLabel.style.display = 'block';
+}
+function hideResizeLabel() {
+  if (resizeLabel) resizeLabel.style.display = 'none';
+}
+
+function handleResizeMove(e) {
+  if (!resizeState) return;
+  e.preventDefault();
+  resizeState.hasMoved = true;
+
+  const tbody = document.getElementById('tbody');
+  let targetRow = null;
+  for (const tr of tbody.querySelectorAll('tr')) {
+    if (!tr.querySelector('.time-cell')) continue;
+    const rect = tr.getBoundingClientRect();
+    if (e.clientY >= rect.top && e.clientY <= rect.bottom) { targetRow = tr; break; }
+  }
+  if (!targetRow) return;
+
+  const timeCell = targetRow.querySelector('.time-cell');
+  if (!timeCell) return;
+
+  const parts = timeCell.textContent.trim().split('-');
+  const newEndMin = toMin(parts[1]?.trim());
+  const block = parseBlock(resizeState.originalBlock);
+  if (!newEndMin || newEndMin <= block.start) return;
+  if (newEndMin === resizeState.currentEndMin) return;
+
+  resizeState.currentEndMin = newEndMin;
+
+  // Live rowspan update
+  let spanCount = 0, counting = false;
+  for (const tr of tbody.querySelectorAll('tr')) {
+    const tc = tr.querySelector('.time-cell');
+    if (!tc) continue;
+    const p = tc.textContent.trim().split('-');
+    const rowStart = toMin(p[0]?.trim());
+    const rowEnd = toMin(p[1]?.trim());
+    if (rowStart === block.start) counting = true;
+    if (counting) spanCount++;
+    if (rowEnd === newEndMin) { counting = false; break; }
+  }
+  if (spanCount > 0) resizeState.td.rowSpan = spanCount;
+
+  // Show floating label
+  const endLabel = to12(toTime(newEndMin));
+  const startLabel = to12(toTime(block.start));
+  showResizeLabel(`${startLabel} – ${endLabel}`, e.clientX, e.clientY);
+}
+
+async function handleResizeEnd() {
+  if (!resizeState) return;
+
+  document.body.style.cursor = '';
+  document.removeEventListener('mousemove', handleResizeMove);
+  document.removeEventListener('mouseup', handleResizeEnd);
+
+  // Re-enable drag
+  if (resizeState.td) resizeState.td.setAttribute('draggable', 'true');
+
+  // Clear highlights
+  document.querySelectorAll('.resize-highlight').forEach(el => el.classList.remove('resize-highlight'));
+  hideResizeLabel();
+
+  if (!resizeState.hasMoved || !resizeState.currentEndMin) {
+    resizeState = null;
+    return;
+  }
+  
+  const sched = schedules.find(s => s.id === resizeState.schedId);
+  if (!sched) { resizeState = null; return; }
+
+  const block = parseBlock(resizeState.originalBlock);
+  const classItem = sched.classes.find(c =>
+    normalizeDay(c.day) === normalizeDay(resizeState.day) &&
+    parseBlock(c.timeBlock).start === block.start
+  );
+  if (classItem) {
+    classItem.timeBlock = `${toTime(block.start)}-${toTime(resizeState.currentEndMin)}`;
+    try {
+      await updateDoc(doc(db, "schedules", sched.id), { classes: sched.classes });
+      showToast('Class duration updated! ⏱️', 'success');
+    } catch (err) {
+      console.error('Resize save failed:', err);
+      showToast('Failed to save resize', 'error');
+    }
+  }
+  renderTable();
+  resizeState = null;
+}
+
+/* ───────── RENDER TABLE ───────── */
 function renderTable() {
   if (!tbody || !colgroup || !theadTr) {
     console.warn("SchedSync: renderTable aborted - table elements missing.");
@@ -1450,7 +1602,7 @@ function renderTable() {
               </button>
               ${(() => {
                 const role = (currentUserRole || localStorage.getItem('userRole') || '').toLowerCase();
-                const hasPermission = localStorage.getItem('editPermission') === 'true';
+                const hasPermission = hasEditPermission;
                 const isEditor = role === 'admin' || role === 'program head' || hasPermission;
                 return isEditor ? `
                 <button class="day-action delete-target" onclick="window.clearSection('${s.id}')" title="Clear Entire Section" style="background: #ef4444; color: white; border: 3px solid black; padding: 0.4rem 1.2rem; border-radius: 50px; cursor: pointer; box-shadow: 4px 4px 0px black; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
@@ -1477,7 +1629,7 @@ function renderTable() {
           <div class="day-actions" style="display: flex; justify-content: center; gap: 1rem;">
             ${(() => {
               const role = (currentUserRole || localStorage.getItem('userRole') || '').toLowerCase();
-              const hasPermission = localStorage.getItem('editPermission') === 'true';
+              const hasPermission = hasEditPermission;
               const isEditor = role === 'admin' || role === 'program head' || hasPermission;
               return isEditor ? `
               <span class="day-action" onclick="window.copyDayInSection('${s.id}', '${d}')" title="Copy ${d} in ${s.section}" style="cursor: pointer; font-size: 1.4rem; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2) rotate(5deg)'" onmouseout="this.style.transform='scale(1)'">📋</span>
@@ -1582,6 +1734,7 @@ function renderTable() {
                 <span style="font-size: 0.85rem; font-weight: 600; color: #334155; opacity: 0.95;">${c.teacher}</span>
                 <span style="font-size: 0.85rem; font-weight: 800; color: #1e293b;">${(c.room || "").replace(/\s*\|?\s*\d{1,3}%\s*(?:OCCUPIED)?$/i, "").trim()}</span>
               </div>
+              ${currentUserRole !== 'student' ? '<div class="resize-handle" draggable="false" title="Drag to resize"></div>' : ''}
             `;
             td.classList.add("occupied");
             td.style.padding = "0.6rem 0.4rem";
@@ -1696,8 +1849,8 @@ function renderTable() {
     tbody.addEventListener('dragend', handleDragEnd);
     tbody.dataset.dragListenersAttached = "true";
   }
-  attachTooltips();
   initDragSelect();
+  initResizeHandles();
 }
 
 // ───────── PANEL ───────── */
@@ -2669,6 +2822,8 @@ async function save() {
   const confirmed = await showConfirm("PUBLISH CHANGES", "Are you sure you want to publish all changes to the official schedule? This will notify all users. 🚀");
   if (!confirmed) return;
 
+  showLoading('Publishing schedule...');
+  try {
   for (const s of schedules) {
     const isOverride = !!s.targetDate;
     const savePayload = {
@@ -2710,6 +2865,12 @@ async function save() {
   localStorage.removeItem('activeEditSession');
   document.querySelectorAll('.back-to-edit-btn').forEach(btn => btn.style.display = 'none');
   window.location.href = 'myschedule.html';
+  } catch (err) {
+    console.error('Save failed:', err);
+    showToast('Failed to publish schedule', 'error');
+  } finally {
+    hideLoading();
+  }
 }
 
 function downloadSchedule(id, format = null, isBatch = false) {
@@ -3264,7 +3425,7 @@ function attachTooltips() {
     const room = spans[1]?.textContent || '';
     const time = td.dataset.block || '';
     tippy(td, {
-      content: '<b>' + subject + '</b><br>' + teacher + '<br>📍 ' + room + '<br>🕐 ' + time,
+      content: '<b>' + subject + '</b><br>' + teacher,
       allowHTML: true,
       placement: 'top',
       theme: 'light-border',

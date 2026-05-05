@@ -2,7 +2,7 @@ import { app, db, auth } from "./js/config/firebase-config.js";
 
 import { collection, doc, getDoc, getDocs, setDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-import { showToast, showConfirm } from "./js/utils/ui-utils.js";
+import { showToast, showConfirm, showLoading, hideLoading } from "./js/utils/ui-utils.js";
 
 import { initUserProfile } from "./userprofile.js";
 
@@ -121,7 +121,12 @@ function createArchiveCard(item) {
 
 function getItemTitle(item) {
   const d = item.originalData;
-  if (item.type === 'schedules') return d.section || d.name || 'Schedule';
+  if (item.type === 'schedules') {
+    const schedName = d.scheduleName || d.name || '';
+    const section = d.section || '';
+    if (schedName && section) return `${schedName} — ${section}`;
+    return schedName || section || 'Schedule';
+  }
   if (item.type === 'faculty') return d.name || 'Faculty Member';
   if (item.type === 'sections') return d.name || 'Section';
   if (item.type === 'curriculum') return d.name || 'Curriculum';
@@ -147,27 +152,69 @@ export async function archiveItem(type, itemId, originalData, reason = '', acade
 
 window.restoreArchive = async function(type, itemId) {
   if (!await showConfirm('Restore Item?', 'This will move the item back to active data.')) return;
+  showLoading('Restoring...');
   try {
     const snap = await getDoc(doc(db, 'archives', type, 'items', itemId));
     if (!snap.exists()) { showToast('Archive not found', 'error'); return; }
+    const originalData = snap.data().originalData;
     const col = type === 'curriculum' ? 'courses' : type;
-    await setDoc(doc(db, col, itemId), snap.data().originalData);
+
+    // Handle group-archived schedules (archived via deleteDraftGroup)
+    // These have { scheduleName, sections: [{id, ...data}, ...] } as originalData
+    if (type === 'schedules' && Array.isArray(originalData.sections)) {
+      const { addDoc, collection: col2 } = await import('https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js');
+      for (const section of originalData.sections) {
+        const { id, ...sectionData } = section;
+        await setDoc(doc(db, 'schedules', id), sectionData);
+      }
+    } else {
+      await setDoc(doc(db, col, itemId), originalData);
+    }
+
     await deleteDoc(doc(db, 'archives', type, 'items', itemId));
     showToast('Item restored successfully', 'success');
     await loadArchives();
   } catch (error) {
     console.error('Error restoring:', error);
     showToast('Failed to restore item', 'error');
-  }
+  } finally { hideLoading(); }
 };
 
-window.deleteArchive = async function(type, itemId) {
-  if (!await showConfirm('Delete Permanently?', 'This cannot be undone.')) return;
+window.bulkDeleteArchives = async function() {
+  if (selectedArchiveIds.size === 0) return;
+  if (!await showConfirm('Delete Permanently?', `Delete ${selectedArchiveIds.size} selected item(s)? This cannot be undone.`)) return;
+  showLoading('Deleting...');
   try {
-    await deleteDoc(doc(db, 'archives', type, 'items', itemId));
-    showToast('Permanently deleted', 'success');
+    for (const itemId of selectedArchiveIds) {
+      const item = allArchives.find(a => a.id === itemId);
+      if (item) await window.deleteArchive(item.type, itemId, true);
+    }
+    selectedArchiveIds.clear();
     await loadArchives();
+    showToast('Permanently deleted', 'success');
+  } finally { hideLoading(); }
+};
+
+window.deleteArchive = async function(type, itemId, silent = false) {
+  if (!silent && !await showConfirm('Delete Permanently?', 'This cannot be undone.')) return;
+  try {
+    // Delete from original collection
+    const collectionMap = {
+      schedules: 'schedules',
+      faculty: 'users',
+      sections: 'sections',
+      curriculum: 'courses',
+      events: 'academic_calendar'
+    };
+    const originalCollection = collectionMap[type];
+    if (originalCollection) {
+      try { await deleteDoc(doc(db, originalCollection, itemId)); } catch (e) { /* may not exist */ }
+    }
+    // Delete from archives
+    await deleteDoc(doc(db, 'archives', type, 'items', itemId));
+    if (!silent) { showToast('Permanently deleted', 'success'); await loadArchives(); }
   } catch (error) {
+    console.error(error);
     showToast('Failed to delete', 'error');
   }
 };
@@ -194,6 +241,9 @@ function updateStats() {
 }
 
 async function autoCleanupOldArchives() {
+  const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+  const lastRun = parseInt(localStorage.getItem('_archiveCleanupLastRun') || '0');
+  if (Date.now() - lastRun < WEEK_MS) return;
   try {
     const cutoff = new Date();
     cutoff.setFullYear(cutoff.getFullYear() - ARCHIVE_RETENTION_YEARS);
@@ -204,6 +254,7 @@ async function autoCleanupOldArchives() {
         if (date < cutoff) await deleteDoc(d.ref);
       }
     }
+    localStorage.setItem('_archiveCleanupLastRun', Date.now().toString());
   } catch (e) { console.error('Auto-cleanup error:', e); }
 }
 
@@ -238,8 +289,18 @@ window.bulkRestoreArchives = async function() {
     try {
       const snap = await getDoc(doc(db, 'archives', item.type, 'items', item.id));
       if (!snap.exists()) continue;
+      const originalData = snap.data().originalData;
       const col = item.type === 'curriculum' ? 'courses' : item.type;
-      await setDoc(doc(db, col, item.id), snap.data().originalData);
+
+      if (item.type === 'schedules' && Array.isArray(originalData.sections)) {
+        for (const section of originalData.sections) {
+          const { id: sId, ...sectionData } = section;
+          await setDoc(doc(db, 'schedules', sId), sectionData);
+        }
+      } else {
+        await setDoc(doc(db, col, item.id), originalData);
+      }
+
       await deleteDoc(doc(db, 'archives', item.type, 'items', item.id));
     } catch(e) { console.error('Restore failed:', e); }
   }

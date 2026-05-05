@@ -8,6 +8,25 @@
   <link rel="stylesheet" href="maangas-styles.css">
   <link rel="stylesheet" href="header-styles.css">
   <link rel="stylesheet" href="export-styles.css">
+  <style>
+    .resize-handle {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 8px;
+      cursor: ns-resize;
+      background: linear-gradient(transparent, rgba(0,91,171,0.3));
+      border-radius: 0 0 4px 4px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    td.occupied { position: relative; }
+    td.occupied:hover .resize-handle { opacity: 1; }
+    td.occupied .resize-handle:hover { background: linear-gradient(transparent, rgba(0,91,171,0.6)); }
+    tr.resize-highlight td { background: rgba(0,91,171,0.15) !important; outline: 2px solid #005BAB; }
+    td.resize-highlight { background: rgba(0,91,171,0.25) !important; outline: 2px solid #005BAB !important; }
+  </style>
   <script>
     (function () {
       // 1. Theme Lock 🌙
@@ -157,7 +176,7 @@
         <div class="main">
           <div class="schedule-wrap">
             <div class="table-scroll">
-              <table>
+              <table style="table-layout:fixed;width:100%">
                 <colgroup>
                   <!-- Dynamically generated in JS -->
                 </colgroup>
@@ -173,14 +192,14 @@
           <!-- Panel Overlay Removed for scrollability po ! 🌊 -->
           <aside class="panel" id="panel">
             <h2>Edit Class</h2><label>Subject</label>
-            <div class="input-wrapper"><input id="subject" class="pill" placeholder="e.g. MATH 101" autocomplete="new-password">
+            <div class="input-wrapper"><input id="subject" class="pill" placeholder="e.g. MATH 101" autocomplete="off">
               <div id="subject-dropdown" class="custom-dropdown"></div>
             </div><label>Teacher</label>
             <div class="input-wrapper"><input id="teacher" class="pill" placeholder="Search teacher..."
-                autocomplete="new-password">
+                autocomplete="off">
               <div id="teacher-dropdown" class="custom-dropdown"></div>
             </div><label>Room</label>
-            <div class="input-wrapper"><input id="room" class="pill" placeholder="Search room..." autocomplete="new-password">
+            <div class="input-wrapper"><input id="room" class="pill" placeholder="Search room..." autocomplete="off">
               <div id="room-dropdown" class="custom-dropdown"></div>
             </div><label>Color</label>
             <div class="row" style="align-items: center; margin-bottom: 10px;"><select id="colorSelect" class="pill"

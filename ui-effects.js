@@ -1218,6 +1218,10 @@ document.addEventListener('DOMContentLoaded', () => {
     initPasswordVisibilityToggles();
     initAutoCollapseSidebar();
     initResumeEditLink();
+    // Disable browser autofill suggestions on all inputs
+    document.querySelectorAll('input:not([type="checkbox"]):not([type="radio"])').forEach(el => {
+        if (!el.getAttribute('autocomplete')) el.setAttribute('autocomplete', 'new-password');
+    });
 
     // Enable theme transitions after a tiny delay 🚀
     setTimeout(() => {

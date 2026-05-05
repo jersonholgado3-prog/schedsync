@@ -19,7 +19,7 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/fi
 import { initUniversalSearch } from "./search.js";
 import { initUserProfile } from "./userprofile.js";
 import { initMobileNav } from "./js/ui/mobile-nav.js";
-import { showToast, showConfirm } from "./js/utils/ui-utils.js";
+import { showToast, showConfirm, showLoading, hideLoading } from "./js/utils/ui-utils.js";
 
 // Global Messaging 🔔
 const messaging = getMessaging(app);
@@ -236,11 +236,10 @@ function initAnnouncements(role) {
     <div class="skeleton-item skeleton" style="height:80px"></div>
   `;
 
-  // 🛡️ OPTIMIZED: Fetch the latest 15 notifications (Pagination ready)
   const q = query(
     collection(db, "notifications"),
     orderBy("createdAt", "desc"),
-    limit(15)
+    limit(50)
   );
 
   // 🛡️ EMERGENCY TIMEOUT: Force display after 3s if stuck
@@ -273,17 +272,12 @@ function initAnnouncements(role) {
       .filter(d => {
         const title = (d.title || "").toUpperCase();
         const msg = (d.message || "").toUpperCase();
-        return d.isAnnouncement === true ||
-          d.isAnnouncement === "true" ||
-          d.type === "announcement" ||
+        return d.type === "announcement" ||
           title.includes("EVENT") ||
           title.includes("SCHEDULE") ||
-          title.includes("UPDATE") ||
-          title.includes("NOTICE") ||
           msg.includes("SCHEDULE") ||
           msg.includes("EVENT");
-      })
-      .slice(0, 20); // Show top 20 after filtering
+      });
 
     if (items.length === 0) {
       list.innerHTML = '<div class="widget-empty">No new announcements for now.</div>';
@@ -298,7 +292,7 @@ function initAnnouncements(role) {
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
-      });
+      }).slice(0, 3);
       window.initHeroCarousel(uniqueItems);
     }
 
@@ -519,10 +513,16 @@ async function deleteDraftGroup(name) {
       );
 
       const snap = await getDocs(q);
+      // Archive the group before deleting
+      const { archiveItem } = await import('./archive-item.js');
+      const groupDocs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      await archiveItem('schedules', name, { scheduleName: name, sections: groupDocs }, 'Draft deleted by user');
+
       const batch = writeBatch(db);
       snap.forEach(d => batch.delete(d.ref));
+      showLoading('Deleting draft...');
       await batch.commit();
-
+      hideLoading();
       showToast(`Draft group "${name}" deleted! 🗑️✨`, "success");
     } catch (e) {
       console.error("Delete draft failed:", e);
@@ -688,6 +688,8 @@ function initEventCalendar() {
    ============================= */
 let carouselInterval = null;
 let currentSlide = 0;
+let _carouselSlides = [];
+let _carouselDots = [];
 let startX = 0;
 
 function initHeroCarousel(announcements) {
@@ -696,129 +698,62 @@ function initHeroCarousel(announcements) {
   const indicators = document.getElementById('carouselIndicators');
   if (!container || !track || !indicators) return;
 
-  // Clear existing
   track.innerHTML = '';
   indicators.innerHTML = '';
 
-  // Filter latest 3 announcements 🎡
-  const latestItems = announcements.slice(0, 3);
-
-  const slidesToCreate = [...latestItems];
-
-  if (slidesToCreate.length === 0) {
-    container.style.display = 'none';
-    return;
-  }
+  const slides = announcements.slice(0, 3);
+  if (slides.length === 0) { container.style.display = 'none'; return; }
   container.style.display = 'block';
 
-  slidesToCreate.forEach((ann, index) => {
+  const colors = [
+    { bg: 'linear-gradient(135deg, #005BAB, #003B95)', tag: '#FFD200', tagText: '#002044' },
+    { bg: 'linear-gradient(135deg, #1d4ed8, #1e3a8a)', tag: '#FFD200', tagText: '#002044' },
+    { bg: 'linear-gradient(135deg, #0369a1, #075985)', tag: '#FFD200', tagText: '#002044' }
+  ];
+
+  slides.forEach((ann, i) => {
     const isUrgent = (ann.title || "").toUpperCase().includes("URGENT") || ann.isUrgent === true;
-
-    // Unique visuals based on index 🎡✨
-    const colors = [
-      { bg: 'linear-gradient(135deg, #005BAB, #003B95)', tag: '#FFD200', tagText: '#002044' },
-      { bg: 'linear-gradient(135deg, #0f172a, #334155)', tag: '#38bdf8', tagText: '#0f172a' },
-      { bg: 'linear-gradient(135deg, #991b1b, #7f1d1d)', tag: '#fecaca', tagText: '#7f1d1d' }
-    ];
-    const theme = colors[index % 3];
-
-    // Create Slide
+    const theme = colors[i % 3];
     const slide = document.createElement('div');
-    slide.className = `carousel-slide announcement-slide ${isUrgent ? 'urgent' : ''}`;
-    slide.style.background = theme.bg;
-
+    slide.className = 'carousel-slide announcement-slide';
+    slide.style.cssText = `background:${theme.bg};display:${i === 0 ? 'flex' : 'none'};flex-direction:column;justify-content:center;align-items:center;width:100%;height:100%;padding:10px 40px 55px;text-align:center;gap:6px;position:absolute;top:0;left:0;`;
     slide.innerHTML = `
-      <div class="slide-tag" style="background: ${isUrgent ? '#ef4444' : theme.tag}; color: ${isUrgent ? '#fff' : theme.tagText};">
-        ${isUrgent ? '⚠️ Urgent' : '✨ Announcement'}
-      </div>
+      <div class="slide-tag" style="background:${isUrgent ? '#ef4444' : theme.tag};color:${isUrgent ? '#fff' : theme.tagText};">${isUrgent ? '⚠️ Urgent' : '✨ Announcement'}</div>
       <div class="slide-title">${ann.title || 'Notification'}</div>
-      <div class="slide-msg">${ann.message || ''}</div>
-    `;
+      <div class="slide-msg">${ann.message || ''}</div>`;
     track.appendChild(slide);
 
-    // Create Indicator
-    const indicator = document.createElement('span');
-    indicator.className = 'indicator';
-    indicators.appendChild(indicator);
+    const dot = document.createElement('span');
+    dot.className = 'indicator' + (i === 0 ? ' active' : '');
+    indicators.appendChild(dot);
   });
 
-  // Cycle Logic
-  const allSlides = track.querySelectorAll('.carousel-slide');
-  const allIndicators = indicators.querySelectorAll('.indicator');
+  track.style.cssText = 'position:relative;width:100%;height:100%;';
+
+  _carouselSlides = Array.from(track.querySelectorAll('.carousel-slide'));
+  _carouselDots = Array.from(indicators.querySelectorAll('.indicator'));
 
   function goToSlide(index) {
-    if (index >= allSlides.length) index = 0;
-    if (index < 0) index = allSlides.length - 1;
+    if (index >= _carouselSlides.length) index = 0;
+    if (index < 0) index = _carouselSlides.length - 1;
     currentSlide = index;
-    track.style.transform = `translateX(-${index * 100}%)`;
-    allIndicators.forEach((ind, i) => ind.classList.toggle('active', i === index));
+    _carouselSlides.forEach((s, i) => s.style.display = i === index ? 'flex' : 'none');
+    _carouselDots.forEach((d, i) => d.classList.toggle('active', i === index));
   }
 
-  // Initial State Reset ⚓
   currentSlide = 0;
-  track.style.transform = 'translateX(0)';
-  if (allIndicators.length > 0) allIndicators[0].classList.add('active');
-
-  // Auto Cycle
   if (carouselInterval) clearInterval(carouselInterval);
-  if (allSlides.length > 1) {
-    carouselInterval = setInterval(() => {
-      goToSlide(currentSlide + 1);
-    }, 6000);
-  }
+  if (_carouselSlides.length > 1) carouselInterval = setInterval(() => goToSlide(currentSlide + 1), 5000);
 
-  // Swipe Support
-  container.ontouchstart = (e) => {
-    startX = e.touches[0].clientX;
-    clearInterval(carouselInterval);
-  };
-
-  container.ontouchend = (e) => {
-    const endX = e.changedTouches[0].clientX;
-    if (startX - endX > 50) goToSlide(currentSlide + 1); // Swipe Left
-    else if (endX - startX > 50) goToSlide(currentSlide - 1); // Swipe Right
-
-    // Resume cycle
-    carouselInterval = setInterval(() => goToSlide(currentSlide + 1), 6000);
-  };
-
-  // Mouse Drag Fallback
-  container.onmousedown = (e) => {
-    startX = e.clientX;
-    clearInterval(carouselInterval);
-    document.onmouseup = (ue) => {
-      const endX = ue.clientX;
-      if (startX - endX > 50) goToSlide(currentSlide + 1);
-      else if (endX - startX > 50) goToSlide(currentSlide - 1);
-      document.onmouseup = null;
-      carouselInterval = setInterval(() => goToSlide(currentSlide + 1), 6000);
-    };
-  };
-
-  // 🎡 Navigation Button Listeners ⚓
   const prevBtn = document.getElementById('prevSlide');
-  if (prevBtn) {
-    prevBtn.onclick = () => {
-      clearInterval(carouselInterval);
-      goToSlide(currentSlide - 1);
-      carouselInterval = setInterval(() => goToSlide(currentSlide + 1), 6000);
-    };
-  }
-
   const nextBtn = document.getElementById('nextSlide');
-  if (nextBtn) {
-    nextBtn.onclick = () => {
-      clearInterval(carouselInterval);
-      goToSlide(currentSlide + 1);
-      carouselInterval = setInterval(() => goToSlide(currentSlide + 1), 6000);
-    };
-  }
+  if (prevBtn) prevBtn.onclick = () => { clearInterval(carouselInterval); goToSlide(currentSlide - 1); carouselInterval = setInterval(() => goToSlide(currentSlide + 1), 5000); };
+  if (nextBtn) nextBtn.onclick = () => { clearInterval(carouselInterval); goToSlide(currentSlide + 1); carouselInterval = setInterval(() => goToSlide(currentSlide + 1), 5000); };
 
-  // ⌨️ Keyboard Accessibility
-  container.setAttribute('tabindex', '0');
-  container.onkeydown = (e) => {
-    if (e.key === 'ArrowLeft') goToSlide(currentSlide - 1);
-    if (e.key === 'ArrowRight') goToSlide(currentSlide + 1);
+  container.ontouchstart = (e) => { startX = e.touches[0].clientX; };
+  container.ontouchend = (e) => {
+    const dx = e.changedTouches[0].clientX - startX;
+    if (Math.abs(dx) > 50) goToSlide(currentSlide + (dx < 0 ? 1 : -1));
   };
 }
 window.initHeroCarousel = initHeroCarousel;

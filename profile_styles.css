@@ -389,3 +389,21 @@ col.day { width: calc((100% - 110px)/6); }
   .prof-modal-actions { flex-direction: column-reverse; }
   .prof-btn-cancel, .prof-btn-save { width: 100%; text-align: center; }
 }
+
+
+.dark #changePassBox {
+    background: #1e293b !important;
+    color: #f1f5f9 !important;
+    border-color: #334155 !important;
+}
+.dark #changePassBox input {
+    background: #0f172a !important;
+    color: #f1f5f9 !important;
+    border-color: #334155 !important;
+}
+.dark #changePassBox input::placeholder { color: #64748b !important; }
+.dark #cpCancelBtn {
+    background: #334155 !important;
+    color: #f1f5f9 !important;
+    border-color: #475569 !important;
+}

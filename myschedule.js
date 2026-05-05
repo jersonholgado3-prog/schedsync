@@ -2,6 +2,7 @@
    FIREBASE
    ============================= */
 import { db, auth } from "./js/config/firebase-config.js";
+import { archiveItem } from "./archive-item.js";
 import {
   collection,
   getDocs,
@@ -19,7 +20,7 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/fi
 import { toMin, toTime, to12, parseBlock, normalizeDay, normalizeTimeBlock } from "./js/utils/time-utils.js";
 import { initUserProfile } from "./userprofile.js";
 import { initUniversalSearch } from './search.js';
-import { showToast, showConfirm, showPrompt } from "./js/utils/ui-utils.js";
+import { showToast, showConfirm, showPrompt, showLoading, hideLoading } from "./js/utils/ui-utils.js";
 import { initMobileNav } from "./js/ui/mobile-nav.js";
 import { logAction } from "./js/utils/audit-logger.js";
 
@@ -1198,6 +1199,11 @@ async function deleteGroup(scheduleName) {
         return;
       }
 
+      // Archive the whole group as one entry before deleting
+      const groupDocs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      await archiveItem('schedules', scheduleName, { scheduleName, sections: groupDocs }, 'Deleted by user');
+
+      showLoading(`Deleting "${scheduleName}"...`);
       const deletes = snap.docs.map(d => deleteDoc(doc(db, "schedules", d.id)));
       await Promise.all(deletes);
 
@@ -1207,12 +1213,14 @@ async function deleteGroup(scheduleName) {
       }
 
       showToast(`Group "${scheduleName}" deleted successfully!`, "success");
+      hideLoading();
       renderAll();
 
       // --- AUDIT LOG 📜 ---
       logAction("DELETE_GROUP", `Deleted schedule group: ${scheduleName}`, { scheduleName });
     } catch (error) {
       console.error("Error deleting group:", error);
+      hideLoading();
       showToast("Failed to delete group.", "error");
     }
   }

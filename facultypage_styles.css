@@ -607,7 +607,8 @@
 }
 
 .status-parttime {
-    background-color: #FEF08A;
+    background-color: #bae6fd;
+    color: #0369a1;
 }
 
 /* DROP ZONE STYLES */
@@ -1569,3 +1570,14 @@
         font-size: 1.75rem;
     }
 }
+
+/* 🌙 Dark mode inputs */
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark select,
+.dark textarea {
+    background: #1e293b;
+    color: #f1f5f9;
+    border-color: #334155;
+}
+.dark input::placeholder, .dark textarea::placeholder { color: #64748b; }
+.dark .faculty-card { background: #1e293b; color: #f1f5f9; border-color: #334155; }

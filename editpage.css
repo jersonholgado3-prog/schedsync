@@ -782,6 +782,31 @@ td.vacant-marked {
     border-color: #334155;
 }
 
+.dark .panel input,
+.dark .panel select,
+.dark .panel textarea,
+.dark #commentPanel input,
+.dark #commentPanel textarea {
+    background: #0f172a;
+    color: #f1f5f9;
+    border-color: #334155;
+}
+
+.dark .panel input::placeholder,
+.dark #commentPanel textarea::placeholder {
+    color: #64748b;
+}
+
+.dark .custom-dropdown {
+    background: #1e293b;
+    border-color: #334155;
+    color: #f1f5f9;
+}
+
+.dark .dropdown-option:hover {
+    background: #334155;
+}
+
 .dark .pill {
     background: #0f172a;
     border-color: #334155;

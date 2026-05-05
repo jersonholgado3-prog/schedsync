@@ -1,0 +1,100 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: get the caller's user doc
+    function userData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function role() {
+      return userData().role;
+    }
+    function isAdmin() {
+      return isSignedIn() && role() == 'admin';
+    }
+    function isEditor() {
+      return isSignedIn() && (role() == 'admin' || role() == 'program head' || userData().editPermission == true);
+    }
+    function isTeacherOrAbove() {
+      return isSignedIn() && role() in ['admin', 'teacher', 'program head'];
+    }
+
+    // ── Users ──────────────────────────────────────────────
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() || request.auth.uid == userId;
+    }
+
+    // ── Schedules ──────────────────────────────────────────
+    match /schedules/{docId} {
+      allow read: if isSignedIn();
+      allow create, update: if isEditor();
+      allow delete: if isAdmin();
+    }
+
+    // ── Sections ───────────────────────────────────────────
+    match /sections/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // ── Courses / Curriculum ───────────────────────────────
+    match /courses/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // ── Rooms ──────────────────────────────────────────────
+    match /rooms/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // ── Notifications ──────────────────────────────────────
+    match /notifications/{docId} {
+      allow read: if isSignedIn();
+      allow create: if isTeacherOrAbove();
+      allow update, delete: if isAdmin();
+    }
+
+    // ── Edit Requests ──────────────────────────────────────
+    match /edit_requests/{docId} {
+      allow read: if isAdmin() || request.auth.uid == resource.data.userId;
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    // ── Audit Logs ─────────────────────────────────────────
+    match /audit_logs/{docId} {
+      allow read: if isAdmin();
+      allow create: if isTeacherOrAbove();
+      allow update, delete: if false;
+    }
+
+    // ── Archives ───────────────────────────────────────────
+    match /archives/{type}/items/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // ── Academic Calendar / Events ─────────────────────────
+    match /academic_calendar/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // ── Comments ───────────────────────────────────────────
+    match /comments/{docId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin() || request.auth.uid == resource.data.userId;
+    }
+
+    // ── Presence (realtime indicators) ─────────────────────
+    match /presence/{docId} {
+      allow read, write: if isSignedIn();
+    }
+  }
+}

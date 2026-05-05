@@ -116,3 +116,27 @@ export function showPrompt(title, message) {
 window.showToast = showToast;
 window.showConfirm = showConfirm;
 window.showPrompt = showPrompt;
+
+export function showLoading(message = 'Processing...') {
+    let el = document.getElementById('_global_loading');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = '_global_loading';
+        el.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);backdrop-filter:blur(4px);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;';
+        el.innerHTML = `
+            <div style="background:#fff;border:3px solid #000;border-radius:24px;box-shadow:6px 6px 0 #000;padding:2rem 2.5rem;display:flex;flex-direction:column;align-items:center;gap:16px;min-width:200px;">
+                <div style="width:48px;height:48px;border:5px solid #e2e8f0;border-top-color:#005BAB;border-radius:50%;animation:_spin 0.7s linear infinite;"></div>
+                <div id="_global_loading_msg" style="color:#0f172a;font-weight:800;font-size:1rem;text-transform:uppercase;letter-spacing:0.05em;">${message}</div>
+            </div>
+            <style>@keyframes _spin{to{transform:rotate(360deg)}}</style>`;
+        document.body.appendChild(el);
+    } else {
+        document.getElementById('_global_loading_msg').textContent = message;
+        el.style.display = 'flex';
+    }
+}
+
+export function hideLoading() {
+    const el = document.getElementById('_global_loading');
+    if (el) el.style.display = 'none';
+}

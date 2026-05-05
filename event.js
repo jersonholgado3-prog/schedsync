@@ -5,6 +5,7 @@ import {
   getDocs,
   getDoc,
   updateDoc,
+  deleteDoc,
   onSnapshot,
   collection,
   query,
@@ -13,6 +14,8 @@ import {
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { initUserProfile } from "./userprofile.js";
 import { initUniversalSearch } from "./search.js";
+import { archiveItem } from "./archive-item.js";
+import { showConfirm } from "./js/utils/ui-utils.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   initMobileNav();
@@ -22,13 +25,73 @@ document.addEventListener("DOMContentLoaded", () => {
 
 let allEvents = [];
 let itemsToShow = 5;
+let eventSelectionMode = false;
+let selectedEventIds = new Set();
 const eventsContainer = document.getElementById("eventsContainer");
 const loadMoreBtn = document.querySelector(".load-more-btn");
 const isEditor = () => {
   const role = localStorage.getItem("userRole") || "student";
-  const hasEditPermission = localStorage.getItem("editPermission") === "true";
-  return role === "admin" || role === "program head" || hasEditPermission;
+  return role === "admin";
 };
+
+function updateEventSelectionBar() {
+  const bar = document.getElementById('eventSelectionBar');
+  const count = document.getElementById('eventSelectedCount');
+  if (bar) bar.style.display = eventSelectionMode ? 'flex' : 'none';
+  if (count) count.textContent = `${selectedEventIds.size} Selected`;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const selectBtn = document.getElementById('eventSelectModeBtn');
+  const cancelBtn = document.getElementById('eventCancelSelectBtn');
+  const deleteBtn = document.getElementById('eventDeleteSelectedBtn');
+
+  if (selectBtn) selectBtn.onclick = () => { eventSelectionMode = true; updateEventSelectionBar(); renderEvents(allEvents); };
+  if (cancelBtn) cancelBtn.onclick = () => { eventSelectionMode = false; selectedEventIds.clear(); updateEventSelectionBar(); renderEvents(allEvents); };
+  if (deleteBtn) deleteBtn.onclick = async () => {
+    if (selectedEventIds.size === 0) return;
+    if (!await showConfirm('Delete Events?', `Delete ${selectedEventIds.size} selected event(s)?`)) return;
+
+    const selectedEvents = allEvents.filter(e => selectedEventIds.has(e.id || String(e.createdAt)));
+
+    // Archive all selected
+    for (const ev of selectedEvents) {
+      await archiveItem('events', ev.id || String(ev.createdAt), ev, 'Bulk deleted by admin');
+    }
+
+    // Delete academic_calendar docs
+    const academicEvents = selectedEvents.filter(e => e.creatorName === 'Academic Admin' && e.id);
+    for (const ev of academicEvents) {
+      await deleteDoc(doc(db, 'academic_calendar', ev.id));
+    }
+
+    // Remove host events from DEFAULT_SECTION.classes
+    const hostCreatedAts = new Set(
+      selectedEvents.filter(e => e.creatorName !== 'Academic Admin').map(e => e.createdAt)
+    );
+    if (hostCreatedAts.size > 0) {
+      const defaultRef = doc(db, "schedules", "DEFAULT_SECTION");
+      const snap = await getDoc(defaultRef);
+      if (snap.exists()) {
+        const classes = (snap.data().classes || []).filter(c =>
+          !(c.section === "EVENT_HOST" && hostCreatedAts.has(c.createdAt))
+        );
+        await updateDoc(defaultRef, { classes });
+      }
+    }
+
+    selectedEventIds.clear();
+    eventSelectionMode = false;
+    updateEventSelectionBar();
+  };
+
+  const selectAllBtn = document.getElementById('eventSelectAllBtn');
+  if (selectAllBtn) selectAllBtn.onclick = () => {
+    allEvents.forEach(e => selectedEventIds.add(e.id || String(e.createdAt)));
+    updateEventSelectionBar();
+    renderEvents(allEvents);
+  };
+});
 
 // --- LOAD MORE LOGIC ---
 if (loadMoreBtn) {
@@ -164,7 +227,22 @@ function renderEvents(events) {
       card.appendChild(actions);
     }
 
-    card.onclick = () => showEventDetails(event);
+    card.onclick = () => {
+      if (eventSelectionMode) {
+        const id = event.id || String(event.createdAt);
+        if (selectedEventIds.has(id)) selectedEventIds.delete(id);
+        else selectedEventIds.add(id);
+        card.style.outline = selectedEventIds.has(id) ? '3px solid #005BAB' : '';
+        updateEventSelectionBar();
+      } else {
+        showEventDetails(event);
+      }
+    };
+
+    if (eventSelectionMode) {
+      const cbId = event.id || String(event.createdAt);
+      card.style.outline = selectedEventIds.has(cbId) ? '3px solid #005BAB' : '';
+    }
     eventsContainer.appendChild(card);
   });
 

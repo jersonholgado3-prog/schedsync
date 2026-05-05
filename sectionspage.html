@@ -197,6 +197,24 @@
       border-color: #38bdf8;
     }
 
+    /* --- SECTION MODAL DARK MODE FIX --- */
+    .dark #sectionModal > div {
+      background: #111827 !important;
+      color: #f8fafc !important;
+    }
+    .dark #sectionModal input,
+    .dark #sectionModal select {
+      background: #1e293b !important;
+      color: #f8fafc !important;
+      border-color: #334155 !important;
+    }
+    .dark #sectionModal label {
+      color: #94a3b8 !important;
+    }
+    .dark #sectionModal h2 {
+      color: #f8fafc !important;
+    }
+
     /* --- PREMIUM SCHEDULE MODAL ANGAS STYLES 🚀 --- */
     #scheduleModal .bg-white {
       background-color: var(--modal-bg) !important;
@@ -695,7 +713,7 @@
                     <button id="genEmailsBtn" class="bg-emerald-500 text-white border-2 border-black px-3 py-1.5 rounded-lg font-bold hover:bg-emerald-600 transition-colors text-sm">Gen Emails</button>
                     <button id="multiDeleteBtn" class="bg-red-500 text-white border-2 border-black px-3 py-1.5 rounded-lg font-bold hover:bg-red-600 transition-colors text-sm">Delete</button>
                     <button id="multiSchedBtn" class="bg-[#005BAB] text-white border-2 border-black px-3 py-1.5 rounded-lg font-bold hover:bg-blue-700 transition-colors text-sm">Create Sched</button>
-                    <button id="cancelSelectionBtn" class="bg-slate-200 text-black border-2 border-black px-3 py-1.5 rounded-lg font-bold hover:bg-slate-300 transition-colors text-sm">Cancel</button>
+                    <button id="cancelSelectionBtn" class="bg-slate-200 dark:bg-slate-700 text-black dark:text-white border-2 border-black dark:border-slate-500 px-3 py-1.5 rounded-lg font-bold hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors text-sm">Cancel</button>
                   </div>
                 </div>
                 <button id="clearAllBtn"

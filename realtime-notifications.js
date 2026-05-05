@@ -426,7 +426,7 @@ overlay.innerHTML = `
     <div class="dg-notif-list" id="dg-notif-list-content">
       <div style="padding: 40px; text-align: center; color: #64748b;">Loading messages...</div>
     </div>
-  </div >
+  </div>
     `;
 document.body.appendChild(overlay);
 
