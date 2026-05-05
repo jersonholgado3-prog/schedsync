@@ -149,7 +149,26 @@ function renderProfile(data) {
             });
         }
         extraLabel.innerHTML = "<strong>Status:</strong>";
-        extraValue.textContent = data.employmentStatus || "N/A";
+        const currentStatus = data.employmentStatus || "Part-Time";
+        const isPartTime = currentStatus.toLowerCase().includes('part');
+        extraValue.innerHTML = `
+            <button id="employmentToggle" style="padding:4px 14px;border:2px solid black;border-radius:20px;font-weight:700;font-size:0.8rem;cursor:pointer;background:${isPartTime ? '#fef9c3' : '#dcfce7'};color:black;box-shadow:2px 2px 0 black;">
+                ${isPartTime ? '⏰ Part-Time' : '🕐 Full-Time'}
+            </button>
+        `;
+        document.getElementById('employmentToggle').addEventListener('click', async () => {
+            const btn = document.getElementById('employmentToggle');
+            const nowPartTime = btn.textContent.trim().includes('Part');
+            const newStatus = nowPartTime ? 'Full-Time' : 'Part-Time';
+            btn.textContent = nowPartTime ? '🕐 Full-Time' : '⏰ Part-Time';
+            btn.style.background = nowPartTime ? '#dcfce7' : '#fef9c3';
+            try {
+                await updateDoc(doc(db, 'users', auth.currentUser.uid), { employmentStatus: newStatus });
+                showToast(`Status updated to ${newStatus}`, 'success');
+            } catch (e) {
+                showToast('Failed to update status.', 'error');
+            }
+        });
 
         // Fetch Schedule for Teacher
         fetchTeacherSchedule(name);

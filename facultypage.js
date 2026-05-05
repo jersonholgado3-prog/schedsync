@@ -395,11 +395,15 @@ async function loadTeachers() {
   }
 
   try {
-    const [teacherSnap, phSnap] = await Promise.all([
+    const [teacherSnap, phSnap, teacherCapSnap, phCapSnap, headSnap] = await Promise.all([
       getDocs(query(collection(db, "users"), where("role", "==", "teacher"))),
-      getDocs(query(collection(db, "users"), where("role", "==", "program head")))
+      getDocs(query(collection(db, "users"), where("role", "==", "program head"))),
+      getDocs(query(collection(db, "users"), where("role", "==", "Teacher"))),
+      getDocs(query(collection(db, "users"), where("role", "==", "Program Head"))),
+      getDocs(query(collection(db, "users"), where("role", "==", "head teacher")))
     ]);
-    const snap = { docs: [...teacherSnap.docs, ...phSnap.docs], empty: teacherSnap.empty && phSnap.empty };
+    const snap = { docs: [...teacherSnap.docs, ...phSnap.docs, ...teacherCapSnap.docs, ...phCapSnap.docs, ...headSnap.docs] };
+    snap.empty = snap.docs.length === 0;
 
     if (snap.empty) {
       facultyGrid.innerHTML = "<p style='text-align: center; width: 100%; grid-column: 1/-1;'>No teachers found.</p>";
@@ -490,7 +494,10 @@ async function loadTeachers() {
     });
   } catch (error) {
     console.error("Error loading teachers:", error);
-    facultyGrid.innerHTML = `<p style='text-align: center; width: 100%; grid-column: 1/-1;'>Error loading teachers.</p>`;
+    const msg = error?.code === 'permission-denied'
+      ? "You don't have permission to view faculty. Contact your admin."
+      : "Error loading teachers.";
+    facultyGrid.innerHTML = `<p style='text-align: center; width: 100%; grid-column: 1/-1;'>${msg}</p>`;
   }
 }
 
