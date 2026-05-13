@@ -93,7 +93,10 @@
   <script>
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     OneSignalDeferred.push(async function(OneSignal) {
-      await OneSignal.init({ appId: "ef82a79a-5e7a-4a5f-83a6-e2b90b8302c9" });
+      await OneSignal.init({
+        appId: "ef82a79a-5e7a-4a5f-83a6-e2b90b8302c9",
+        promptOptions: { slidedown: { prompts: [{ type: "push", autoPrompt: true, text: { actionMessage: "SchedSync wants to send you schedule updates.", acceptButton: "Allow", cancelButton: "No Thanks" }, delay: { pageViews: 1, timeDelay: 2 } }] } }
+      });
     });
   </script>
 </head>
