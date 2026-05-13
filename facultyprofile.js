@@ -184,24 +184,24 @@ function showProgramHeadModal(callback) {
         z-index:2000001;opacity:0;transition:all 0.4s cubic-bezier(0.16,1,0.3,1);
     `;
     overlay.innerHTML = `
-        <div class="export-card-container" style="background:white;border:5px solid black;padding:45px;border-radius:32px;box-shadow:15px 15px 0px #000;text-align:center;max-width:650px;width:95%;transform:scale(0.9);transition:all 0.5s cubic-bezier(0.175,0.885,0.32,1.275);position:relative;">
-            <button class="close-modal-btn" style="position:absolute;top:20px;right:20px;background:#f1f5f9;border:3px solid black;width:40px;height:40px;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;box-shadow:3px 3px 0px black;">×</button>
+        <div class="export-card-container" style="background:white;border: 1.5px solid var(--border-main);padding:45px;border-radius:32px;box-shadow:15px 15px 0px #000;text-align:center;max-width:650px;width:95%;transform:scale(0.9);transition:all 0.5s cubic-bezier(0.175,0.885,0.32,1.275);position:relative;">
+            <button class="close-modal-btn" style="position:absolute;top:20px;right:20px;background:#f1f5f9;border: 1.5px solid #cbd5e1;width:40px;height:40px;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;box-shadow: 0 2px 8px rgba(0,0,0,0.08);">×</button>
             <h2 style="color:#005BAB;font-size:32px;font-weight:950;margin-bottom:8px;text-transform:uppercase;letter-spacing:2px;">Select Program</h2>
             <p style="font-size:16px;color:#64748b;font-weight:700;margin-bottom:35px;">Choose the program this faculty member will head:</p>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;">
-                <div data-program="ICT/IT" class="program-option" style="background:#eff6ff;border:4px solid black;padding:25px 15px;border-radius:20px;cursor:pointer;box-shadow:6px 6px 0px black;transition:all 0.3s;">
+                <div data-program="ICT/IT" class="program-option" style="background:#eff6ff;border: 1.5px solid var(--border-main);padding:25px 15px;border-radius:20px;cursor:pointer;box-shadow: 0 2px 8px rgba(0,0,0,0.08);transition:all 0.3s;">
                     <div style="font-size:40px;margin-bottom:10px;">💻</div>
                     <div style="font-weight:900;color:#1e40af;font-size:14px;text-transform:uppercase;">ICT/IT Program Head</div>
                 </div>
-                <div data-program="GE" class="program-option" style="background:#fef3c7;border:4px solid black;padding:25px 15px;border-radius:20px;cursor:pointer;box-shadow:6px 6px 0px black;transition:all 0.3s;">
+                <div data-program="GE" class="program-option" style="background:#fef3c7;border: 1.5px solid var(--border-main);padding:25px 15px;border-radius:20px;cursor:pointer;box-shadow: 0 2px 8px rgba(0,0,0,0.08);transition:all 0.3s;">
                     <div style="font-size:40px;margin-bottom:10px;">📚</div>
                     <div style="font-weight:900;color:#92400e;font-size:14px;text-transform:uppercase;">GE Program Head</div>
                 </div>
-                <div data-program="BM" class="program-option" style="background:#f0fdf4;border:4px solid black;padding:25px 15px;border-radius:20px;cursor:pointer;box-shadow:6px 6px 0px black;transition:all 0.3s;">
+                <div data-program="BM" class="program-option" style="background:#f0fdf4;border: 1.5px solid var(--border-main);padding:25px 15px;border-radius:20px;cursor:pointer;box-shadow: 0 2px 8px rgba(0,0,0,0.08);transition:all 0.3s;">
                     <div style="font-size:40px;margin-bottom:10px;">💼</div>
                     <div style="font-weight:900;color:#166534;font-size:14px;text-transform:uppercase;">BM Program Head</div>
                 </div>
-                <div data-program="SHS" class="program-option" style="background:#fce7f3;border:4px solid black;padding:25px 15px;border-radius:20px;cursor:pointer;box-shadow:6px 6px 0px black;transition:all 0.3s;">
+                <div data-program="SHS" class="program-option" style="background:#fce7f3;border: 1.5px solid var(--border-main);padding:25px 15px;border-radius:20px;cursor:pointer;box-shadow: 0 2px 8px rgba(0,0,0,0.08);transition:all 0.3s;">
                     <div style="font-size:40px;margin-bottom:10px;">🎓</div>
                     <div style="font-weight:900;color:#9d174d;font-size:14px;text-transform:uppercase;">Asst. Principal (SHS)</div>
                 </div>
@@ -602,20 +602,20 @@ function showDownloadFormatSelector(callback) {
     const overlay = document.createElement('div');
     overlay.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.8);backdrop-filter:blur(12px);display:flex;justify-content:center;align-items:center;z-index:2000001;opacity:0;transition:all 0.4s cubic-bezier(0.16,1,0.3,1);`;
     overlay.innerHTML = `
-        <div class="export-card-container" style="background:white;border:5px solid black;padding:45px;border-radius:32px;box-shadow:15px 15px 0px #000;text-align:center;max-width:650px;width:95%;transform:scale(0.9);transition:all 0.5s cubic-bezier(0.175,0.885,0.32,1.275);position:relative;">
-            <button class="close-modal-btn" style="position:absolute;top:20px;right:20px;background:#f1f5f9;border:3px solid black;width:40px;height:40px;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;box-shadow:3px 3px 0px black;">×</button>
+        <div class="export-card-container" style="background:white;border: 1.5px solid var(--border-main);padding:45px;border-radius:32px;box-shadow:15px 15px 0px #000;text-align:center;max-width:650px;width:95%;transform:scale(0.9);transition:all 0.5s cubic-bezier(0.175,0.885,0.32,1.275);position:relative;">
+            <button class="close-modal-btn" style="position:absolute;top:20px;right:20px;background:#f1f5f9;border: 1.5px solid #cbd5e1;width:40px;height:40px;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;box-shadow: 0 2px 8px rgba(0,0,0,0.08);">×</button>
             <h2 style="color:#005BAB;font-size:32px;font-weight:950;margin-bottom:8px;text-transform:uppercase;letter-spacing:2px;">Export Schedule</h2>
             <p style="font-size:16px;color:#64748b;font-weight:700;margin-bottom:35px;">Select your preferred format below.</p>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:25px;">
-                <div id="pdfBtn" style="background:#fef2f2;border:4px solid black;padding:30px 10px;border-radius:20px;cursor:pointer;box-shadow:6px 6px 0px black;transition:all 0.3s;">
+                <div id="pdfBtn" style="background:#fef2f2;border: 1.5px solid var(--border-main);padding:30px 10px;border-radius:20px;cursor:pointer;box-shadow: 0 2px 8px rgba(0,0,0,0.08);transition:all 0.3s;">
                     <div style="font-size:45px;margin-bottom:15px;">📑</div>
                     <div style="font-weight:900;color:#991b1b;font-size:14px;text-transform:uppercase;">PDF Document</div>
                 </div>
-                <div id="imgBtn" style="background:#eff6ff;border:4px solid black;padding:30px 10px;border-radius:20px;cursor:pointer;box-shadow:6px 6px 0px black;transition:all 0.3s;">
+                <div id="imgBtn" style="background:#eff6ff;border: 1.5px solid var(--border-main);padding:30px 10px;border-radius:20px;cursor:pointer;box-shadow: 0 2px 8px rgba(0,0,0,0.08);transition:all 0.3s;">
                     <div style="font-size:45px;margin-bottom:15px;">🖼️</div>
                     <div style="font-weight:900;color:#1e40af;font-size:14px;text-transform:uppercase;">Image (PNG)</div>
                 </div>
-                <div id="xlsBtn" style="background:#f0fdf4;border:4px solid black;padding:30px 10px;border-radius:20px;cursor:pointer;box-shadow:6px 6px 0px black;transition:all 0.3s;">
+                <div id="xlsBtn" style="background:#f0fdf4;border: 1.5px solid var(--border-main);padding:30px 10px;border-radius:20px;cursor:pointer;box-shadow: 0 2px 8px rgba(0,0,0,0.08);transition:all 0.3s;">
                     <div style="font-size:45px;margin-bottom:15px;">📊</div>
                     <div style="font-weight:900;color:#166534;font-size:14px;text-transform:uppercase;">Excel</div>
                 </div>

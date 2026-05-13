@@ -50,18 +50,18 @@
     overflow: hidden;
     padding: 0.5rem;
     gap: 0.5rem;
-    border: 3px solid black;
+    border: 1.5px solid var(--border-main);
     border-radius: 20px;
     box-sizing: border-box;
     cursor: pointer;
     background-color: transparent;
-    box-shadow: 4px 4px 0px black;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .logo-container:hover {
     transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .logo-container img {
@@ -97,16 +97,16 @@
     height: 45px;
     cursor: pointer;
     padding: 8px;
-    border: 3px solid black;
+    border: 1.5px solid var(--border-main);
     border-radius: 12px;
     background-color: white;
-    box-shadow: 3px 3px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .notification-icon:hover {
     transform: translate(-2px, -2px);
-    box-shadow: 5px 5px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .user-profile {
@@ -117,17 +117,17 @@
     height: 70px;
     align-items: center;
     padding: 0 1.25rem;
-    border: 3px solid black;
+    border: 1.5px solid var(--border-main);
     border-radius: 20px;
     cursor: pointer;
     background-color: white;
-    box-shadow: 4px 4px 0px black;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .user-profile:hover {
     transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .user-name {
@@ -330,7 +330,7 @@
         min-height: 110px !important;
         padding: 1rem !important;
         border-radius: 20px !important;
-        box-shadow: 4px 4px 0px black !important;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
     }
 
     .room-pill-text-label {
@@ -353,7 +353,7 @@
         border-radius: 15px !important;
         margin-top: 1rem !important;
         height: 50px !important;
-        box-shadow: 4px 4px 0px black !important;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
     }
 
     /* Modal Mobile Fix */
@@ -368,7 +368,7 @@
     .campus-card {
         padding: 1rem !important; /* Tightened padding to maximize room grid 📐 */
         border-radius: 24px !important;
-        box-shadow: 4px 4px 0px black !important;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
         border-width: 2px !important;
     }
 
@@ -410,10 +410,10 @@
 
 .campus-card {
     background: #f8fafc;
-    border: 3px solid black;
+    border: 1.5px solid var(--border-main);
     border-radius: 32px;
     padding: 3rem 2.5rem; /* Increased vertical padding 📐 */
-    box-shadow: 8px 8px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     width: 100%;
 }
@@ -431,13 +431,13 @@
     align-items: center;
     justify-content: flex-start;
     padding: 0;
-    border: 3px solid black;
+    border: 1.5px solid var(--border-main);
     background-color: white;
     cursor: pointer;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     font-weight: 950;
     text-transform: uppercase;
-    box-shadow: 6px 6px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     position: relative;
     min-height: 125px;
     border-radius: 20px;
@@ -511,7 +511,7 @@
 
 .room-pill:active {
     transform: translate(2px, 2px);
-    box-shadow: 2px 2px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .professional-mode .room-pill {
@@ -718,10 +718,10 @@
 .logo-container {
     width: 250px !important;
     height: 65px !important;
-    border: 3px solid black !important;
+    border: 1.5px solid var(--border-main) !important;
     border-radius: 15px !important;
     background-color: white !important;
-    box-shadow: 4px 4px 0px black !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
     padding: 5px !important;
     display: flex !important;
     align-items: center !important;
@@ -777,7 +777,7 @@
     max-width: 40px !important;
     max-height: 40px !important;
     border-radius: 50% !important;
-    border: 2px solid black !important;
+    border: 1.5px solid var(--border-main) !important;
     overflow: hidden !important;
     display: flex !important;
     align-items: center !important;
@@ -799,10 +799,10 @@
     align-items: center !important;
     gap: 0.75rem !important;
     padding: 0.5rem 1rem !important;
-    border: 3px solid black !important;
+    border: 1.5px solid var(--border-main) !important;
     border-radius: 50px !important;
     background-color: white !important;
-    box-shadow: 4px 4px 0px black !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
     cursor: pointer !important;
     overflow: hidden !important;
 }
@@ -896,7 +896,7 @@
 .add-room-modal-box {
     background-color: white !important;
     color: #0f172a !important;
-    border: 2px solid black;
+    border: 1.5px solid var(--border-main);
     border-radius: 30px;
     padding: 2rem;
     max-width: 28rem;
@@ -913,7 +913,7 @@
 .modal-input {
     width: 100%;
     padding: 0.75rem;
-    border: 2px solid black;
+    border: 1.5px solid var(--border-main);
     border-radius: 0.75rem;
     background-color: #f8fafc !important;
     color: #0f172a !important;
@@ -931,7 +931,7 @@
 .modal-btn-cancel {
     flex: 1;
     padding: 0.75rem;
-    border: 2px solid black;
+    border: 1.5px solid var(--border-main);
     border-radius: 0.75rem;
     font-weight: 700;
     background-color: white !important;
@@ -947,7 +947,7 @@
 .modal-btn-save {
     flex: 1;
     padding: 0.75rem;
-    border: 2px solid black;
+    border: 1.5px solid var(--border-main);
     border-radius: 0.75rem;
     font-weight: 700;
     background-color: #bfdbfe !important;
@@ -1006,9 +1006,9 @@
 .add-room-fab {
     background-color: #005BAB !important; /* Royal Blue */
     color: white !important;
-    border: 3px solid black !important;
+    border: 1.5px solid var(--border-main) !important;
     border-radius: 50% !important;
-    box-shadow: 4px 4px 0px black !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
     transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
     cursor: pointer !important;
     z-index: 200 !important;
@@ -1017,12 +1017,12 @@
 .add-room-fab:hover {
     transform: scale(1.1) rotate(90deg) !important;
     background-color: #004481 !important;
-    box-shadow: 6px 6px 0px black !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
 }
 
 .add-room-fab:active {
     transform: translate(2px, 2px) scale(0.95) !important;
-    box-shadow: 2px 2px 0px black !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
 }
 
 /* Dark Mode Override for FAB */

@@ -21,7 +21,7 @@
 .modal-box {
     background-color: #f9f9f9;
     padding: 30px;
-    border: 2px solid black;
+    border: 1.5px solid var(--border-main);
     border-radius: 30px;
     width: 90%;
     max-width: 500px;
@@ -99,7 +99,7 @@
 .save-button {
     padding: 12px 20px;
     background-color: #B0C6F8;
-    border: 2px solid black;
+    border: 1.5px solid var(--border-main);
     border-radius: 20px;
     font-size: 16px;
     font-weight: bold;

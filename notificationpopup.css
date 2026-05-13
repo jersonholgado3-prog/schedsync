@@ -43,7 +43,7 @@
 
 /* ===== MESSAGE FORM ===== */
 .message-form {
-    border: 2px solid black;
+    border: 1.5px solid var(--border-main);
     background-color: #d4d4d8;
     border-radius: 30px;
     width: 100%;
@@ -71,7 +71,7 @@ body {
 }
 
 .message-form {
-    border: 2px solid black;
+    border: 1.5px solid var(--border-main);
     background-color: #d4d4d8;
     border-radius: 30px;
     width: 100%;
@@ -140,7 +140,7 @@ body {
 }
 
 .input-field {
-    border: 2px solid black;
+    border: 1.5px solid var(--border-main);
     height: 52px;
     border-radius: 30px;
     background: white;
@@ -151,7 +151,7 @@ body {
 }
 
 .textarea-field {
-    border: 2px solid black;
+    border: 1.5px solid var(--border-main);
     height: 275px;
     border-radius: 30px;
     background: white;
@@ -170,7 +170,7 @@ body {
 
 .send-button {
     background: #e5e5e5;
-    border: 2px solid black;
+    border: 1.5px solid var(--border-main);
     border-radius: 30px;
     height: 40px;
     width: 106px;

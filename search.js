@@ -506,9 +506,9 @@ export function initUniversalSearch(db, options = {}) {
         left: 0;
         right: 0;
         background: white;
-        border: 3px solid black;
+        border: 1.5px solid #cbd5e1;
         border-radius: 20px;
-        box-shadow: 8px 8px 0px black;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         z-index: 10000 !important; /* Extremely high to beat sticky headers */
         max-height: 480px;
         overflow-y: auto;
@@ -585,7 +585,7 @@ export function initUniversalSearch(db, options = {}) {
         width: 40px;
         height: 40px;
         background: #e2e8f0;
-        border: 2px solid black;
+        border: 1.5px solid #cbd5e1;
         border-radius: 10px;
         display: flex;
         align-items: center;

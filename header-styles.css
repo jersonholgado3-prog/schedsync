@@ -5,7 +5,8 @@
     --bg-main: #f8fafc;
     --bg-card: #ffffff;
     --text-main: #0f172a;
-    --border-main: #000000;
+    --border-main: #cbd5e1;
+    --shadow-card: 0 2px 8px rgba(0,0,0,0.07);
     --sidebar-bg: #002044;
     --sidebar-text: rgba(255, 255, 255, 0.8);
     --sidebar-icon-filter: brightness(0) invert(1);
@@ -35,6 +36,29 @@
     --input-bg: #1e293b;
     --input-text: #f8fafc;
     color-scheme: dark;
+}
+
+/* ── GLOBAL PROFESSIONAL SOFTENING (light mode only) ──
+   Replaces the heavy neo-brutalist black outlines/shadows
+   with subtle, modern equivalents across all pages.       */
+:root:not(.dark) *:not(.sidebar):not(.sidebar *):not(.mobile-bottom-nav):not(.mobile-bottom-nav *) {
+    --brutal-shadow: var(--shadow-card) !important;
+}
+body:not(.dark) [style*="box-shadow: 0 2px 8px rgba(0,0,0,0.08)"],
+body:not(.dark) [style*="box-shadow: 0 2px 8px rgba(0,0,0,0.08)"] {
+    box-shadow: var(--shadow-card) !important;
+}
+body:not(.dark) [style*="box-shadow: 0 1px 4px rgba(0,0,0,0.08)"],
+body:not(.dark) [style*="box-shadow: 0 1px 4px rgba(0,0,0,0.08)"] {
+    box-shadow: var(--shadow-card) !important;
+}
+body:not(.dark) [style*="border: 1.5px solid var(--border-main)"],
+body:not(.dark) [style*="border: 1.5px solid var(--border-main)"] {
+    border: 1.5px solid var(--border-main) !important;
+}
+body:not(.dark) [style*="border: 1.5px solid var(--border-main)"],
+body:not(.dark) [style*="border: 1.5px solid var(--border-main)"] {
+    border: 1.5px solid var(--border-main) !important;
 }
 
 /* 📥 SELECT & DROPDOWN THEMING 📥 */
@@ -164,8 +188,8 @@ body,
 
 .header {
     display: grid !important;
-    grid-template-columns: min-content 1fr min-content !important;
-    /* ✅ PREVENT LOGO SHIFT: Fix columns to min-content */
+    grid-template-columns: 1fr auto 1fr !important;
+    /* ✅ TRUE CENTER: Equal side columns so greeting is always centered */
     align-items: center !important;
     min-height: 90px !important;
     height: auto !important;
@@ -174,9 +198,9 @@ body,
     position: relative !important;
     z-index: 1000 !important;
     background-color: var(--bg-card) !important;
-    border: 3px solid var(--border-main) !important;
-    border-radius: 20px !important;
-    box-shadow: 6px 6px 0px black !important;
+    border: 1.5px solid var(--border-main) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
     margin: 1rem 1.5rem 1rem 1.5rem !important;
     padding: 0.75rem 1.25rem !important;
     width: calc(100% - 3rem) !important;
@@ -200,14 +224,12 @@ body,
 }
 
 .professional-mode .header,
-.professional-mode .logo-container,
 .professional-mode .notification-icon-wrapper,
 .professional-mode .user-profile,
 .professional-mode .user-profile-btn,
 .professional-mode .search-wrapper,
 .professional-mode .hamburger-btn {
     border-width: 1.5px !important;
-    /* Slightly thinner as requested 🧤 */
 }
 
 .hamburger-btn {
@@ -216,17 +238,17 @@ body,
     justify-content: center;
     width: 48px;
     height: 48px;
-    border: 3px solid black;
+    border: 1.5px solid var(--border-main);
     border-radius: 12px;
     background: white;
-    box-shadow: 4px 4px 0px black;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .hamburger-btn:active {
     transform: translate(2px, 2px);
-    box-shadow: 2px 2px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .burger-icon {
@@ -240,10 +262,9 @@ body,
 .dark .search-wrapper,
 .dark .notification-icon-wrapper,
 .dark .logo-container {
-    background-color: var(--bg-card) !important;
-    border-color: var(--border-main) !important;
-    color: var(--text-main) !important;
-    box-shadow: 4px 4px 0px #000 !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 .dark .user-name {
@@ -287,15 +308,14 @@ body,
 
 .logo-container {
     width: fit-content !important;
-    min-width: 150px !important;
-    max-width: 250px !important;
+    min-width: unset !important;
+    max-width: 420px !important;
     height: 65px !important;
-    border: 3px solid black !important;
-    border-radius: 15px !important;
-    background-color: white !important;
-    box-shadow: 4px 4px 0px black !important;
-    padding: 10px !important;
-    /* Increased from 5px for breathing room ⚓ */
+    border: none !important;
+    border-radius: 0 !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -344,10 +364,10 @@ body,
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    border: 3px solid black !important;
+    border: 1.5px solid var(--border-main) !important;
     border-radius: 12px !important;
-    background-color: white !important;
-    box-shadow: 4px 4px 0px black !important;
+    background-color: var(--bg-card) !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
     cursor: pointer !important;
     position: relative;
 }
@@ -363,10 +383,10 @@ body,
     align-items: center !important;
     gap: 0.75rem !important;
     padding: 0.5rem 1rem !important;
-    border: 3px solid black !important;
+    border: 1.5px solid var(--border-main) !important;
     border-radius: 50px !important;
-    background-color: white !important;
-    box-shadow: 4px 4px 0px black !important;
+    background-color: var(--bg-card) !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
     cursor: pointer !important;
     overflow: visible !important;
     position: relative !important;
@@ -377,7 +397,7 @@ body,
 .user-profile:hover,
 .user-profile-btn:hover {
     /* transform: translate(-2px, -2px); -- REMOVED SHIFTING EFFECT ⚓ */
-    box-shadow: 6px 6px 0px black;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
 }
 
 /* ABSOLUTE FLATNESS FOR PROFESSIONAL MODE 👔 */
@@ -406,7 +426,7 @@ body,
     height: 40px !important;
     min-width: 40px !important;
     border-radius: 50% !important;
-    border: 2px solid black !important;
+    border: 1.5px solid var(--border-main) !important;
     overflow: hidden !important;
     display: flex !important;
     align-items: center !important;
@@ -431,15 +451,15 @@ body,
     display: flex !important;
     align-items: center !important;
     background-color: var(--bg-card) !important;
-    border: 3px solid var(--border-main) !important;
-    border-radius: 16px !important;
+    border: 1.5px solid var(--border-main) !important;
+    border-radius: 12px !important;
     width: 52px !important;
     height: 52px !important;
     padding: 0 !important;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
     overflow: hidden !important;
     cursor: pointer !important;
-    box-shadow: 4px 4px 0px black !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
     flex-shrink: 0 !important;
     justify-content: center !important;
     position: relative !important;
@@ -525,8 +545,8 @@ body,
 
     /* --- HEADER --- */
     body .container .main-content-wrapper .header {
-        background: white !important;
-        border: 1.5px solid #d1d5db !important;
+        background: var(--bg-card) !important;
+        border: 1.5px solid var(--border-main) !important;
         border-radius: 14px !important;
         height: 52px !important;
         min-height: 52px !important;
@@ -538,7 +558,7 @@ body,
         justify-content: space-between !important;
         align-items: center !important;
         gap: 0.5rem !important;
-        width: calc(100% - 1rem) !important;
+        width: auto !important;
         box-sizing: border-box !important;
         position: fixed !important;
         top: 0.35rem !important;
@@ -572,14 +592,17 @@ body,
             display: grid !important;
             grid-template-columns: auto 1fr auto !important;
             gap: 1.5rem !important;
-            box-shadow: 4px 4px 0px black !important;
-            border: 3px solid black !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
+            border: 1.5px solid var(--border-main) !important;
         }
     }
 
-    body.dark .container .main-content-wrapper .header {
+    body.dark .container .main-content-wrapper .header,
+    html.dark .container .main-content-wrapper .header,
+    html.dark body .container .main-content-wrapper .header {
         background: #1e293b !important;
         border-color: #334155 !important;
+        box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4) !important;
     }
 
     /* --- HIDE on mobile: Burger, Logo, Greeting, Name --- */
@@ -1052,12 +1075,15 @@ html.professional-mode *::after {
         margin: 0 !important;
         border-radius: 0 !important;
         height: 56px !important;
-        background: white !important;
+        background: var(--bg-card) !important;
         border: none !important;
-        border-bottom: 1px solid #e5e7eb !important;
+        border-bottom: 1px solid var(--border-main) !important;
         box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08) !important;
         z-index: 10000 !important;
         padding: 0 12px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
     }
 
     /* ── BOTTOM NAV: locks to viewport bottom ── */
@@ -1106,7 +1132,7 @@ html.professional-mode *::after {
     html.dark .header {
         background: #1e293b !important;
         border-color: #334155 !important;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4) !important;
+        box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4) !important;
     }
 
     /* HIDE everything except search, bell, avatar */
@@ -1151,9 +1177,9 @@ html.professional-mode *::after {
         width: 36px !important;
         height: 36px !important;
         min-width: 36px !important;
-        border: 1.5px solid #d1d5db !important;
+        border: 1.5px solid var(--border-main) !important;
         border-radius: 10px !important;
-        background: white !important;
+        background: var(--bg-card) !important;
         box-shadow: none !important;
         align-items: center !important;
         justify-content: center !important;
@@ -1195,10 +1221,10 @@ html.professional-mode *::after {
         overflow: hidden !important;
         gap: 0 !important;
         box-shadow: none !important;
-        border: 1.5px solid #d1d5db !important;
+        border: 1.5px solid var(--border-main) !important;
         justify-content: center !important;
         align-items: center !important;
-        background: white !important;
+        background: var(--bg-card) !important;
     }
 
     .dark .user-profile,
@@ -1239,4 +1265,24 @@ html.professional-mode *::after {
     html body .sidebar {
         display: none !important;
     }
+}
+
+/* ── LOGO CONTAINER: NO BORDER/BG/SHADOW ── */
+.logo-container,
+.dark .logo-container,
+html .logo-container,
+html.dark .logo-container,
+html.professional-mode .logo-container,
+html.dark.professional-mode .logo-container {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  height: 48px !important;
+}
+
+.logo-container .logo-img {
+  height: 100% !important;
+  width: auto !important;
+  border-radius: 16px !important;
 }

@@ -29,10 +29,10 @@ body {
     font-size: 1.5rem;
     font-weight: 600;
     background-color: white;
-    border: 3px solid black;
+    border: 1.5px solid var(--border-main);
     border-radius: 30px;
     width: 745px;
-    box-shadow: 10px 10px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .login-container h2 {
@@ -90,7 +90,7 @@ input:focus {
 button[type="submit"] {
     padding: 1rem 4rem;
     background-color: #a5b4fc;
-    border: 3px solid black;
+    border: 1.5px solid var(--border-main);
     border-radius: 30px;
     font-size: 1.5rem;
     font-weight: 600;
@@ -98,13 +98,13 @@ button[type="submit"] {
     cursor: pointer;
     transition: all 0.2s;
     margin-top: 1rem;
-    box-shadow: 4px 4px 0px black;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
 
 button[type="submit"]:hover {
     background-color: #8b5cf6;
     transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .forgot-password {
@@ -135,7 +135,7 @@ button[type="submit"]:hover {
     padding: 0.75rem 4rem;
     margin-top: 0.625rem;
     background-color: #e5e7eb;
-    border: 3px solid black;
+    border: 1.5px solid var(--border-main);
     border-radius: 30px;
     font-size: 1.5rem;
     font-weight: 600;
@@ -146,13 +146,13 @@ button[type="submit"]:hover {
     width: fit-content;
     min-width: 278px;
     align-self: center;
-    box-shadow: 4px 4px 0px black;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
 
 .signup-button:hover {
     background-color: #d1d5db;
     transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 /* Password Toggle Styles */
@@ -246,7 +246,7 @@ button[type="submit"]:hover {
         width: 100% !important;
         max-width: 100% !important;
         border-radius: 24px !important;
-        box-shadow: 6px 6px 0px black !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
     }
 
     h1,

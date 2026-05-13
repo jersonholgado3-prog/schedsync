@@ -309,14 +309,14 @@ function showDownloadFormatSelector(callback) {
     const overlay = document.createElement('div');
     overlay.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.8);backdrop-filter:blur(12px);display:flex;justify-content:center;align-items:center;z-index:2000001;opacity:0;transition:opacity 0.3s;`;
     overlay.innerHTML = `
-        <div style="background:white;border:5px solid black;padding:45px;border-radius:32px;box-shadow:15px 15px 0px #000;text-align:center;max-width:600px;width:95%;position:relative;">
-            <button id="closeExportModal" style="position:absolute;top:20px;right:20px;background:#f1f5f9;border:3px solid black;width:40px;height:40px;border-radius:12px;cursor:pointer;font-size:20px;font-weight:900;box-shadow:3px 3px 0px black;">×</button>
+        <div style="background:white;border: 1.5px solid var(--border-main);padding:45px;border-radius:32px;box-shadow:15px 15px 0px #000;text-align:center;max-width:600px;width:95%;position:relative;">
+            <button id="closeExportModal" style="position:absolute;top:20px;right:20px;background:#f1f5f9;border: 1.5px solid #cbd5e1;width:40px;height:40px;border-radius:12px;cursor:pointer;font-size:20px;font-weight:900;box-shadow: 0 2px 8px rgba(0,0,0,0.08);">×</button>
             <h2 style="color:#005BAB;font-size:28px;font-weight:950;margin-bottom:8px;text-transform:uppercase;">Export Schedule</h2>
             <p style="color:#64748b;font-weight:700;margin-bottom:30px;">Select format</p>
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
-                <div data-fmt="pdf" style="background:#fef2f2;border:4px solid black;padding:25px 10px;border-radius:20px;cursor:pointer;box-shadow:6px 6px 0px black;"><div style="font-size:40px;">📑</div><div style="font-weight:900;color:#991b1b;font-size:13px;text-transform:uppercase;margin-top:8px;">PDF</div></div>
-                <div data-fmt="image" style="background:#eff6ff;border:4px solid black;padding:25px 10px;border-radius:20px;cursor:pointer;box-shadow:6px 6px 0px black;"><div style="font-size:40px;">🖼️</div><div style="font-weight:900;color:#1e40af;font-size:13px;text-transform:uppercase;margin-top:8px;">Image</div></div>
-                <div data-fmt="excel" style="background:#f0fdf4;border:4px solid black;padding:25px 10px;border-radius:20px;cursor:pointer;box-shadow:6px 6px 0px black;"><div style="font-size:40px;">📊</div><div style="font-weight:900;color:#166534;font-size:13px;text-transform:uppercase;margin-top:8px;">Excel</div></div>
+                <div data-fmt="pdf" style="background:#fef2f2;border: 1.5px solid var(--border-main);padding:25px 10px;border-radius:20px;cursor:pointer;box-shadow: 0 2px 8px rgba(0,0,0,0.08);"><div style="font-size:40px;">📑</div><div style="font-weight:900;color:#991b1b;font-size:13px;text-transform:uppercase;margin-top:8px;">PDF</div></div>
+                <div data-fmt="image" style="background:#eff6ff;border: 1.5px solid var(--border-main);padding:25px 10px;border-radius:20px;cursor:pointer;box-shadow: 0 2px 8px rgba(0,0,0,0.08);"><div style="font-size:40px;">🖼️</div><div style="font-weight:900;color:#1e40af;font-size:13px;text-transform:uppercase;margin-top:8px;">Image</div></div>
+                <div data-fmt="excel" style="background:#f0fdf4;border: 1.5px solid var(--border-main);padding:25px 10px;border-radius:20px;cursor:pointer;box-shadow: 0 2px 8px rgba(0,0,0,0.08);"><div style="font-size:40px;">📊</div><div style="font-weight:900;color:#166534;font-size:13px;text-transform:uppercase;margin-top:8px;">Excel</div></div>
             </div>
         </div>`;
     document.body.appendChild(overlay);

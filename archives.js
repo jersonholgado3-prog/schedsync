@@ -2,7 +2,18 @@ import { app, db, auth } from "./js/config/firebase-config.js";
 
 import { collection, doc, getDoc, getDocs, setDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, deleteUser } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { showToast, showConfirm, showLoading, hideLoading } from "./js/utils/ui-utils.js";
+
+const secondaryConfig = {
+  apiKey: "AIzaSyBrtJocBlfkPciYO7f8-7FwREE1tSF3VXU",
+  authDomain: "schedsync-e60d0.firebaseapp.com",
+  projectId: "schedsync-e60d0",
+  storageBucket: "schedsync-e60d0.firebasestorage.app",
+  messagingSenderId: "334140247575",
+  appId: "1:334140247575:web:930b0c12e024e4defc5652"
+};
 
 import { initUserProfile } from "./userprofile.js";
 
@@ -45,7 +56,7 @@ function setupEventListeners() {
 
 async function loadArchives() {
   try {
-    const types = ['schedules', 'sections', 'faculty', 'curriculum', 'events'];
+    const types = ['schedules', 'sections', 'curriculum', 'events'];
     allArchives = [];
     for (const type of types) {
       const snapshot = await getDocs(collection(db, 'archives', type, 'items'));
@@ -197,6 +208,7 @@ window.bulkDeleteArchives = async function() {
 
 window.deleteArchive = async function(type, itemId, silent = false) {
   if (!silent && !await showConfirm('Delete Permanently?', 'This cannot be undone.')) return;
+  if (!silent) showLoading('Deleting...');
   try {
     // Delete from original collection
     const collectionMap = {
@@ -210,12 +222,31 @@ window.deleteArchive = async function(type, itemId, silent = false) {
     if (originalCollection) {
       try { await deleteDoc(doc(db, originalCollection, itemId)); } catch (e) { /* may not exist */ }
     }
+
+    // Delete Firebase Auth account for faculty
+    if (type === 'faculty') {
+      const archiveDoc = await getDoc(doc(db, 'archives', type, 'items', itemId));
+      const data = archiveDoc.exists() ? archiveDoc.data()?.originalData : null;
+      if (data?.email && data?.password) {
+        let tempApp;
+        try {
+          tempApp = initializeApp(secondaryConfig, 'ArchiveDel-' + Date.now());
+          const tempAuth = getAuth(tempApp);
+          const cred = await signInWithEmailAndPassword(tempAuth, data.email, data.password);
+          await deleteUser(cred.user);
+        } catch (e) { /* auth user may already be deleted */ }
+        finally { if (tempApp) await deleteApp(tempApp).catch(() => {}); }
+      }
+    }
+
     // Delete from archives
     await deleteDoc(doc(db, 'archives', type, 'items', itemId));
     if (!silent) { showToast('Permanently deleted', 'success'); await loadArchives(); }
   } catch (error) {
     console.error(error);
     showToast('Failed to delete', 'error');
+  } finally {
+    if (!silent) hideLoading();
   }
 };
 

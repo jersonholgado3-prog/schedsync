@@ -149,7 +149,7 @@ td[draggable="true"]:active {
     /* Maangas Green Gradient ✨ */
     background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
     color: white !important;
-    border: 3px solid black !important;
+    border: 1.5px solid var(--border-main) !important;
     border-radius: 50px !important;
     /* Fully Rounded 🏀 */
     font-weight: 800 !important;
@@ -157,7 +157,7 @@ td[draggable="true"]:active {
     text-transform: uppercase !important;
     letter-spacing: 0.05em !important;
     cursor: pointer !important;
-    box-shadow: 4px 4px 0px black !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
     position: relative;
     overflow: hidden;
@@ -192,7 +192,7 @@ td[draggable="true"]:active {
 
 .download-all-header-btn:hover {
     transform: translate(-3px, -3px) !important;
-    box-shadow: 7px 7px 0px black !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
     background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
     color: white !important;
 }
@@ -204,7 +204,7 @@ td[draggable="true"]:active {
 
 .download-all-header-btn:active {
     transform: translate(1px, 1px) !important;
-    box-shadow: 2px 2px 0px black !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
 }
 
 /* Dark Mode Maangas 🌑 */
@@ -223,11 +223,11 @@ td[draggable="true"]:active {
         padding: 0.6rem 1rem !important;
         font-size: 0.7rem !important;
         border-width: 2px !important;
-        box-shadow: 2px 2px 0px black !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
     }
 
     .download-all-header-btn:hover {
         transform: translate(-1px, -1px) !important;
-        box-shadow: 3px 3px 0px black !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
     }
 }

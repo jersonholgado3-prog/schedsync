@@ -28,9 +28,9 @@ export function initUserProfile(profileSelector = "#userProfile") {
     right: auto;
     width: 240px;
     margin-top: 0;
-    border: 3px solid black;
+    border: 1.5px solid #cbd5e1;
     border-radius: 20px;
-    box-shadow: 6px 6px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     display: none; 
     flex-direction: column;
     overflow: hidden;
@@ -225,16 +225,16 @@ export function initUserProfile(profileSelector = "#userProfile") {
       font-weight: 800;
       transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       background: white; 
-      border: 2px solid black;
+      border: 1.5px solid #cbd5e1;
       border-radius: 12px;
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
       color: black;
       text-transform: uppercase;
       font-size: 13px;
     }
     .dropdown-item:hover { 
       transform: translate(-2px, -2px);
-      box-shadow: 6px 6px 0px black;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       background: #f1f5f9;
     }
     
@@ -245,11 +245,11 @@ export function initUserProfile(profileSelector = "#userProfile") {
       background: #334155; /* Lighter grey for better visibility 🌑 */
       color: white; 
       border-color: black;
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     }
     .dark .dropdown-item:hover { 
       background: #475569; 
-      box-shadow: 6px 6px 0px black;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
   `;
   document.head.appendChild(style);

@@ -59,13 +59,13 @@ body {
 }
 
 .content-box {
-  border: 3px solid black;
+  border: 1.5px solid var(--border-main);
   border-radius: 30px;
   overflow: visible;
   background: #fff;
   width: 100%;
   padding: 1rem;
-  box-shadow: 4px 4px 0px black;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
   margin-bottom: 2rem;
   min-height: 200px;
 }
@@ -82,7 +82,7 @@ body {
   width: 200px;
   height: 200px;
   margin-left: 40px;
-  border: 2px solid black;
+  border: 1.5px solid var(--border-main);
   border-radius: 30px;
   flex-shrink: 0;
   overflow: hidden;
@@ -149,7 +149,7 @@ body {
 
 /* ── Schedule Table ── */
 .table-scroll {
-  border: 2px solid black;
+  border: 1.5px solid var(--border-main);
   overflow: auto;
   border-radius: 20px;
   max-height: 500px;
@@ -207,7 +207,7 @@ col.day { width: calc((100% - 110px)/6); }
   width: 80px;
   height: 80px;
   background-color: #B0C6F8;
-  border: 2px solid black;
+  border: 1.5px solid var(--border-main);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -226,10 +226,10 @@ col.day { width: calc((100% - 110px)/6); }
   display: flex;
   background: #f1f5f9;
   padding: 4px;
-  border: 2px solid black;
+  border: 1.5px solid var(--border-main);
   border-radius: 16px;
   gap: 4px;
-  box-shadow: 3px 3px 0px black;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .mode-btn {
@@ -294,7 +294,7 @@ col.day { width: calc((100% - 110px)/6); }
   .content-box {
     padding: 1rem !important;
     border-radius: 20px !important;
-    box-shadow: 4px 4px 0px black !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
   }
 
   .profile-content {

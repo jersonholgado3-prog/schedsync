@@ -128,10 +128,10 @@
             <div class="flex justify-between items-center mb-4 ml-2">
               <h2 class="text-2xl">Classrooms</h2>
               <div class="flex gap-2 items-center">
-                <button id="selectModeBtn" class="hidden items-center gap-2 px-4 py-2 text-sm font-bold border-2 border-black rounded-xl shadow-[2px_2px_0px_black] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all active:scale-95 bg-white dark:bg-gray-800 admin-only"
-                  onclick="toggleSelectMode()" style="display:none">☑️ Select</button>
+                <button id="selectModeBtn" class="hidden items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl transition-all active:scale-95 admin-only"
+                  onclick="toggleSelectMode()" style="display:none; background:var(--bg-card); color:var(--text-main); border: 1.5px solid var(--border-main); box-shadow: 0 1px 4px rgba(0,0,0,0.08);">☑️ Select</button>
                 <button id="roomImportDocBtn"
-                  class="flex items-center gap-2 px-4 py-2 text-sm font-bold border-2 border-black rounded-xl shadow-[2px_2px_0px_black] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all active:scale-95 bg-white dark:bg-gray-800 admin-only" style="display:none">
+                  class="flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl transition-all active:scale-95 admin-only" style="display:none; background:var(--bg-card); color:var(--text-main); border: 1.5px solid var(--border-main); box-shadow: 0 1px 4px rgba(0,0,0,0.08);">
                   📂 Import Rooms
                 </button>
                 <input type="file" id="roomDocImportInput" accept=".xlsx,.csv,.pdf,.docx,.doc" style="display:none">

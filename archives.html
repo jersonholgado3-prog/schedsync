@@ -96,7 +96,7 @@
         <!-- Tabs -->
         <div class="archive-tabs">
           <button class="tab-btn active" data-type="schedules">Schedules</button>
-          <button class="tab-btn" data-type="faculty">Faculty</button>
+
           <button class="tab-btn" data-type="sections">Sections</button>
           <button class="tab-btn" data-type="curriculum">Curriculum</button>
           <button class="tab-btn" data-type="events">Events</button>
@@ -118,12 +118,12 @@
         </div>
 
         <!-- Archive List -->
-        <div id="archiveSelectionBar" style="display:none;align-items:center;gap:12px;padding:10px 16px;background:#1e293b;border-radius:12px;margin-bottom:12px;color:white;font-weight:700;">
+        <div id="archiveSelectionBar" style="display:none;align-items:center;gap:12px;padding:10px 16px;background:white;border: 1.5px solid var(--border-main);border-radius:12px;margin-bottom:12px;color:black;font-weight:700;box-shadow: 0 1px 4px rgba(0,0,0,0.08);">
           <input type="checkbox" id="selectAllArchives" style="width:18px;height:18px;cursor:pointer;" title="Select All" onchange="toggleSelectAllArchives(this.checked)">
           <span id="archiveSelectedCount">0 Selected</span>
-          <button onclick="bulkRestoreArchives()" style="padding:6px 14px;background:#22c55e;color:white;border:2px solid black;border-radius:8px;font-weight:700;cursor:pointer;">Restore</button>
-          <button onclick="bulkDeleteArchives()" style="padding:6px 14px;background:#ef4444;color:white;border:2px solid black;border-radius:8px;font-weight:700;cursor:pointer;">🗑️ Delete</button>
-          <button onclick="clearArchiveSelection()" style="padding:6px 14px;background:#64748b;color:white;border:2px solid black;border-radius:8px;font-weight:700;cursor:pointer;">Cancel</button>
+          <button onclick="bulkRestoreArchives()" style="padding:6px 14px;background:#22c55e;color:white;border: 1.5px solid var(--border-main);border-radius:8px;font-weight:700;cursor:pointer;">Restore</button>
+          <button onclick="bulkDeleteArchives()" style="padding:6px 14px;background:#ef4444;color:white;border: 1.5px solid var(--border-main);border-radius:8px;font-weight:700;cursor:pointer;">🗑️ Delete</button>
+          <button onclick="clearArchiveSelection()" style="padding:6px 14px;background:#64748b;color:white;border: 1.5px solid var(--border-main);border-radius:8px;font-weight:700;cursor:pointer;">Cancel</button>
         </div>
         <div class="archive-list" id="archiveList">
           <div class="loading">Loading archives...</div>

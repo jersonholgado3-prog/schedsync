@@ -270,7 +270,7 @@ function renderSection(status, schedules, type = null) {
     const hasPermission = localStorage.getItem('editPermission') === 'true';
 
     if (currentUserRole !== 'student') {
-      const viewSchedBtn = `<button class="view-sched-btn" style="background:#005BAB;color:white;font-size:11px;padding:4px 12px;font-weight:800;border-radius:8px;border:2px solid black;box-shadow:2px 2px 0px black;text-transform:uppercase;cursor:pointer;" onclick="event.stopPropagation(); window.location.href='editpage.html?name=${encodeURIComponent(safeName)}'">📅 View Schedules</button>`;
+      const viewSchedBtn = `<button class="view-sched-btn" style="background:#005BAB;color:white;font-size:11px;padding:4px 12px;font-weight:800;border-radius:8px;border: 1.5px solid #cbd5e1;box-shadow: 0 2px 8px rgba(0,0,0,0.08);text-transform:uppercase;cursor:pointer;" onclick="event.stopPropagation(); window.location.href='editpage.html?name=${encodeURIComponent(safeName)}'">📅 View Schedules</button>`;
 
       if (currentUserRole === 'admin' || hasPermission) {
         const addSectionBtn = `<button class="action-button add-section" onclick="event.stopPropagation(); addSectionToGroup('${safeName}')">+ SECTION</button>`;
@@ -301,11 +301,11 @@ function renderSection(status, schedules, type = null) {
       } else if (currentUserRole === 'teacher' || currentUserRole === 'program head') {
         buttonsHtml = `
           ${viewSchedBtn}
-          <button class="action-button request-permission-btn" style="background: #1e293b; font-size: 11px; padding: 4px 12px; font-weight: 800; border-radius: 8px; border: 2px solid black; box-shadow: 2px 2px 0px black; color: white; text-transform: uppercase; cursor: pointer;" onclick="event.stopPropagation(); window.requestEditPermission()">Ask to Edit</button>`;
+          <button class="action-button request-permission-btn" style="background: #1e293b; font-size: 11px; padding: 4px 12px; font-weight: 800; border-radius: 8px; border: 1.5px solid #cbd5e1; box-shadow: 0 2px 8px rgba(0,0,0,0.08); color: white; text-transform: uppercase; cursor: pointer;" onclick="event.stopPropagation(); window.requestEditPermission()">Ask to Edit</button>`;
       }
     } else {
       // Student: Strictly read-only 🛡️
-      buttonsHtml = `<button class="action-button request-permission-btn" style="background: #1e293b; font-size: 11px; padding: 4px 12px; font-weight: 800; border-radius: 8px; border: 2px solid black; box-shadow: 2px 2px 0px black; color: white; text-transform: uppercase; cursor: pointer;" onclick="event.stopPropagation(); window.requestEditPermission()">Ask to Edit</button>`;
+      buttonsHtml = `<button class="action-button request-permission-btn" style="background: #1e293b; font-size: 11px; padding: 4px 12px; font-weight: 800; border-radius: 8px; border: 1.5px solid #cbd5e1; box-shadow: 0 2px 8px rgba(0,0,0,0.08); color: white; text-transform: uppercase; cursor: pointer;" onclick="event.stopPropagation(); window.requestEditPermission()">Ask to Edit</button>`;
     }
 
     folderFn.innerHTML = `
@@ -1069,9 +1069,9 @@ function showDownloadFormatSelector(callback) {
   `;
 
   overlay.innerHTML = `
-    <div class="export-card-container" style="background: white; border: 5px solid black; padding: 45px; border-radius: 32px; box-shadow: 15px 15px 0px #000; text-align: center; max-width: 550px; width: 95%; transform: scale(0.9); transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative;">
+    <div class="export-card-container" style="background: white; border: 1.5px solid var(--border-main); padding: 45px; border-radius: 32px; box-shadow: 15px 15px 0px #000; text-align: center; max-width: 550px; width: 95%; transform: scale(0.9); transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative;">
       
-      <button class="close-modal-btn" style="position: absolute; top: 20px; right: 20px; background: #f1f5f9; border: 3px solid black; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; transition: all 0.2s; box-shadow: 3px 3px 0px black;">×</button>
+      <button class="close-modal-btn" style="position: absolute; top: 20px; right: 20px; background: #f1f5f9; border: 1.5px solid #cbd5e1; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">×</button>
 
       <div style="margin-bottom: 35px;">
         <h2 style="color: #005BAB; font-size: 32px; font-weight: 950; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 2px;">Download Data</h2>
@@ -1081,7 +1081,7 @@ function showDownloadFormatSelector(callback) {
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 25px;">
         
         <!-- EXCEL OPTION -->
-        <div class="format-option xls-btn" style="background: #f0fdf4; border: 4px solid black; padding: 30px 20px; border-radius: 20px; cursor: pointer; transition: all 0.3s; box-shadow: 6px 6px 0px black; position: relative; overflow: hidden;">
+        <div class="format-option xls-btn" style="background: #f0fdf4; border: 1.5px solid var(--border-main); padding: 30px 20px; border-radius: 20px; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative; overflow: hidden;">
           <div style="font-size: 45px; margin-bottom: 15px;">📊</div>
           <div style="font-weight: 900; color: #166534; font-size: 14px; text-transform: uppercase;">Excel Sheet</div>
           <div style="font-size: 11px; color: #22c55e; font-weight: 700; margin-top: 5px;">Styled Spreadsheet</div>
@@ -1089,7 +1089,7 @@ function showDownloadFormatSelector(callback) {
         </div>
 
         <!-- CSV OPTION -->
-        <div class="format-option csv-btn" style="background: #f8fafc; border: 4px solid black; padding: 30px 20px; border-radius: 20px; cursor: pointer; transition: all 0.3s; box-shadow: 6px 6px 0px black; position: relative; overflow: hidden;">
+        <div class="format-option csv-btn" style="background: #f8fafc; border: 1.5px solid var(--border-main); padding: 30px 20px; border-radius: 20px; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative; overflow: hidden;">
           <div style="font-size: 45px; margin-bottom: 15px;">📑</div>
           <div style="font-weight: 900; color: #334155; font-size: 14px; text-transform: uppercase;">Raw CSV</div>
           <div style="font-size: 11px; color: #64748b; font-weight: 700; margin-top: 5px;">Pure Data Export</div>
@@ -1106,14 +1106,14 @@ function showDownloadFormatSelector(callback) {
     <style>
       .format-option:hover {
         transform: translate(-4px, -4px);
-        box-shadow: 10px 10px 0px black;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       }
       .format-option:hover .hover-glow {
         opacity: 1;
       }
       .format-option:active {
         transform: translate(2px, 2px);
-        box-shadow: 2px 2px 0px black;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       }
       .close-modal-btn:hover {
         background: #ef4444;
@@ -1431,8 +1431,8 @@ window.openViewSchedulesModal = async function(scheduleName) {
     const overlay = document.createElement('div');
     overlay.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.85);backdrop-filter:blur(8px);display:flex;justify-content:center;align-items:flex-start;z-index:2000001;overflow-y:auto;padding:2rem;`;
     overlay.innerHTML = `
-        <div style="background:white;border:4px solid black;border-radius:24px;box-shadow:10px 10px 0 #000;width:100%;max-width:1100px;padding:2rem;position:relative;">
-            <button id="closeViewSched" style="position:absolute;top:16px;right:16px;background:#f1f5f9;border:2px solid black;width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:18px;font-weight:900;box-shadow:2px 2px 0 #000;">×</button>
+        <div style="background:white;border: 1.5px solid var(--border-main);border-radius:24px;box-shadow:10px 10px 0 #000;width:100%;max-width:1100px;padding:2rem;position:relative;">
+            <button id="closeViewSched" style="position:absolute;top:16px;right:16px;background:#f1f5f9;border: 1.5px solid #cbd5e1;width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:18px;font-weight:900;box-shadow:2px 2px 0 #000;">×</button>
             <h2 style="font-size:1.4rem;font-weight:900;color:#005BAB;margin-bottom:1.5rem;text-transform:uppercase;">📅 My Assigned Schedules</h2>
             ${sections.map(sec => `
                 <div style="margin-bottom:2rem;">

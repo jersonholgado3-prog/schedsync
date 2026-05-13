@@ -28,12 +28,12 @@
   <style>
     .section-card {
       background: white;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       border-radius: 12px;
       padding: 15px;
       cursor: pointer;
       transition: all 0.2s;
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -44,7 +44,7 @@
 
     .section-card:hover {
       transform: translate(-2px, -2px);
-      box-shadow: 6px 6px 0px black;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       background: #f8fafc;
     }
 
@@ -67,31 +67,31 @@
       color: black;
       padding: 2px 8px;
       border-radius: 4px;
-      border: 1.5px solid black;
+      border: 1.5px solid var(--border-main);
     }
 
     .add-section-btn {
       background: #005BAB;
       color: white;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       border-radius: 12px;
       padding: 10px 20px;
       font-weight: 700;
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
       cursor: pointer;
       transition: all 0.2s;
     }
 
     .add-section-btn:hover {
       transform: translate(-2px, -2px);
-      box-shadow: 6px 6px 0px black;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
     /* Grade Group Styles */
     .grade-group {
       margin-bottom: 1.5rem;
       background: #f1f5f9;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       border-radius: 20px;
       padding: 12px;
     }
@@ -138,10 +138,10 @@
       align-items: center;
       gap: 15px;
       background: white;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       border-radius: 15px;
       padding: 8px 15px;
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
       transition: all 0.2s;
     }
     .selection-bar.active {
@@ -150,7 +150,7 @@
     .dark .selection-bar {
       background: #1e293b;
       border-color: #334155;
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     }
     .selection-count {
       font-weight: 900;
@@ -169,7 +169,7 @@
     .section-checkbox, .grade-checkbox {
       width: 26px;
       height: 26px;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       border-radius: 50% !important;
       cursor: pointer;
       appearance: none !important;
@@ -240,7 +240,7 @@
     .schedule-type-toggle {
       display: flex;
       background: #f1f5f9;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       border-radius: 18px;
       padding: 6px;
       position: relative;
@@ -270,14 +270,14 @@
     .type-btn.active {
       background: #005BAB;
       color: white;
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     }
 
     /* Form Inputs ⌨️ */
     .modal-input-wrapper input {
       width: 100%;
       background: var(--input-bg);
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       padding: 14px 20px;
       border-radius: 18px;
       font-weight: 700;
@@ -307,7 +307,7 @@
       flex-wrap: wrap;
       gap: 10px;
       background: #f8fafc;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       padding: 15px;
       border-radius: 20px;
     }
@@ -318,14 +318,14 @@
 
     .quick-select-btn, .day-chip {
       padding: 10px 20px;
-      border: 2px solid black;
+      border: 1.5px solid var(--border-main);
       border-radius: 12px;
       background: white;
       font-weight: 800;
       font-size: 0.85rem;
       cursor: pointer;
       transition: all 0.2s;
-      box-shadow: 3px 3px 0px black;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
     .dark .quick-select-btn, .dark .day-chip {
@@ -335,7 +335,7 @@
 
     .quick-select-btn:hover, .day-chip:hover {
       transform: translate(-1px, -1px);
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     }
 
     .quick-select-btn.active, .day-chip.active {
@@ -349,14 +349,14 @@
       width: 100%;
       background: #005BAB;
       color: white;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       padding: 20px;
       border-radius: 20px;
       font-weight: 900;
       font-size: 1.25rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      box-shadow: 6px 6px 0px black;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       transition: all 0.2s;
       cursor: pointer;
       margin-top: 1.5rem;
@@ -364,12 +364,12 @@
 
     .save-sched-btn:hover {
       transform: translate(-2px, -2px);
-      box-shadow: 8px 8px 0px black;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
     .save-sched-btn:active {
       transform: translate(2px, 2px);
-      box-shadow: 2px 2px 0px black;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
     /* ══════════════════════════════════════════════════
@@ -589,7 +589,7 @@
     .footer-btn {
       flex: 1;
       padding: 15px;
-      border: 5px solid black;
+      border: 1.5px solid var(--border-main);
       border-radius: 20px;
       background: white;
       color: black;
@@ -599,11 +599,11 @@
       letter-spacing: 1px;
       cursor: pointer;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 6px 6px 0px black;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
     .footer-btn:hover {
       transform: translate(-4px, -4px);
-      box-shadow: 10px 10px 0px black;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
     #timePickerOK {
       background: #005BAB;
@@ -614,7 +614,7 @@
     }
     .footer-btn:active {
       transform: translate(2px, 2px);
-      box-shadow: 2px 2px 0px black;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
   </style>
@@ -713,7 +713,7 @@
                     <button id="genEmailsBtn" class="bg-emerald-500 text-white border-2 border-black px-3 py-1.5 rounded-lg font-bold hover:bg-emerald-600 transition-colors text-sm">Gen Emails</button>
                     <button id="multiDeleteBtn" class="bg-red-500 text-white border-2 border-black px-3 py-1.5 rounded-lg font-bold hover:bg-red-600 transition-colors text-sm">Delete</button>
                     <button id="multiSchedBtn" class="bg-[#005BAB] text-white border-2 border-black px-3 py-1.5 rounded-lg font-bold hover:bg-blue-700 transition-colors text-sm">Create Sched</button>
-                    <button id="cancelSelectionBtn" class="bg-slate-200 dark:bg-slate-700 text-black dark:text-white border-2 border-black dark:border-slate-500 px-3 py-1.5 rounded-lg font-bold hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors text-sm">Cancel</button>
+                    <button id="cancelSelectionBtn" style="background:var(--bg-card);color:var(--text-main);border:1.5px solid var(--border-main);padding:6px 12px;border-radius:8px;font-weight:700;cursor:pointer;font-size:0.875rem;">Cancel</button>
                   </div>
                 </div>
                 <button id="clearAllBtn"

@@ -132,7 +132,7 @@ const injectGlobalTransitions = () => {
         .professional-mode .comment-entry {
             box-shadow: none !important;
             border-radius: 12px !important;
-            border: 1px solid black !important;
+            border: 1.5px solid var(--border-main) !important;
             background-color: rgba(255, 255, 255, 0.95) !important;
             backdrop-filter: blur(8px);
             transform: none !important;
@@ -158,7 +158,7 @@ const injectGlobalTransitions = () => {
         .professional-mode .vacant-btn,
         .professional-mode .cancel {
             box-shadow: none !important;
-            border: 1px solid black !important;
+            border: 1.5px solid var(--border-main) !important;
             border-radius: 12px !important;
         }
 

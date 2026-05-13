@@ -34,11 +34,18 @@ function findColumns(headers) {
  */
 function extractNamesFromRows(rows) {
   if (!rows || rows.length < 2) return [];
-  const { last, first, middle } = findColumns(rows[0]);
-  if (last === -1 || first === -1) return [];
 
+  // Find the header row (may not be row 0)
+  let headerIdx = -1;
+  for (let i = 0; i < rows.length; i++) {
+    const { last, first } = findColumns(rows[i]);
+    if (last !== -1 && first !== -1) { headerIdx = i; break; }
+  }
+  if (headerIdx === -1) return [];
+
+  const { last, first, middle } = findColumns(rows[headerIdx]);
   const names = [];
-  for (let i = 1; i < rows.length; i++) {
+  for (let i = headerIdx + 1; i < rows.length; i++) {
     const row = rows[i];
     const l = String(row[last] || "").trim();
     const f = String(row[first] || "").trim();
@@ -57,9 +64,14 @@ async function parseSpreadsheet(file) {
     reader.onload = (e) => {
       try {
         const wb = window.XLSX.read(e.target.result, { type: "array" });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const rows = window.XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
-        resolve(extractNamesFromRows(rows));
+        // Search all sheets for one with LAST NAME / FIRST NAME columns
+        for (const sheetName of wb.SheetNames) {
+          const ws = wb.Sheets[sheetName];
+          const rows = window.XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+          const names = extractNamesFromRows(rows);
+          if (names.length > 0) { resolve(names); return; }
+        }
+        resolve([]);
       } catch (err) {
         reject(err);
       }
@@ -132,11 +144,11 @@ async function parsePDF(file) {
  * Main handler: reads the file, parses it, confirms, then calls importFacultyMembers.
  */
 async function handleDocumentImport(file) {
-  const { showToast, showConfirm } = await import("./js/utils/ui-utils.js");
+  const { showToast, showConfirm, showLoading, hideLoading } = await import("./js/utils/ui-utils.js");
 
   let names = [];
+  showLoading('Parsing document...');
   try {
-    showToast("Parsing document...", "info");
     const ext = file.name.split(".").pop().toLowerCase();
     if (ext === "pdf") {
       names = await parsePDF(file);
@@ -150,6 +162,8 @@ async function handleDocumentImport(file) {
     console.error("Document parse error:", err);
     showToast("Failed to parse document.", "error");
     return;
+  } finally {
+    hideLoading();
   }
 
   if (names.length === 0) {

@@ -244,10 +244,10 @@
 
     .card-container {
       background-color: white;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       border-radius: 16px;
       padding: 32px;
-      box-shadow: 8px 8px 0px black;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       transition: all 0.3s ease;
       display: flex;
       flex-direction: column;
@@ -284,7 +284,7 @@
       display: flex;
       padding: 0 16px;
       border-radius: 10px;
-      border: 2px solid black;
+      border: 1.5px solid var(--border-main);
       background-color: white;
       font-size: 14px;
       height: 42px;
@@ -294,7 +294,7 @@
 
     .form-input:focus-within {
       border-color: black;
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
       transform: translate(-1px, -1px);
     }
 
@@ -330,9 +330,9 @@
       font-size: 14px;
       font-weight: bold;
       border-radius: 50px;
-      border: 2px solid black;
+      border: 1.5px solid var(--border-main);
       background: white;
-      box-shadow: 3px 3px 0px black;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
     .day-item {
@@ -357,7 +357,7 @@
     .day-item.selected {
       background-color: #3b82f6;
       color: white;
-      border: 2px solid black;
+      border: 1.5px solid var(--border-main);
       transform: scale(1.05);
     }
 
@@ -373,11 +373,11 @@
       padding: 5px 10px;
       background-color: #dbeafe;
       color: #1e40af;
-      border: 2px solid black;
+      border: 1.5px solid var(--border-main);
       border-radius: 8px;
       font-size: 13px;
       font-weight: 700;
-      box-shadow: 2px 2px 0px black;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       margin-bottom: 4px;
     }
 
@@ -420,7 +420,7 @@
       align-items: center;
       padding: 8px 16px;
       border-radius: 50px;
-      border: 2px solid black;
+      border: 1.5px solid var(--border-main);
       cursor: pointer;
       font-size: 13px;
       font-weight: 700;
@@ -428,7 +428,7 @@
       background: white;
       min-height: 40px;
       width: 100%;
-      box-shadow: 3px 3px 0px black;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
     @keyframes vacuum {
@@ -460,7 +460,7 @@
       color: #fff;
       border-color: black;
       transform: translate(-2px, -2px);
-      box-shadow: 6px 6px 0px black;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
     .section-name {
@@ -520,13 +520,13 @@
       max-width: 350px;
       padding: 16px 32px;
       border-radius: 50px;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       outline: none;
       font-size: 20px;
       font-weight: 700;
       text-align: center;
       margin: 0 auto;
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     }
 
     .add-section {
@@ -551,7 +551,7 @@
       border-style: solid;
       background: #f8fafc;
       transform: translate(-2px, -2px);
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     }
 
     .add-section .plus-icon {
@@ -580,8 +580,8 @@
       background: white;
       color: black;
       font-weight: 800;
-      border: 3px solid black;
-      box-shadow: 4px 4px 0px black;
+      border: 1.5px solid var(--border-main);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
       animation: toastIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
       font-size: 15px;
       text-align: center;
@@ -629,13 +629,13 @@
       font-size: 18px;
       font-weight: 800;
       border-radius: 50px;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       cursor: pointer;
       background-color: #3b82f6;
       color: white;
       margin-top: 20px;
       margin-right: 10px;
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
       transition: all 0.2s;
       text-transform: uppercase;
     }
@@ -643,7 +643,7 @@
     .edit-button:hover,
     .save-button:hover {
       transform: translate(-2px, -2px);
-      box-shadow: 6px 6px 0px black;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
     .save-dropdown {
@@ -693,16 +693,16 @@
       font-size: 14px;
       font-weight: 700;
       cursor: pointer;
-      border: 2px solid black;
+      border: 1.5px solid var(--border-main);
       transition: all 0.2s ease;
       background: white;
-      box-shadow: 3px 3px 0px black;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       text-transform: uppercase;
     }
 
     .control-btn:hover {
       transform: translate(-1px, -1px);
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     }
 
     .select-all-btn {
@@ -855,10 +855,10 @@
       background: #f1f5f9;
       padding: 4px;
       border-radius: 50px;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       position: relative;
       margin-top: 8px;
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
       width: fit-content;
       min-width: 220px;
       height: 48px;
@@ -894,8 +894,8 @@
       background: #7dd3fc;
       /* Light blue for regular */
       border-radius: 50px;
-      border: 3px solid black;
-      box-shadow: 2px 2px 0px black;
+      border: 1.5px solid var(--border-main);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
@@ -1055,13 +1055,13 @@
 
     .confirm-modal {
       background: white;
-      border: 4px solid black;
+      border: 1.5px solid var(--border-main);
       border-radius: 16px;
       padding: 32px;
       width: 400px;
       max-width: 90%;
       text-align: center;
-      box-shadow: 12px 12px 0px black;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       transform: scale(0.9);
       transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
@@ -1102,28 +1102,28 @@
 
     .confirm-btn-cancel {
       background: #e2e8f0;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       color: black;
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     }
 
     .confirm-btn-cancel:hover {
       background: #cbd5e1;
       transform: translate(-1px, -1px);
-      box-shadow: 5px 5px 0px black;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
     .confirm-btn-yes {
       background: #ef4444;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       color: white;
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     }
 
     .confirm-btn-yes:hover {
       background: #dc2626;
       transform: translate(-2px, -2px);
-      box-shadow: 6px 6px 0px black;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
     /* ───────── NEO-BRUTALIST TIME PICKER (ANGAS) ───────── */
@@ -1501,17 +1501,17 @@
         justify-content: center;
         width: 45px;
         height: 45px;
-        border: 3px solid black;
+        border: 1.5px solid var(--border-main);
         border-radius: 12px;
         background: white;
-        box-shadow: 3px 3px 0px black;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         cursor: pointer;
         z-index: 1002;
       }
 
       .hamburger-btn:active {
         transform: translate(1px, 1px);
-        box-shadow: 2px 2px 0px black;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       }
 
       .logo-section {
@@ -1523,7 +1523,7 @@
       .logo-container {
         width: 140px !important;
         height: 45px !important;
-        box-shadow: 3px 3px 0px black !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
       }
 
       .logo-container img {
@@ -1569,7 +1569,7 @@
         height: 45px !important;
         width: 45px !important;
         border-radius: 12px !important;
-        box-shadow: 3px 3px 0px black !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
         margin-left: 0 !important;
       }
 
@@ -1612,10 +1612,10 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       border-radius: 15px;
       background-color: white;
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
       cursor: pointer;
       transition: all 0.2s;
       overflow: hidden;
@@ -1679,10 +1679,10 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       border-radius: 15px;
       background-color: white;
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
       cursor: pointer;
       overflow: hidden;
       padding: 5px;
@@ -1715,10 +1715,10 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       border-radius: 12px;
       background-color: white;
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
       cursor: pointer;
       position: relative;
     }
@@ -1771,10 +1771,10 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       border-radius: 15px;
       background-color: white;
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
       cursor: pointer;
       transition: all 0.2s;
       padding: 5px;
@@ -1805,10 +1805,10 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       border-radius: 12px;
       background-color: white;
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
       cursor: pointer;
       position: relative;
     }
@@ -1861,10 +1861,10 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       border-radius: 15px;
       background-color: white;
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
       cursor: pointer;
       transition: all 0.2s;
       padding: 5px;
@@ -1896,10 +1896,10 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       border-radius: 12px;
       background-color: white;
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
       cursor: pointer;
       position: relative;
     }
@@ -1953,9 +1953,9 @@
       position: relative !important;
       z-index: 1000 !important;
       background-color: #fff !important;
-      border: 3px solid black !important;
+      border: 1.5px solid var(--border-main) !important;
       border-radius: 20px !important;
-      box-shadow: 6px 6px 0px black !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
       margin: 1.5rem 1.5rem 0 1.5rem !important;
       padding: 0 1.5rem !important;
       width: auto !important;
@@ -1977,10 +1977,10 @@
     .logo-container {
       width: 250px !important;
       height: 65px !important;
-      border: 3px solid black !important;
+      border: 1.5px solid var(--border-main) !important;
       border-radius: 15px !important;
       background-color: white !important;
-      box-shadow: 4px 4px 0px black !important;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
       padding: 5px !important;
       display: flex !important;
       align-items: center !important;
@@ -2025,7 +2025,7 @@
       max-width: 40px !important;
       max-height: 40px !important;
       border-radius: 50% !important;
-      border: 2px solid black !important;
+      border: 1.5px solid var(--border-main) !important;
       overflow: hidden !important;
       display: flex !important;
       align-items: center !important;
@@ -2047,10 +2047,10 @@
       align-items: center !important;
       gap: 0.75rem !important;
       padding: 0.5rem 1rem !important;
-      border: 3px solid black !important;
+      border: 1.5px solid var(--border-main) !important;
       border-radius: 50px !important;
       background-color: white !important;
-      box-shadow: 4px 4px 0px black !important;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
       cursor: pointer !important;
       overflow: hidden !important;
     }
@@ -2075,10 +2075,10 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       border-radius: 12px;
       background-color: white;
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
       cursor: pointer;
       position: relative;
     }
@@ -2229,7 +2229,7 @@
       
       .card-container {
           padding: 1rem !important;
-          box-shadow: 4px 4px 0px black !important;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
       }
 
       .days-row button, .days-row-2 .day-item {
@@ -2268,8 +2268,8 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      border: 4px solid black;
-      box-shadow: 12px 12px 0px black;
+      border: 1.5px solid var(--border-main);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       transform: scale(0.9);
       transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
@@ -2320,7 +2320,7 @@
       font-weight: 900;
       color: #1e293b;
       cursor: pointer;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       text-align: center;
       outline: none;
     }
@@ -2333,7 +2333,7 @@
     .time-box.active {
       background: #005BAB;
       color: white;
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     }
 
     .time-colon {
@@ -2344,7 +2344,7 @@
     .period-selector {
       display: flex;
       flex-direction: column;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       border-radius: 14px;
       overflow: hidden;
       margin-left: 10px;
@@ -2370,7 +2370,7 @@
       width: 220px;
       height: 220px;
       background: #f8fafc;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       border-radius: 50%;
       position: relative;
       margin: 15px 0;
@@ -2425,7 +2425,7 @@
       width: 44px;
       height: 44px;
       background: #005BAB;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       border-radius: 50%;
       display: flex;
       justify-content: center;
@@ -2433,7 +2433,7 @@
       color: white;
       font-weight: 900;
       font-size: 16px;
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     }
 
     .dial-center {
@@ -2459,12 +2459,12 @@
     .footer-btn {
       flex: 1;
       padding: 12px 0;
-      border: 3px solid black;
+      border: 1.5px solid var(--border-main);
       border-radius: 12px;
       font-weight: 900;
       text-transform: uppercase;
       cursor: pointer;
-      box-shadow: 4px 4px 0px black;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
       transition: all 0.2s;
       background: white;
       font-size: 0.9rem;
@@ -2472,7 +2472,7 @@
 
     .footer-btn:hover {
       transform: translate(-2px, -2px);
-      box-shadow: 6px 6px 0px black;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
     .footer-btn:active {

@@ -2,6 +2,7 @@ import { db, auth } from "./js/config/firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { doc, getDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { showToast, showConfirm } from "./js/utils/ui-utils.js";
+import "./import-progress.js";
 
 // 🚀 Early Cache Check for Flicker Prevention
 let cachedRole = localStorage.getItem('userRole');
@@ -87,7 +88,7 @@ onAuthStateChanged(auth, async (user) => {
     } else {
         localStorage.removeItem('userRole');
         localStorage.removeItem('editPermission');
-        restoreVisibility();
+        window.location.href = 'index.html';
     }
 });
 
@@ -207,3 +208,19 @@ window.requestEditPermission = async function () {
     }
 };
 
+
+// Auto-follow OS dark/light mode when user hasn't set a manual preference
+(function() {
+    const saved = localStorage.getItem('theme');
+    const osIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    // If saved theme matches OS, remove it so OS changes are followed dynamically
+    if ((saved === 'dark' && osIsDark) || (saved === 'light' && !osIsDark)) {
+        localStorage.removeItem('theme');
+    }
+})();
+
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+    if (!localStorage.getItem('theme')) {
+        document.documentElement.classList.toggle('dark', e.matches);
+    }
+});

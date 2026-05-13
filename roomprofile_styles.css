@@ -199,13 +199,13 @@
 
         /* Content boxes */
         .content-box {
-            border: 3px solid black;
+            border: 1.5px solid var(--border-main);
             border-radius: 30px;
             overflow: visible;
             background: #fff;
             width: 100%;
             padding: 2rem;
-            box-shadow: 4px 4px 0px black;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
         }
 
         .profile-content {
@@ -225,7 +225,7 @@
         .profile-image-container {
             width: 250px;
             height: 250px;
-            border: 3px solid black;
+            border: 1.5px solid var(--border-main);
             border-radius: 30px;
             flex-shrink: 0;
             overflow: hidden;
@@ -233,7 +233,7 @@
             align-items: center;
             justify-content: center;
             background-color: #f3f4f6;
-            box-shadow: 4px 4px 0px black;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
         }
 
         @media (max-width: 768px) {
@@ -282,7 +282,7 @@
 
         /* TABLE STYLES */
         .table-scroll {
-            border: 2px solid black;
+            border: 1.5px solid var(--border-main);
             overflow: auto;
             border-radius: 20px;
         }
@@ -350,10 +350,10 @@
             font-size: 0.85rem;
             padding: 4px 10px;
             border-radius: 10px;
-            border: 2px solid black;
+            border: 1.5px solid var(--border-main);
             font-weight: 800;
             text-transform: uppercase;
-            box-shadow: 2px 2px 0px black;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             margin-top: 10px;
         }
 
@@ -382,18 +382,18 @@
         }
 
         .daily-occ-item {
-            border: 2px solid black;
+            border: 1.5px solid var(--border-main);
             border-radius: 15px;
             padding: 10px;
             text-align: center;
             background: white;
-            box-shadow: 4px 4px 0px black;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
             transition: all 0.2s;
         }
 
         .daily-occ-item:hover {
             transform: translate(-2px, -2px);
-            box-shadow: 6px 6px 0px black;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
 
         .daily-occ-day {
@@ -414,9 +414,9 @@
         .download-all-header-btn {
             background: #FFD200 !important;
             color: black !important;
-            border: 2px solid black !important;
+            border: 1.5px solid var(--border-main) !important;
             border-radius: 12px !important;
-            box-shadow: 3px 3px 0px black !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
             font-weight: 900 !important;
             text-transform: uppercase !important;
             letter-spacing: 0.05em !important;
@@ -428,13 +428,13 @@
 
         .download-all-header-btn:hover {
             background: #e6bd00 !important;
-            box-shadow: 5px 5px 0px black !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
             transform: translate(-1px, -1px);
         }
 
         .download-all-header-btn:active {
             transform: translate(1px, 1px);
-            box-shadow: 2px 2px 0px black !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
         }
 
         @media (max-width: 768px) {
@@ -541,7 +541,7 @@
             width: 80px;
             height: 80px;
             background-color: #B0C6F8;
-            border: 2px solid black;
+            border: 1.5px solid var(--border-main);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -676,17 +676,17 @@
                 justify-content: center;
                 width: 45px;
                 height: 45px;
-                border: 3px solid black;
+                border: 1.5px solid var(--border-main);
                 border-radius: 12px;
                 background: white;
-                box-shadow: 3px 3px 0px black;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.08);
                 cursor: pointer;
                 z-index: 5001 !important;
             }
 
             .hamburger-btn:active {
                 transform: translate(1px, 1px);
-                box-shadow: 2px 2px 0px black;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             }
 
             .logo-section {
@@ -698,7 +698,7 @@
             .logo-container {
                 width: 110px !important;
                 height: 40px !important;
-                box-shadow: 3px 3px 0px black !important;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
             }
 
             .logo-container img {
@@ -744,7 +744,7 @@
                 height: 45px !important;
                 width: 45px !important;
                 border-radius: 12px !important;
-                box-shadow: 3px 3px 0px black !important;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
                 margin-left: 0 !important;
             }
 

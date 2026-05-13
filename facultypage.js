@@ -18,7 +18,7 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth
 import { initUniversalSearch } from './search.js';
 import { initUserProfile } from "./userprofile.js";
 import { initMobileNav } from "./js/ui/mobile-nav.js";
-import { showToast, showConfirm } from "./js/utils/ui-utils.js";
+import { showToast, showConfirm, showLoading, hideLoading } from "./js/utils/ui-utils.js";
 import { startImportProgress, tickImportProgress, clearImportProgress, isCancelled } from "./import-progress.js";
 
 
@@ -112,7 +112,7 @@ function initDragAndDrop() {
 
 async function importFacultyMembers(items) {
   showToast(`Processing 0/${items.length}...`, "info");
-  startImportProgress(items.length);
+  startImportProgress(items.length, items);
   let succeeded = 0;
 
   // Ensure allFaculty is populated so duplicate check works
@@ -132,15 +132,22 @@ async function importFacultyMembers(items) {
       existingData = null;
     }
 
-    const sanitizedName = name.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-    const email = `${sanitizedName}@stamaria.sti.edu`;
     const lastName = name.trim().split(' ').pop().replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+    const seqNum = '02' + String(allFaculty.length + succeeded + 1).padStart(5, '0');
+    const emailUser = `${lastName}${seqNum}`.toLowerCase();
+    const email = `${emailUser}@stamaria.sti.edu`;
     const password = `${lastName}@SCHEDSYNC`;
 
     // Skip if already in Firestore
-    if (allFaculty.some(f => (f.email || '').toLowerCase() === email.toLowerCase())) {
+    const existing = allFaculty.find(f => (f.email || '').toLowerCase() === email.toLowerCase());
+    if (existing) {
+      // Update password to new format if it still uses old format
+      if (existing.password !== password) {
+        try {
+          await setDoc(doc(db, 'users', existing.id), { password }, { merge: true });
+        } catch (e) { /* non-critical */ }
+      }
       tickImportProgress();
-      showToast(`Skipped (already exists): ${name}`, "info");
       continue;
     }
 
@@ -150,7 +157,7 @@ async function importFacultyMembers(items) {
 
     while (retries <= 3) {
       try {
-        const tempAppName = "AuthGen-" + sanitizedName + "-" + Math.random().toString(36).substring(7);
+        const tempAppName = "AuthGen-" + lastName + "-" + Math.random().toString(36).substring(7);
         tempApp = initializeApp(secondaryConfig, tempAppName);
         const tempAuth = getAuth(tempApp);
 
@@ -160,12 +167,18 @@ async function importFacultyMembers(items) {
           uid = userCredential.user.uid;
         } catch (authErr) {
           if (authErr.code === 'auth/email-already-in-use') {
-            const userCredential = await signInWithEmailAndPassword(tempAuth, email, password);
-            uid = userCredential.user.uid;
+            try {
+              const userCredential = await signInWithEmailAndPassword(tempAuth, email, password);
+              uid = userCredential.user.uid;
+            } catch (signInErr) {
+              uid = existingData?.authUid || null;
+              if (!uid) { processed = true; break; }
+            }
           } else {
             throw authErr;
           }
         }
+        if (isCancelled()) { if (tempApp) await deleteApp(tempApp).catch(()=>{}); break; }
 
         const batch = writeBatch(db);
         const facultyData = {
@@ -174,7 +187,7 @@ async function importFacultyMembers(items) {
           password: password,
           authUid: uid,
           role: "teacher",
-          employmentStatus: (existingData && (existingData.employmentStatus || existingData.status)) || "Part-time",
+          employmentStatus: (existingData && (existingData.employmentStatus || existingData.status)) || "Full-time",
           subjects: (existingData && existingData.subjects) || [],
           photoURL: (existingData && existingData.photoURL) || "",
           createdAt: (existingData && existingData.createdAt) || new Date().toISOString()
@@ -186,8 +199,10 @@ async function importFacultyMembers(items) {
         succeeded++;
         processed = true;
         if (tempApp) await deleteApp(tempApp);
-        // 800ms base delay + 200ms extra every 10 records to avoid rate limits
-        await new Promise(res => setTimeout(res, 800 + Math.floor(i / 10) * 200));
+        loadTeachers();
+        // 300ms delay to avoid rate limits
+        await new Promise(res => setTimeout(res, 300));
+        if (isCancelled()) break;
         break;
       } catch (err) {
         if (tempApp) await deleteApp(tempApp).catch(() => { });
@@ -204,6 +219,7 @@ async function importFacultyMembers(items) {
           const wait = 5000 * (retries + 1); // 5s, 10s, 15s
           showToast(`Rate limited. Retrying in ${wait / 1000}s...`, "info");
           await new Promise(res => setTimeout(res, wait));
+          if (isCancelled()) break;
           retries++;
         } else {
           console.error(`Failed for ${name}:`, err);
@@ -212,11 +228,14 @@ async function importFacultyMembers(items) {
         }
       }
     }
+    if (isCancelled()) break;
     tickImportProgress();
     showToast(`Processing ${i + 1}/${items.length}...`, "info");
   }
+  if (isCancelled()) { loadTeachers(); return; }
   clearImportProgress();
   showToast(`Successfully processed ${succeeded}/${items.length} faculty!`, "success");
+  localStorage.removeItem('importPendingItems');
   loadTeachers();
 }
 
@@ -281,20 +300,23 @@ function initSelectionUI() {
 
   multiDeleteBtn.onclick = async () => {
     const selectedFaculty = allFaculty.filter(f => selectedIds.has(f.id));
-    const confirmed = await showConfirm(`Archive ${selectedFaculty.length} faculty members?`, 'Move to Archives');
+    const confirmed = await showConfirm(`Permanently delete ${selectedFaculty.length} faculty member(s)? This cannot be undone.`, 'Delete Faculty');
+    if (!confirmed) return;
 
-    if (confirmed) {
-      showToast('Archiving... ⏳', 'info');
-      const { archiveItem } = await import('./archive-item.js');
-      for (const f of selectedFaculty) {
-        try {
-          await archiveItem('faculty', f.id, f, '');
-          await deleteDoc(doc(db, 'faculty', f.id));
-        } catch (err) {
-          console.error('Archive failed for:', f.username, err);
-        }
-      }
-      showToast('Faculty archived successfully.', 'success');
+    showLoading('Deleting...');
+    await new Promise(r => setTimeout(r, 50));
+    try {
+      await Promise.all(selectedFaculty.map(async f => {
+        if (f.email && f.password) await deleteAuthAccount(f.email, f.password);
+        await deleteDoc(doc(db, 'users', f.id));
+        if (f.authUid && f.authUid !== f.id) await deleteDoc(doc(db, 'users', f.authUid));
+      }));
+      showToast(`${selectedFaculty.length} faculty deleted.`, 'success');
+    } catch (err) {
+      console.error('Delete failed:', err);
+      showToast('Some deletions failed.', 'error');
+    } finally {
+      hideLoading();
       selectedIds.clear();
       updateSelectionBar();
       loadTeachers();
@@ -321,13 +343,13 @@ function initSelectionUI() {
     const confirmed = await showConfirm(`Delete ALL ${allFaculty.length} faculty members and their accounts? This cannot be undone.`, "Delete All Faculty");
     if (!confirmed) return;
     showToast("Deleting all... ⏳", "info");
-    for (const f of allFaculty) {
+    await Promise.all(allFaculty.map(async f => {
       try {
         if (f.email && f.password) await deleteAuthAccount(f.email, f.password);
         await deleteDoc(doc(db, "users", f.id));
         if (f.authUid && f.authUid !== f.id) await deleteDoc(doc(db, "users", f.authUid));
       } catch (err) { console.error("Delete failed for:", f.username, err); }
-    }
+    }));
     showToast("All faculty deleted.", "success");
     selectedIds.clear();
     updateSelectionBar();
@@ -813,3 +835,26 @@ function initAssignSubjectsModal() {
 
 // Expose for faculty-doc-import.js
 window.importFacultyMembers = importFacultyMembers;
+
+// Auto-restart import if redirected back with ?restartImport=1
+// Restart import in-place without page reload
+document.addEventListener('ipb-restart', () => {
+  const pending = localStorage.getItem('importPendingItems');
+  if (pending) {
+    try {
+      const items = JSON.parse(pending);
+      if (items?.length) importFacultyMembers(items);
+    } catch {}
+  }
+});
+
+if (new URLSearchParams(location.search).get('restartImport') === '1') {
+  history.replaceState({}, '', 'facultypage.html');
+  const pending = localStorage.getItem('importPendingItems');
+  if (pending) {
+    try {
+      const items = JSON.parse(pending);
+      if (items?.length) setTimeout(() => importFacultyMembers(items), 1500);
+    } catch {}
+  }
+}

@@ -424,7 +424,7 @@ document.addEventListener("DOMContentLoaded", () => {
             groupEl.innerHTML = `
                 <div class="grade-header">
                     <div class="flex items-center gap-4">
-                        <input type="checkbox" class="grade-checkbox" ${allSelected ? 'checked' : ''}>
+                        <input type="checkbox" class="grade-checkbox" ${allSelected ? 'checked' : ''} ${!isEditor ? 'style="display:none"' : ''}>
                         <span>Grade / Level: ${grade} (${groupData.length})</span>
                     </div>
 
@@ -454,7 +454,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const card = document.createElement("div");
                 card.className = `section-card relative group ${selectedIds.has(section.id) ? 'selected' : ''}`;
                 card.innerHTML = `
-                    <div class="checkbox-wrapper">
+                    <div class="checkbox-wrapper" ${!isEditor ? 'style="display:none"' : ''}>
                         <input type="checkbox" class="section-checkbox" ${selectedIds.has(section.id) ? 'checked' : ''}>
                     </div>
                     <div class="section-name">${section.name}</div>
@@ -542,7 +542,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function updateSelectionBar() {
-        if (selectedIds.size > 0) {
+        if (selectedIds.size > 0 && isEditor) {
             selectionBar.classList.add('active');
             selectedCountEl.textContent = selectedIds.size;
         } else {

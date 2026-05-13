@@ -81,7 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Set defaults for new users (only if not already set)
         if (!localStorage.getItem('uiMode')) localStorage.setItem('uiMode', 'professional');
-        if (!localStorage.getItem('theme')) localStorage.setItem('theme', 'light');
 
         showNotification('✅ Login successful! Redirecting...', 'success');
 

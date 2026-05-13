@@ -24,6 +24,7 @@ function getOrCreateBar() {
     <div class="ipb-label">
       <span class="ipb-icon">⚙️</span>
       <span class="ipb-text">Importing faculty...</span>
+      <button class="ipb-restart" title="Restart import" style="display:none">↺</button>
       <button class="ipb-cancel" title="Cancel import">✕</button>
     </div>
     <div class="ipb-track"><div class="ipb-fill"></div></div>
@@ -31,16 +32,19 @@ function getOrCreateBar() {
   `;
   document.body.appendChild(bar);
 
+  bar.querySelector('.ipb-restart').addEventListener('click', () => {
+    localStorage.removeItem(CANCEL_KEY);
+    bar.dispatchEvent(new CustomEvent('ipb-restart', { bubbles: true }));
+  });
+
   bar.querySelector('.ipb-cancel').addEventListener('click', () => {
-    // Set cancel flag — loop will see this and stop calling tick/setState
     localStorage.setItem(CANCEL_KEY, '1');
     setState(null);
-    bar.querySelector('.ipb-text').textContent = 'Cancelling...';
+    bar.querySelector('.ipb-text').textContent = 'Cancelled — click ↺ to resume';
     bar.querySelector('.ipb-icon').style.animation = 'none';
     bar.querySelector('.ipb-icon').textContent = '🛑';
     bar.querySelector('.ipb-cancel').disabled = true;
-    // Hide after short delay
-    setTimeout(() => bar.classList.remove('visible'), 2000);
+    bar.querySelector('.ipb-restart').style.display = 'inline-block';
   });
 
   if (!document.getElementById('ipb-style')) {
@@ -67,6 +71,11 @@ function getOrCreateBar() {
       .ipb-cancel:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
       .ipb-cancel:disabled { opacity: 0.4; cursor: not-allowed; }
       .dark .ipb-cancel { border-color: #475569; color: #f1f5f9; }
+      .ipb-restart {
+        background: none; border: 2px solid #3b82f6; border-radius: 6px;
+        font-size: 13px; font-weight: 900; cursor: pointer; padding: 1px 6px; color: #3b82f6;
+      }
+      .ipb-restart:hover { background: #3b82f6; color: #fff; }
       .ipb-track { height: 10px; background: #e2e8f0; border-radius: 99px; border: 2px solid #000; overflow: hidden; }
       .dark .ipb-track { background: #334155; border-color: #475569; }
       .ipb-fill { height: 100%; background: #3b82f6; border-radius: 99px; transition: width 0.4s ease; width: 0%; }
@@ -96,9 +105,10 @@ function render(state) {
   bar.classList.add('visible');
 }
 
-export function startImportProgress(total) {
-  localStorage.removeItem(CANCEL_KEY); // clear any previous cancel
+export function startImportProgress(total, items = null) {
+  localStorage.removeItem(CANCEL_KEY);
   setState({ total, done: 0 });
+  if (items) localStorage.setItem('importPendingItems', JSON.stringify(items));
   render(getState());
 }
 

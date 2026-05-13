@@ -30,11 +30,11 @@
 
 .widget-card {
   background: #ffffff;
-  border: 3px solid black;
+  border: 1.5px solid var(--border-main);
   border-radius: 20px;
   padding: 18px;
   margin-bottom: 15px;
-  box-shadow: 4px 4px 0px black;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
   display: flex;
   flex-direction: column;
 }
@@ -72,19 +72,19 @@
   width: 38px;
   height: 38px;
   background: white;
-  border: 2px solid black;
+  border: 1.5px solid var(--border-main);
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 3px 3px 0px black;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .widget-action-btn-icon:hover {
   /* transform: translateY(-2px); -- REMOVED LIFTING EFFECT ⚓ */
-  box-shadow: 5px 5px 0px black;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .dark .widget-action-btn-icon {
@@ -98,7 +98,7 @@
   /* Changed from Yellow to SchedSync Blue 🔵⚓ */
   color: white;
   /* Contrast fix ⚪ */
-  border: 2px solid black;
+  border: 1.5px solid var(--border-main);
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -108,7 +108,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 3px 3px 0px black;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   transition: all 0.2s;
 }
 
@@ -137,8 +137,6 @@
   min-height: unset;
   position: relative;
 }
-
-
 
 .welcome-title-img {
   width: 100%;
@@ -840,7 +838,7 @@ html.dark:not(.professional-mode) .announcement-item:hover {
 
 .cal-nav-btn {
   background: #f1f5f9;
-  border: 2px solid black;
+  border: 1.5px solid var(--border-main);
   border-radius: 8px;
   width: 32px;
   height: 32px;
@@ -856,7 +854,7 @@ html.dark:not(.professional-mode) .announcement-item:hover {
   background: #e2e8f0;
   transform: none;
   /* REMOVED LIFTING EFFECT ⚓ */
-  box-shadow: 2px 2px 0px black;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .calendar-days-grid {
@@ -1317,3 +1315,79 @@ html.professional-mode .add-btn {
 }
 .dark input::placeholder, .dark textarea::placeholder { color: #64748b; }
 .dark .modal-box, .dark .modal-content { background: #111827; color: #f1f5f9; border-color: #334155; }
+
+/* ── MOBILE DARK MODE + WIDGET OVERFLOW FIXES ── */
+
+/* 1. Widget card must clip its children */
+.widget-card {
+  overflow: hidden !important;
+}
+
+/* 2. Content areas must not overflow their flex parent */
+.draft-content,
+.announcement-content {
+  overflow: hidden !important;
+  min-width: 0 !important;
+}
+
+/* 3. Titles must truncate/wrap without bleeding */
+.draft-title,
+.announcement-title {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  width: 100% !important;
+}
+
+/* 4. Dark mode — widget backgrounds */
+.dark .widget-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+/* 5. Dark mode — draft/announcement items */
+.dark .draft-item,
+.dark .announcement-item {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  box-shadow: none !important;
+}
+
+/* 6. Dark mode — left accent bar on announcement items */
+.dark .announcement-item::before {
+  background: #60a5fa !important;
+}
+
+/* 7. Dark mode — calendar day default text */
+.dark .cal-day {
+  color: #94a3b8 !important;
+}
+
+/* 8. Dark mode — widget action buttons */
+.dark .widget-action-btn-icon {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+/* 9. Dark mode — add button */
+.dark .add-btn {
+  background: #005BAB !important;
+  border-color: #334155 !important;
+  color: white !important;
+}
+
+/* 10. Mobile: ensure widget-card doesn't exceed viewport */
+@media (max-width: 768px) {
+  .widget-card,
+  #draftWidget {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  .draft-item,
+  .announcement-item {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}

@@ -280,17 +280,17 @@ body {
         justify-content: center;
         width: 45px;
         height: 45px;
-        border: 3px solid black;
+        border: 1.5px solid var(--border-main);
         border-radius: 12px;
         background: white;
-        box-shadow: 3px 3px 0px black;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         cursor: pointer;
         z-index: 5001 !important;
     }
 
     .hamburger-btn:active {
         transform: translate(1px, 1px);
-        box-shadow: 2px 2px 0px black;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
     .logo-section {
@@ -302,7 +302,7 @@ body {
     .logo-container {
         width: 110px !important;
         height: 40px !important;
-        box-shadow: 2px 2px 0px black !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
     }
 
     .logo-container img {
@@ -384,7 +384,7 @@ body {
         overflow-x: auto !important;
         -webkit-overflow-scrolling: touch !important;
         border-radius: 15px !important;
-        box-shadow: 4px 4px 0px black !important;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
         height: calc(100vh - 250px) !important;
         min-height: 400px !important;
     }
@@ -419,7 +419,7 @@ body {
     .download-all-header-btn {
         padding: 0.5rem 0.75rem !important;
         font-size: 0.65rem !important;
-        box-shadow: 2px 2px 0px black !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
         gap: 5px !important;
     }
 
@@ -442,10 +442,10 @@ body {
     align-items: center !important;
     gap: 0.75rem !important;
     padding: 0.5rem 1rem !important;
-    border: 3px solid black !important;
+    border: 1.5px solid var(--border-main) !important;
     border-radius: 50px !important;
     background-color: white !important;
-    box-shadow: 4px 4px 0px black !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
     cursor: pointer !important;
     overflow: hidden !important;
 }
@@ -524,10 +524,10 @@ body {
     flex: 1;
     height: 100%;
     overflow: auto;
-    border: 4px solid black;
+    border: 1.5px solid var(--border-main);
     border-radius: 20px;
     background: white;
-    box-shadow: 6px 6px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     margin-right: 0;
 }
 
@@ -630,8 +630,8 @@ td.vacant-marked {
     width: 450px;
     opacity: 1;
     padding: 1.25rem;
-    border: 3px solid black;
-    box-shadow: 4px 4px 0px black;
+    border: 1.5px solid var(--border-main);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     margin-left: 0;
     overflow-y: auto;
 }
@@ -655,12 +655,12 @@ td.vacant-marked {
     width: 100%;
     padding: 0.8rem 1.1rem;
     border-radius: 15px;
-    border: 3px solid black;
+    border: 1.5px solid var(--border-main);
     font-size: 1rem;
     font-weight: 600;
     background: white;
     margin-bottom: 0.75rem;
-    box-shadow: 3px 3px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     transition: all 0.2s;
 }
 
@@ -677,7 +677,7 @@ td.vacant-marked {
 
 .pill:focus {
     transform: translate(-1px, -1px);
-    box-shadow: 4px 4px 0px black;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     outline: none;
 }
 
@@ -691,23 +691,23 @@ td.vacant-marked {
 .btn {
     padding: 0.8rem 1.5rem;
     border-radius: 12px;
-    border: 3px solid black;
+    border: 1.5px solid var(--border-main);
     font-weight: 700;
     cursor: pointer;
     transition: all 0.2s;
-    box-shadow: 3px 3px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     text-transform: uppercase;
     font-size: 0.85rem;
 }
 
 .btn:hover {
     transform: translate(-2px, -2px);
-    box-shadow: 5px 5px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .btn:active {
     transform: translate(1px, 1px);
-    box-shadow: 1px 1px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .btn.save {
@@ -832,9 +832,9 @@ td.vacant-marked {
     left: 0;
     right: 0;
     background: white;
-    border: 3px solid black;
+    border: 1.5px solid var(--border-main);
     border-radius: 12px;
-    box-shadow: 6px 6px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     z-index: 2000;
     max-height: 250px;
     overflow-y: auto;
@@ -903,7 +903,7 @@ td.vacant-marked {
     width: 32px;
     height: 32px;
     border-radius: 8px;
-    border: 2px solid black;
+    border: 1.5px solid var(--border-main);
     object-fit: cover;
 }
 
@@ -1024,11 +1024,11 @@ td {
 
 .comment-entry {
     background: white;
-    border: 2px solid black;
+    border: 1.5px solid var(--border-main);
     border-radius: 12px;
     padding: 10px;
     margin-bottom: 10px;
-    box-shadow: 2px 2px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .dark .comment-entry {
@@ -1196,10 +1196,10 @@ td {
 
 .guard-content {
     background: white;
-    border: 4px solid black;
+    border: 1.5px solid var(--border-main);
     border-radius: 40px;
     padding: 3rem 2rem;
-    box-shadow: 10px 10px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     max-width: 90%;
 }
 
@@ -1266,7 +1266,7 @@ td {
         visibility: visible !important;
         transform: translate(-50%, -50%) scale(1);
         pointer-events: auto !important;
-        box-shadow: 6px 6px 0px black, 0 0 0 200vw rgba(0,0,0,0.6) !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 0 0 200vw rgba(0,0,0,0.6) !important;
     }
     
     .dark .panel.open, .dark #commentPanel.open {

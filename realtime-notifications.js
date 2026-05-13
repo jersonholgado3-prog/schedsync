@@ -39,13 +39,13 @@ style.textContent = `
   .dg-game-popup {
     width: 320px;
     background: #fff;
-    border: 2px solid black;
+    border: 1.5px solid #cbd5e1;
     border-radius: 20px;
     padding: 16px;
     color: black;
     display: flex;
     gap: 12px;
-    box-shadow: 6px 6px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     pointer-events: auto;
     cursor: pointer;
     animation: dg-game-pop-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -63,7 +63,7 @@ style.textContent = `
 
   .dg-game-popup:hover {
     transform: translate(-2px, -2px);
-    box-shadow: 8px 8px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   }
 
   .dark .dg-game-popup:hover {
@@ -92,11 +92,11 @@ style.textContent = `
     height: 650px;
     max-height: 85vh;
     background: white;
-    border: 3px solid black;
+    border: 1.5px solid #cbd5e1;
     border-radius: 30px;
     display: flex;
     flex-direction: column;
-    box-shadow: 12px 12px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     overflow: hidden;
     animation: dg-panel-slide 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
     position: relative;
@@ -146,12 +146,12 @@ style.textContent = `
 
   .dg-notif-item {
     background: #fff;
-    border: 3px solid black;
+    border: 1.5px solid #cbd5e1;
     border-radius: 20px;
     padding: 20px;
     position: relative;
     transition: all 0.2s ease;
-    box-shadow: 4px 4px 0px black;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
   }
 
   .dark .dg-notif-item {
@@ -162,7 +162,7 @@ style.textContent = `
 
   .dg-notif-item:hover {
     transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   }
 
   .dark .dg-notif-item:hover {
@@ -175,7 +175,7 @@ style.textContent = `
     right: 15px;
     width: 30px;
     height: 30px;
-    border: 2px solid black;
+    border: 1.5px solid #cbd5e1;
     border-radius: 8px;
     display: flex;
     align-items: center;
@@ -194,18 +194,18 @@ style.textContent = `
   .dg-clear-all {
     padding: 8px 16px;
     background: #fff;
-    border: 2px solid black;
+    border: 1.5px solid #cbd5e1;
     border-radius: 12px;
     font-weight: 800;
     font-size: 0.75rem;
     cursor: pointer;
-    box-shadow: 2px 2px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     transition: all 0.2s;
   }
 
   .dg-clear-all:hover {
     transform: translate(-1px, -1px);
-    box-shadow: 3px 3px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     background: #fee2e2;
   }
 
@@ -348,6 +348,20 @@ style.textContent = `
   html:not(.dark) .dg-notif-item .notif-msg-text {
     color: #475569 !important;
   }
+
+  html.dark .dg-notif-item .notif-title-text {
+    color: #f1f5f9 !important;
+  }
+
+  html.dark .dg-notif-item .notif-msg-text {
+    color: #94a3b8 !important;
+  }
+
+  .notif-sender-text { color: #6366f1; }
+  .notif-date-text   { color: #64748b; }
+
+  html.dark .notif-sender-text { color: #818cf8 !important; }
+  html.dark .notif-date-text   { color: #94a3b8 !important; }
 `;
 document.head.appendChild(style);
 // Add toast-out and fade-out animations
@@ -539,8 +553,8 @@ async function loadAllNotificationsForOverlay() {
       if (d.type === 'edit_request' && d.userId) {
         actionButtons = `
     <div style="display: flex; gap: 10px; margin-top: 12px;">
-              <button onclick="event.stopPropagation(); acceptEditRequest('${d.userId}', '${doc.id}')" style="flex: 1; padding: 10px; border-radius: 12px; border: none; background: #10b981; color: white; font-weight: 800; cursor: pointer; border: 2px solid black; box-shadow: 2px 2px 0px black;">ACCEPT</button>
-              <button onclick="event.stopPropagation(); denyEditRequest('${d.userId}', '${doc.id}')" style="flex: 1; padding: 10px; border-radius: 12px; border: none; background: #64748b; color: white; font-weight: 800; cursor: pointer; border: 2px solid black; box-shadow: 2px 2px 0px black;">DENY</button>
+              <button onclick="event.stopPropagation(); acceptEditRequest('${d.userId}', '${doc.id}')" style="flex: 1; padding: 10px; border-radius: 12px; border: none; background: #10b981; color: white; font-weight: 800; cursor: pointer; border: 1.5px solid #cbd5e1; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">ACCEPT</button>
+              <button onclick="event.stopPropagation(); denyEditRequest('${d.userId}', '${doc.id}')" style="flex: 1; padding: 10px; border-radius: 12px; border: none; background: #64748b; color: white; font-weight: 800; cursor: pointer; border: 1.5px solid #cbd5e1; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">DENY</button>
             </div>
     `;
       }
@@ -549,9 +563,9 @@ async function loadAllNotificationsForOverlay() {
     <div class="dg-notif-item-delete" onclick="event.stopPropagation(); dismissNotification('${doc.id}')">✕</div>
           <div style="margin-bottom: 8px;">
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
-                  <div style="font-weight: 900; color: #6366f1; font-size: 0.75rem; text-transform: uppercase;">Published by: ${d.sender || 'SYSTEM'}</div>
+                  <div class="notif-sender-text" style="font-weight: 900; font-size: 0.75rem; text-transform: uppercase;">Published by: ${d.sender || 'SYSTEM'}</div>
               </div>
-              <div style="font-size: 0.65rem; color: #64748b; font-weight: 800;">${dateStr.toUpperCase()} • ${timeStr}</div>
+              <div class="notif-date-text" style="font-size: 0.65rem; font-weight: 800;">${dateStr.toUpperCase()} • ${timeStr}</div>
           </div>
           <div style="font-weight: 900; margin-bottom: 4px; font-size: 1.25rem; line-height: 1.1; letter-spacing: -0.02em;" class="notif-title-text">${d.title}</div>
           <div style="font-size: 0.95rem; line-height: 1.5; font-weight: 500;" class="notif-msg-text">${d.message}</div>

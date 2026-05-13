@@ -37,10 +37,10 @@
 
 /* Specific Card Skeletons */
 .faculty-skeleton-card {
-    border: 2px solid black;
+    border: 1.5px solid var(--border-main);
     border-radius: 20px;
     padding: 20px;
-    box-shadow: 6px 6px 0px black;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     background: white;
 }
 

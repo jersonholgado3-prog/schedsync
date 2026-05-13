@@ -1597,7 +1597,7 @@ function renderTable() {
           <div style="display: flex; justify-content: space-between; align-items: center; position: sticky; left: 1rem; width: fit-content; max-width: calc(100vw - 300px);">
             <span style="font-weight: 700; font-size: 1.15rem; color: #000; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">SECTION: GRADE 12 ${cleanSection(s.section)}</span>
             <div style="display: flex; gap: 0.8rem; margin-left: 2rem;">
-              <button class="day-action" onclick="window.downloadSchedule('${s.id}')" title="Download This Section" style="background: #22c55e; color: white; border: 3px solid black; padding: 0.4rem 1.2rem; border-radius: 50px; cursor: pointer; box-shadow: 4px 4px 0px black; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
+              <button class="day-action" onclick="window.downloadSchedule('${s.id}')" title="Download This Section" style="background: #22c55e; color: white; border: 1.5px solid #cbd5e1; padding: 0.4rem 1.2rem; border-radius: 50px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.08); font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
                 <span style="font-size: 1rem;">📄</span> DOWNLOAD
               </button>
               ${(() => {
@@ -1605,7 +1605,7 @@ function renderTable() {
                 const hasPermission = hasEditPermission;
                 const isEditor = role === 'admin' || role === 'program head' || hasPermission;
                 return isEditor ? `
-                <button class="day-action delete-target" onclick="window.clearSection('${s.id}')" title="Clear Entire Section" style="background: #ef4444; color: white; border: 3px solid black; padding: 0.4rem 1.2rem; border-radius: 50px; cursor: pointer; box-shadow: 4px 4px 0px black; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
+                <button class="day-action delete-target" onclick="window.clearSection('${s.id}')" title="Clear Entire Section" style="background: #ef4444; color: white; border: 1.5px solid #cbd5e1; padding: 0.4rem 1.2rem; border-radius: 50px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.08); font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
                   <span style="font-size: 1rem;">🗑️</span> CLEAR SECTION
                 </button>
                 ` : '';
@@ -3168,22 +3168,22 @@ function showDownloadFormatSelector(callback) {
   `;
 
   overlay.innerHTML = `
-    <div class="export-card-container" style="background: white; border: 5px solid black; padding: 45px; border-radius: 32px; box-shadow: 15px 15px 0px #000; text-align: center; max-width: 750px; width: 95%; transform: scale(0.9); transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative;">
-      <button class="close-modal-btn" style="position: absolute; top: 20px; right: 20px; background: #f1f5f9; border: 3px solid black; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; transition: all 0.2s; box-shadow: 3px 3px 0px black;">×</button>
+    <div class="export-card-container" style="background: white; border: 1.5px solid var(--border-main); padding: 45px; border-radius: 32px; box-shadow: 15px 15px 0px #000; text-align: center; max-width: 750px; width: 95%; transform: scale(0.9); transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative;">
+      <button class="close-modal-btn" style="position: absolute; top: 20px; right: 20px; background: #f1f5f9; border: 1.5px solid #cbd5e1; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">×</button>
       <div style="margin-bottom: 35px;">
         <h2 style="color: #005BAB; font-size: 32px; font-weight: 950; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 2px;">Export Schedule</h2>
         <p style="font-size: 16px; color: #64748b; font-weight: 700;">Select your export format below.</p>
       </div>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 25px;">
-        <div class="format-option pdf-btn" style="background: #fef2f2; border: 4px solid black; padding: 30px 20px; border-radius: 20px; cursor: pointer; transition: all 0.3s; box-shadow: 6px 6px 0px black; position: relative; overflow: hidden;">
+        <div class="format-option pdf-btn" style="background: #fef2f2; border: 1.5px solid var(--border-main); padding: 30px 20px; border-radius: 20px; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative; overflow: hidden;">
           <div style="font-size: 45px; margin-bottom: 15px;">📑</div>
           <div style="font-weight: 900; color: #991b1b; font-size: 14px; text-transform: uppercase;">PDF Document</div>
         </div>
-        <div class="format-option img-btn" style="background: #eff6ff; border: 4px solid black; padding: 30px 20px; border-radius: 20px; cursor: pointer; transition: all 0.3s; box-shadow: 6px 6px 0px black; position: relative; overflow: hidden;">
+        <div class="format-option img-btn" style="background: #eff6ff; border: 1.5px solid var(--border-main); padding: 30px 20px; border-radius: 20px; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative; overflow: hidden;">
           <div style="font-size: 45px; margin-bottom: 15px;">🖼️</div>
           <div style="font-weight: 900; color: #1e40af; font-size: 14px; text-transform: uppercase;">Image (PNG)</div>
         </div>
-        <div class="format-option xls-btn" style="background: #f0fdf4; border: 4px solid black; padding: 30px 20px; border-radius: 20px; cursor: pointer; transition: all 0.3s; box-shadow: 6px 6px 0px black; position: relative; overflow: hidden;">
+        <div class="format-option xls-btn" style="background: #f0fdf4; border: 1.5px solid var(--border-main); padding: 30px 20px; border-radius: 20px; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative; overflow: hidden;">
           <div style="font-size: 45px; margin-bottom: 15px;">📊</div>
           <div style="font-weight: 900; color: #166534; font-size: 14px; text-transform: uppercase;">Excel Spreadsheet</div>
         </div>
