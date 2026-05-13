@@ -1,6 +1,6 @@
 {
   "name": "schedsync-functions",
-  "engines": { "node": "20" },
+  "engines": { "node": ">=20" },
   "main": "index.js",
   "dependencies": {
     "firebase-admin": "^12.0.0",

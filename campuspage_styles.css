@@ -381,7 +381,7 @@
     .modal-input {
         height: 50px !important;
     }
-}
+
 
 @media (max-width: 480px) {
     #floor-1-dynamic, #floor-2-dynamic, #floor-3-dynamic, #floor-4-dynamic,

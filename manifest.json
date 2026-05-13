@@ -4,7 +4,6 @@
   "description": "Multi-page campus scheduling and management system.",
   "start_url": "./homepage.html",
   "display": "standalone",
-  "orientation": "landscape",
   "background_color": "#ffffff",
   "theme_color": "#005BAB",
   "icons": [

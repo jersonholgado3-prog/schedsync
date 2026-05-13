@@ -28,6 +28,13 @@
   <script type="module" src="realtime-notifications.js"></script> <!-- Included for Toasts/Confirm logic -->
   <link rel="stylesheet" href="header-styles.css" />
   <link rel="stylesheet" href="permissions_styles.css" />
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script>
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      await OneSignal.init({ appId: "ef82a79a-5e7a-4a5f-83a6-e2b90b8302c9" });
+    });
+  </script>
 </head>
 
 <body>

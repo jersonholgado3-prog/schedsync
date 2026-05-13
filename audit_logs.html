@@ -318,6 +318,13 @@
             .greeting { font-size: 0.85rem !important; }
         }
     </style>
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script>
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      await OneSignal.init({ appId: "ef82a79a-5e7a-4a5f-83a6-e2b90b8302c9" });
+    });
+  </script>
 </head>
 
 <body>

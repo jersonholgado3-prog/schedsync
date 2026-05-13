@@ -2856,6 +2856,22 @@ async function save() {
       isAnnouncement: true, 
     });
 
+    // Send OneSignal push to all subscribers
+    fetch("https://api.onesignal.com/notifications", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Key os_v2_app_56bkpgs6pjff7a5g4k4qxayczfelnogxafiuaye5gz47agi4llpb6xjskn2rcvrg7rwkve3fv3byvtgvcq2dhczfvzey3kujaixlfhy"
+      },
+      body: JSON.stringify({
+        app_id: "ef82a79a-5e7a-4a5f-83a6-e2b90b8302c9",
+        included_segments: ["Total Subscriptions"],
+        headings: { en: "NEW SCHEDULE" },
+        contents: { en: `The schedule for "${schedName}" is now officially published.` },
+        chrome_web_icon: "/images/LOGO.png"
+      })
+    }).catch(() => {});
+
     logAction("PUBLISH_SCHEDULE", `Published schedule: ${schedName}`, {
       scheduleId: schedules[0].id,
       section: schedules[0].section
