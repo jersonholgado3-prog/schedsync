@@ -797,3 +797,27 @@ window.acceptEditRequest = acceptEditRequest;
 window.denyEditRequest = denyEditRequest;
 window.createNotification = createNotification;
 window.cleanupAnnouncement = cleanupAnnouncement;
+
+// --- FCM Push Notification Token Registration ---
+import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-messaging.js";
+import { setDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+const VAPID_KEY = "BKECCderqm2mTLDAJsZMsPRH1Ugocna8sYOj6qtFvBAf-rBSsBXiCqxuK-qkThnKXdI_D50zGuHqvz02r_rKeqE";
+
+async function registerFCMToken(userId) {
+  try {
+    const messaging = getMessaging(app);
+    const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+    if (token) {
+      await setDoc(doc(db, "fcmTokens", userId), { token, userId, updatedAt: serverTimestamp() });
+    }
+  } catch (e) {
+    console.warn("FCM token registration failed:", e);
+  }
+}
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return;
+  const permission = await Notification.requestPermission();
+  if (permission === "granted") await registerFCMToken(user.uid);
+});
