@@ -1,4 +1,8 @@
 // 0. UI Mode Helpers
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+}
+
 export const getUIMode = () => 'professional';
 
 export const setUIMode = (mode) => {
