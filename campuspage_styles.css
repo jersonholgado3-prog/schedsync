@@ -326,12 +326,18 @@
         margin-bottom: 1.5rem !important;
     }
 
-    .room-pill {
-        min-height: 110px !important;
-        padding: 1rem !important;
-        border-radius: 20px !important;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
+    /* Move FAB above bulk bar on mobile */
+    .add-room-fab {
+        bottom: 12rem !important;
+        z-index: 40 !important; /* Lower than bulk bar to prevent overlap issues */
     }
+
+    #bulkDeleteBar button {
+        width: auto !important;
+        display: inline-block !important;
+    }
+    }
+
 
     .room-pill-text-label {
         font-size: 0.85rem !important;

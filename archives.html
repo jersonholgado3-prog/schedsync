@@ -55,6 +55,10 @@
           <div class="logo-container" onclick="window.location.href='homepage.html'">
             <img src="images/BANNER.png" class="logo-img" alt="SchedSync Logo" style="max-height:100%;width:100%;object-fit:contain;">
           </div>
+          <div class="search-wrapper">
+            <img src="images/SEARCH.png" class="search-icon" alt="Search">
+            <input type="search" class="search-button" placeholder="Search" aria-label="Search" autocomplete="new-password">
+          </div>
         </div>
         <div class="page-title">Archives</div>
         <div class="user-section">
@@ -106,7 +110,7 @@
         <div class="archive-controls">
           <div class="search-wrapper">
             <img src="images/SEARCH.png" class="search-icon" alt="Search">
-            <input type="text" id="searchInput" class="search-button" placeholder="Search archives..." aria-label="Search">
+            <input type="text" id="searchInput" class="search-button" placeholder="Search archives..." aria-label="Search" data-search-initialized="true">
           </div>
           <select id="yearFilter" class="filter-select">
             <option value="">All Years</option>

@@ -26,25 +26,61 @@ document.addEventListener("DOMContentLoaded", () => {
 let allEvents = [];
 let itemsToShow = 5;
 let eventSelectionMode = false;
+let sortCol = null, sortAsc = true;
 let selectedEventIds = new Set();
 const eventsContainer = document.getElementById("eventsContainer");
 const loadMoreBtn = document.querySelector(".load-more-btn");
 const isEditor = () => {
   const role = localStorage.getItem("userRole") || "student";
-  return role === "admin";
+  const hasPermission = localStorage.getItem("editPermission") === "true";
+  return role === "admin" || role === "program head" || hasPermission;
 };
+
 
 function updateEventSelectionBar() {
   const bar = document.getElementById('eventSelectionBar');
   const count = document.getElementById('eventSelectedCount');
+  const selectAllBtn = document.getElementById('eventSelectAllBtn');
+  
   if (bar) bar.style.display = eventSelectionMode ? 'flex' : 'none';
   if (count) count.textContent = `${selectedEventIds.size} Selected`;
+  
+  if (selectAllBtn && allEvents.length > 0) {
+    const isAllSelected = selectedEventIds.size === allEvents.length;
+    selectAllBtn.textContent = isAllSelected ? 'Deselect All' : 'Select All';
+  }
 }
+
 
 document.addEventListener("DOMContentLoaded", () => {
   const selectBtn = document.getElementById('eventSelectModeBtn');
   const cancelBtn = document.getElementById('eventCancelSelectBtn');
   const deleteBtn = document.getElementById('eventDeleteSelectedBtn');
+
+  // Column sort 🔃
+  const sortKeys = { 'col-from': 'creatorName', 'col-title': 'subject', 'col-content': 'room', 'col-date': 'date' };
+  document.querySelectorAll('.event-list-header [class*="col-"]').forEach(el => {
+    const colClass = [...el.classList].find(c => c.startsWith('col-'));
+    const key = sortKeys[colClass];
+    if (!key) return;
+    el.style.cursor = 'pointer';
+    el.title = 'Click to sort';
+    el.addEventListener('click', () => {
+      if (sortCol === key) sortAsc = !sortAsc;
+      else { sortCol = key; sortAsc = true; }
+      // Update header indicators
+      document.querySelectorAll('.event-list-header [class*="col-"]').forEach(h => {
+        h.textContent = h.textContent.replace(/ [▲▼]$/, '');
+      });
+      el.textContent += sortAsc ? ' ▲' : ' ▼';
+      const sorted = [...allEvents].sort((a, b) => {
+        const va = (a[key] || '').toString().toLowerCase();
+        const vb = (b[key] || '').toString().toLowerCase();
+        return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+      });
+      renderEvents(sorted);
+    });
+  });
 
   if (selectBtn) selectBtn.onclick = () => { eventSelectionMode = true; updateEventSelectionBar(); renderEvents(allEvents); };
   if (cancelBtn) cancelBtn.onclick = () => { eventSelectionMode = false; selectedEventIds.clear(); updateEventSelectionBar(); renderEvents(allEvents); };
@@ -87,10 +123,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const selectAllBtn = document.getElementById('eventSelectAllBtn');
   if (selectAllBtn) selectAllBtn.onclick = () => {
-    allEvents.forEach(e => selectedEventIds.add(e.id || String(e.createdAt)));
+    const isAllSelected = selectedEventIds.size === allEvents.length && allEvents.length > 0;
+    if (isAllSelected) {
+      selectedEventIds.clear();
+    } else {
+      allEvents.forEach(e => selectedEventIds.add(e.id || String(e.createdAt)));
+    }
     updateEventSelectionBar();
     renderEvents(allEvents);
   };
+
+
 });
 
 // --- LOAD MORE LOGIC ---

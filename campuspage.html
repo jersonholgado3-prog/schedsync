@@ -174,14 +174,6 @@
         +
       </button>
 
-      <!-- BULK DELETE BAR (admin only, shown in select mode) -->
-      <div id="bulkDeleteBar" class="hidden fixed bottom-24 md:bottom-16 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 bg-white border-2 border-black rounded-2xl shadow-[4px_4px_0px_black] admin-only">
-        <span id="bulkCount" class="font-bold text-sm">0 selected</span>
-        <button onclick="selectAll()" id="selectAllBtn" class="px-4 py-2 text-sm font-bold border-2 border-black rounded-xl shadow-[2px_2px_0px_black] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all">Select All</button>
-        <button onclick="bulkDeleteSelected()" class="px-4 py-2 bg-red-500 text-white text-sm font-bold border-2 border-black rounded-xl shadow-[2px_2px_0px_black] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all">🗑️ Delete</button>
-        <button onclick="exitSelectMode()" class="px-4 py-2 text-sm font-bold border-2 border-black rounded-xl shadow-[2px_2px_0px_black] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all">Cancel</button>
-      </div>
-
       <!-- ADD ROOM MODAL -->
       <div id="addRoomModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[2000]">
         <div class="add-room-modal-box">
@@ -243,6 +235,15 @@
   <script type="module" src="realtime-notifications.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
   <script type="module" src="ui-effects.js"></script>
+  <!-- BULK DELETE BAR -->
+  <div id="bulkDeleteBar" class="hidden fixed bottom-20 z-50" style="left:0;right:0;margin:0 auto;width:fit-content;white-space:nowrap;background:white;border:1.5px solid black;border-radius:10px;box-shadow:2px 2px 0px black;">
+    <div style="display:flex;flex-direction:row;align-items:center;gap:3px;padding:4px 6px;">
+      <span id="bulkCount" class="font-bold text-xs px-1">0</span>
+      <button onclick="selectAll()" id="selectAllBtn" class="px-2 py-0.5 text-xs font-bold border border-black rounded-md hover:bg-gray-100 transition-all">ALL</button>
+      <button onclick="bulkDeleteSelected()" class="px-2 py-0.5 bg-red-500 text-white text-xs font-bold border border-black rounded-md hover:bg-red-600 transition-all">🗑️</button>
+      <button onclick="exitSelectMode()" class="px-2 py-0.5 text-xs font-bold border border-black rounded-md hover:bg-gray-100 transition-all">✕</button>
+    </div>
+  </div>
   <!-- ?? MOBILE BOTTOM NAVIGATION BAR ? -->
   <nav class="mobile-bottom-nav" id="mobileBottomNav">
     <a href="homepage.html" class="mob-nav-item" data-page="homepage">

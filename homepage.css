@@ -518,8 +518,6 @@ html:not(.professional-mode).dark #draftWidget {
   text-overflow: ellipsis !important;
   flex: 1;
 }
-
-.dark #draftWidget .widget-title,
 .dark .widget-card .widget-title {
   color: #FFD200;
 }
@@ -863,6 +861,7 @@ html.dark:not(.professional-mode) .announcement-item:hover {
   /* ✅ 7 COLUMNS TO FIX PORTRAIT ISSUE */
   gap: 8px;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .cal-day {
@@ -1086,6 +1085,14 @@ html.dark:not(.professional-mode) .announcement-item:hover {
     margin-bottom: 15px !important;
     visibility: visible !important;
     opacity: 1 !important;
+  }
+
+  .calendar-days-grid {
+    gap: 4px !important;
+  }
+
+  .widget-card {
+    padding: 12px !important;
   }
 }
 

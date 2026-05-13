@@ -165,6 +165,10 @@
       top: 10px;
       left: 10px;
       z-index: 5;
+      display: none;
+    }
+    .select-mode .checkbox-wrapper {
+      display: block;
     }
     .section-checkbox, .grade-checkbox {
       width: 26px;
@@ -617,6 +621,21 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
+    @media (max-width: 768px) {
+      .section-checkbox, .grade-checkbox {
+        width: 18px !important;
+        height: 18px !important;
+      }
+      .checkbox-wrapper {
+        top: 6px !important;
+        left: 6px !important;
+      }
+      .section-name {
+        font-size: 0.85rem !important;
+        padding-left: 4px !important;
+      }
+    }
+
   </style>
 </head>
 <body class="bg-white text-black font-bold">
@@ -719,6 +738,7 @@
                 <button id="clearAllBtn"
                   class="bg-red-500 text-white border-[3px] border-black rounded-xl px-5 py-2.5 font-bold shadow-[4px_4px_0px_black] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_black] transition-all admin-only"
                   style="display: none;">Clear All</button>
+                <button id="selectModeBtn" class="add-section-btn admin-only" style="display:none;">☑️ Select</button>
                 <button id="addSectionBtn" class="add-section-btn admin-only" style="display: none;">+ Add
                   Section</button>
               </div>

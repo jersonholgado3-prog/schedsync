@@ -27,6 +27,41 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Selection state 🧐
   let selectedIds = new Set();
+  let allNotifications = [];
+  let sortCol = null, sortAsc = true;
+
+  // Column sort 🔃
+  const sortKeys = { 'col-from': 'sender', 'col-title': 'title', 'col-content': 'message', 'col-date': 'createdAt' };
+  document.querySelectorAll('.notification-list-header [class*="col-"]').forEach(el => {
+    const colClass = [...el.classList].find(c => c.startsWith('col-'));
+    const key = sortKeys[colClass];
+    if (!key) return;
+    el.style.cursor = 'pointer';
+    el.title = 'Click to sort';
+    el.addEventListener('click', () => {
+      if (sortCol === key) sortAsc = !sortAsc;
+      else { sortCol = key; sortAsc = true; }
+      document.querySelectorAll('.notification-list-header [class*="col-"]').forEach(h => {
+        h.textContent = h.textContent.replace(/ [▲▼]$/, '');
+      });
+      el.textContent += sortAsc ? ' ▲' : ' ▼';
+      const sorted = [...allNotifications].sort((a, b) => {
+        let va = (a.data[key] || '').toString().toLowerCase();
+        let vb = (b.data[key] || '').toString().toLowerCase();
+        if (key === 'createdAt') {
+          va = a.data.createdAt?.toDate?.() || new Date(a.data.date || 0);
+          vb = b.data.createdAt?.toDate?.() || new Date(b.data.date || 0);
+          return sortAsc ? va - vb : vb - va;
+        }
+        return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+      });
+      const container = document.getElementById("notificationsContainer");
+      if (container) {
+        container.innerHTML = "";
+        sorted.forEach(({ data, id }) => renderNotificationCard(container, data, id, selectedIds, updateDeleteButtonsVisibility));
+      }
+    });
+  });
 
   // Setup Modal Listeners
   const modal = document.getElementById("notificationModal");
@@ -138,10 +173,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Load Notifications
-  loadNotifications(selectedIds, updateDeleteButtonsVisibility);
+  loadNotifications(selectedIds, updateDeleteButtonsVisibility, (items) => { allNotifications = items; });
 });
 
-function loadNotifications(selectedIds, updateDeleteButtonsVisibility) {
+function loadNotifications(selectedIds, updateDeleteButtonsVisibility, onLoaded) {
   const container = document.getElementById("notificationsContainer");
   if (!container) return;
 
@@ -164,10 +199,12 @@ function loadNotifications(selectedIds, updateDeleteButtonsVisibility) {
       return;
     }
 
+    const items = [];
     snapshot.forEach(doc => {
-      const data = doc.data();
-      renderNotificationCard(container, data, doc.id, selectedIds, updateDeleteButtonsVisibility);
+      items.push({ data: doc.data(), id: doc.id });
     });
+    if (onLoaded) onLoaded(items);
+    items.forEach(({ data, id }) => renderNotificationCard(container, data, id, selectedIds, updateDeleteButtonsVisibility));
   });
 }
 

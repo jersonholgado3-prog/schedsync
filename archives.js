@@ -16,6 +16,7 @@ const secondaryConfig = {
 };
 
 import { initUserProfile } from "./userprofile.js";
+import { initUniversalSearch } from "./search.js";
 
 const ARCHIVE_RETENTION_YEARS = 3;
 const STORAGE_WARNING_THRESHOLD = 50 * 1024 * 1024;
@@ -27,6 +28,7 @@ let selectedArchiveIds = new Set();
 document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   initUserProfile('#userProfile');
+  initUniversalSearch(db);
 
   onAuthStateChanged(auth, async (user) => {
     console.log('[Archives] Auth state:', user ? user.email : 'not logged in');
@@ -49,7 +51,18 @@ function setupEventListeners() {
       renderArchives();
     });
   });
-  document.getElementById('searchInput').addEventListener('input', renderArchives);
+
+  const searchInput = document.getElementById('searchInput');
+  const searchWrapper = searchInput?.closest('.search-wrapper');
+  if (searchInput && searchWrapper) {
+    searchInput.addEventListener('focus', () => searchWrapper.classList.add('expanded'));
+    searchInput.addEventListener('blur', () => {
+      setTimeout(() => { if (!searchInput.value) searchWrapper.classList.remove('expanded'); }, 200);
+    });
+    searchWrapper.addEventListener('click', () => searchInput.focus());
+  }
+
+  searchInput?.addEventListener('input', renderArchives);
   document.getElementById('yearFilter').addEventListener('change', renderArchives);
   document.getElementById('sortFilter').addEventListener('change', renderArchives);
 }
@@ -70,6 +83,8 @@ async function loadArchives() {
   }
 }
 
+
+
 function populateYearFilter() {
   const years = new Set(allArchives.filter(i => i.academicYear).map(i => i.academicYear));
   const el = document.getElementById('yearFilter');
@@ -84,8 +99,13 @@ function renderArchives() {
 
   let filtered = allArchives.filter(item => {
     if (item.type !== currentType) return false;
-    if (search && !JSON.stringify(item.originalData).toLowerCase().includes(search)) return false;
     if (year && item.academicYear !== year) return false;
+    if (search) {
+      const title = getItemTitle(item).toLowerCase();
+      const meta = (item.archivedBy || '').toLowerCase();
+      const raw = item.originalData ? JSON.stringify(item.originalData).toLowerCase() : '';
+      if (!title.includes(search) && !meta.includes(search) && !raw.includes(search)) return false;
+    }
     return true;
   });
 

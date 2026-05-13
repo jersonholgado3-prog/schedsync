@@ -300,6 +300,23 @@
             border-width: 1.5px !important;
             transform: none !important;
         }
+
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 10px !important; }
+            .stat-card { padding: 12px !important; }
+            .stat-value { font-size: 1.4rem !important; }
+
+            .filter-bar { flex-wrap: wrap !important; gap: 10px !important; padding: 12px !important; }
+
+            .log-item { gap: 12px !important; padding: 1rem !important; }
+            .log-icon-box { width: 40px !important; height: 40px !important; font-size: 1.1rem !important; flex-shrink: 0 !important; }
+            .log-message { font-size: 0.9rem !important; }
+            .log-action-badge { font-size: 9px !important; }
+            .log-timestamp { font-size: 0.7rem !important; }
+            .log-user-meta { font-size: 0.72rem !important; flex-wrap: wrap !important; }
+
+            .greeting { font-size: 0.85rem !important; }
+        }
     </style>
 </head>
 
@@ -361,7 +378,7 @@
                 <div class="greeting">🛡️ SYSTEM AUDIT</div>
 
                 <div class="user-section">
-                    <div class="notification-icon-wrapper" onclick="window.location.href='notification.html'">
+                    <div class="notification-icon-wrapper" onclick="window.openGameNotifications()">
                         <img src="images/BELL.png" alt="Notifications">
                     </div>
                     <div class="user-profile-btn" id="userProfile">

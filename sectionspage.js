@@ -470,7 +470,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 // Normal click -> Profile (if NOT in selection mode)
                 card.onclick = () => {
-                    if (selectedIds.size > 0) {
+                    if (document.getElementById('sections-grid')?.classList.contains('select-mode')) {
                         toggleSectionSelection(section.id, card);
                     } else {
                         window.location.href = `sectionprofile.html?id=${section.id}`;
@@ -542,7 +542,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function updateSelectionBar() {
-        if (selectedIds.size > 0 && isEditor) {
+        const inSelectMode = document.getElementById('sections-grid')?.classList.contains('select-mode');
+        if (inSelectMode && isEditor) {
             selectionBar.classList.add('active');
             selectedCountEl.textContent = selectedIds.size;
         } else {
@@ -557,8 +558,17 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    const selectModeBtn = document.getElementById('selectModeBtn');
+    if (selectModeBtn) {
+        selectModeBtn.onclick = () => {
+            document.getElementById('sections-grid')?.classList.add('select-mode');
+            updateSelectionBar();
+        };
+    }
+
     cancelSelectionBtn.onclick = () => {
         selectedIds.clear();
+        document.getElementById('sections-grid')?.classList.remove('select-mode');
         renderSections(allSections);
         updateSelectionBar();
     };

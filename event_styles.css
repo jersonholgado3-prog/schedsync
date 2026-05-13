@@ -1784,28 +1784,6 @@ body {
 
 /* Consolidating redundant CSS ... done! */
 
-#eventSelectionBar {
-    align-items: center;
-    justify-content: space-between;
-    background: white;
-    border: 1.5px solid var(--border-main);
-    border-radius: 20px;
-    padding: 0.75rem 1.5rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    color: black;
-}
-.dark #eventSelectionBar {
-    background: #1e293b;
-    border-color: #334155;
-    color: #f1f5f9;
-    box-shadow: 4px 4px 0 #334155;
-}
-.dark #eventCancelSelectBtn {
-    background: #334155 !important;
-    color: #f1f5f9 !important;
-    border-color: #475569 !important;
-}
 #eventSelectModeBtn {
     padding: 8px 18px;
     border: 1.5px solid var(--border-main);
@@ -1821,4 +1799,37 @@ body {
     color: #f1f5f9 !important;
     border-color: #334155 !important;
     box-shadow: 3px 3px 0 #334155 !important;
+}
+
+@media (max-width: 768px) {
+    .event-list-header { display: none !important; }
+
+    .event-card .flex { flex-wrap: wrap !important; gap: 4px !important; }
+
+    .event-card-item.col-from {
+        flex: 0 0 auto !important;
+        width: auto !important;
+        font-size: 0.7rem !important;
+        color: #64748b !important;
+        order: 1;
+    }
+    .event-card-item.col-date {
+        flex: 0 0 auto !important;
+        width: auto !important;
+        font-size: 0.7rem !important;
+        margin-left: auto !important;
+        order: 2;
+    }
+    .event-card-item.col-title {
+        flex: 0 0 100% !important;
+        width: 100% !important;
+        font-size: 1rem !important;
+        order: 3;
+    }
+    .event-card-item.col-content {
+        flex: 0 0 100% !important;
+        width: 100% !important;
+        font-size: 0.85rem !important;
+        order: 4;
+    }
 }

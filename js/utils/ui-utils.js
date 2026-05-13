@@ -9,7 +9,9 @@
  * @param {string} type - 'success', 'error', 'info', 'warning'
  */
 export function showToast(message, type = "info") {
-    let container = document.getElementById("toast-container");
+    let container = document.getElementById("dg-toast-container") || document.getElementById("toast-container");
+    const isDG = container && container.id === "dg-toast-container";
+    
     if (!container) {
         container = document.createElement("div");
         container.id = "toast-container";
@@ -17,34 +19,50 @@ export function showToast(message, type = "info") {
     }
 
     const toast = document.createElement("div");
-    toast.className = `toast-message ${type}`;
+    toast.className = isDG ? `dg-toast dg-toast-${type}` : `toast-message ${type}`;
 
     // Icon based on type 🎨
     let icon = "";
-    switch (type) {
-        case "success":
-            icon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1 -5.93 -9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
-            break;
-        case "error":
-            icon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
-            break;
-        case "warning":
-            icon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
-            break;
-        default:
-            icon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+    if (isDG) {
+        switch (type) {
+            case "success": icon = "✅"; break;
+            case "error": icon = "❌"; break;
+            case "warning": icon = "⚠️"; break;
+            default: icon = "🔔";
+        }
+    } else {
+        switch (type) {
+            case "success":
+                icon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1 -5.93 -9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
+                break;
+            case "error":
+                icon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+                break;
+            case "warning":
+                icon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
+                break;
+            default:
+                icon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+        }
     }
 
-    toast.innerHTML = `${icon}<span>${message}</span>`;
+    toast.innerHTML = isDG ? `${icon} <span>${message}</span>` : `${icon}<span>${message}</span>`;
     container.appendChild(toast);
 
     // Auto-remove with fallback 💨
     setTimeout(() => {
-        toast.style.animation = "toastSlideOut 0.3s forwards";
+        if (isDG) {
+            toast.style.opacity = "0";
+            toast.style.transform = "translateY(-20px)";
+            toast.style.transition = "all 0.4s ease";
+        } else {
+            toast.style.animation = "toastSlideOut 0.3s forwards";
+        }
         // Final cleanup after animation completes
-        setTimeout(() => toast.remove(), 300);
+        setTimeout(() => toast.remove(), 400);
     }, 3000);
 }
+
 
 /**
  * Show a Maangas-style Confirmation Modal

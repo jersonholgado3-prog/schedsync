@@ -11,6 +11,7 @@
   <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
   <script type="module" src="role-restriction.js"></script>
   <script type="module" src="profile.js"></script>
+  <script type="module" src="realtime-notifications.js"></script>
   <link rel="stylesheet" href="header-styles.css" />
   <script>
     (function () {
@@ -146,6 +147,14 @@
                   </div>
                 </div>
               </div>
+              <div style="margin-top:16px;padding-top:16px;border-top:1.5px solid var(--border-main);">
+                <button id="installAppBtn" style="display:none;width:100%;padding:10px;border:2px solid #000;border-radius:12px;background:#005BAB;color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;box-shadow:3px 3px 0 #000;">
+                  📲 Install SchedSync App
+                </button>
+                <p id="installAppNote" style="display:none;font-size:0.8rem;color:#64748b;margin-top:8px;text-align:center;">
+                  On iPhone: tap Share → "Add to Home Screen"
+                </p>
+              </div>
             </div>
 
             <!-- CONTAINER 2: SCHEDULE -->
@@ -219,6 +228,29 @@
       <img src="images/AUDIT.png" alt="Audit Logs"><span>Audit</span>
     </a>
   </nav>
+<script>
+  let _installPrompt = null;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    _installPrompt = e;
+    document.getElementById('installAppBtn').style.display = 'block';
+  });
+  document.addEventListener('DOMContentLoaded', () => {
+    // Show iOS hint if on Safari iOS (no beforeinstallprompt support)
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+    const isInStandalone = window.navigator.standalone;
+    if (isIOS && !isInStandalone) {
+      document.getElementById('installAppNote').style.display = 'block';
+    }
+    document.getElementById('installAppBtn').addEventListener('click', async () => {
+      if (!_installPrompt) return;
+      _installPrompt.prompt();
+      await _installPrompt.userChoice;
+      _installPrompt = null;
+      document.getElementById('installAppBtn').style.display = 'none';
+    });
+  });
+</script>
 </body>
 
 </html>

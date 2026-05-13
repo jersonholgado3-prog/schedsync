@@ -140,6 +140,7 @@ function applyRestrictions(role, hasPermission) {
     document.querySelectorAll('.admin-only').forEach(el => {
         if (role === 'admin') {
             if (el.classList.contains('selection-bar')) return; // controlled by facultypage.js
+            if (el.id === 'bulkDeleteBar' || el.id === 'eventSelectionBar') return; // controlled by select mode
             const isFlexEl = el.classList.contains('mob-nav-item') || el.classList.contains('import-toolbar');
             el.style.display = isFlexEl ? 'flex' : 'block';
         } else {

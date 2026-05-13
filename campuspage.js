@@ -43,6 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
     selectedIds.clear();
     const btn = document.getElementById('selectModeBtn');
     if (btn) btn.textContent = '☑️ Select';
+    document.getElementById('bulkDeleteBar').classList.remove('flex');
     document.getElementById('bulkDeleteBar').classList.add('hidden');
     document.querySelectorAll('.room-pill').forEach(pill => {
       pill.classList.remove('ring-2', 'ring-blue-500', 'ring-offset-2', 'opacity-60');
@@ -52,6 +53,10 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   window.enterSelectMode = function() {
+    const bar = document.getElementById('bulkDeleteBar');
+    const count = document.getElementById('bulkCount');
+    if (bar) { bar.classList.remove('hidden'); bar.classList.add('flex'); }
+    if (count) count.textContent = `0 selected`;
     document.querySelectorAll('.room-pill').forEach(pill => {
       if (!pill.dataset.docId) return;
       if (pill.querySelector('.room-select-cb')) return;
@@ -61,10 +66,6 @@ document.addEventListener("DOMContentLoaded", () => {
       cb.addEventListener('change', () => {
         if (cb.checked) { selectedIds.add(pill.dataset.docId); pill.classList.add('ring-2', 'ring-blue-500', 'ring-offset-2'); }
         else { selectedIds.delete(pill.dataset.docId); pill.classList.remove('ring-2', 'ring-blue-500', 'ring-offset-2'); }
-        const bar = document.getElementById('bulkDeleteBar');
-        const count = document.getElementById('bulkCount');
-        if (selectedIds.size > 0) { bar.classList.remove('hidden'); bar.classList.add('flex'); }
-        else { bar.classList.add('hidden'); bar.classList.remove('flex'); }
         if (count) count.textContent = `${selectedIds.size} selected`;
       });
       pill.appendChild(cb);
@@ -84,15 +85,17 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   window.selectAll = () => {
-    const allSelected = document.querySelectorAll('.room-pill[data-doc-id]').length === selectedIds.size;
-    document.querySelectorAll('.room-pill[data-doc-id]').forEach(pill => {
+    const pills = document.querySelectorAll('.room-pill[data-doc-id]');
+    const allSelected = selectedIds.size > 0 && pills.length === selectedIds.size;
+    pills.forEach(pill => {
       const cb = pill.querySelector('.room-select-cb');
       if (!cb) return;
       cb.checked = !allSelected;
       cb.dispatchEvent(new Event('change'));
     });
     const btn = document.getElementById('selectAllBtn');
-    if (btn) btn.textContent = allSelected ? 'Select All' : 'Deselect All';
+    if (btn) btn.textContent = allSelected ? 'Deselect All' : 'Select All';
+
   };
 
 

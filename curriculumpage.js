@@ -3,10 +3,12 @@ import { collection, getDocs, getDoc, doc, setDoc, deleteDoc, query, orderBy } f
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { SUBJECT_DATA } from "./subject-data.js";
 import { showToast } from "./js/utils/ui-utils.js";
+import { initUniversalSearch } from "./search.js";
 import { initUserProfile } from "./userprofile.js";
 
 document.addEventListener('DOMContentLoaded', async () => {
     initUserProfile("#userProfile");
+    initUniversalSearch(db);
     const curriculumGrid = document.getElementById('curriculumGrid');
     const addSubjectBtn  = document.getElementById('addSubjectBtn');
     const migrateDataBtn = document.getElementById('migrateDataBtn');
