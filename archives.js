@@ -18,7 +18,7 @@ const secondaryConfig = {
 import { initUserProfile } from "./userprofile.js";
 import { initUniversalSearch } from "./search.js";
 
-const ARCHIVE_RETENTION_YEARS = 3;
+const ARCHIVE_RETENTION_MONTHS = 6;
 const STORAGE_WARNING_THRESHOLD = 50 * 1024 * 1024;
 
 let currentType = 'schedules';
@@ -297,7 +297,7 @@ async function autoCleanupOldArchives() {
   if (Date.now() - lastRun < WEEK_MS) return;
   try {
     const cutoff = new Date();
-    cutoff.setFullYear(cutoff.getFullYear() - ARCHIVE_RETENTION_YEARS);
+    cutoff.setMonth(cutoff.getMonth() - ARCHIVE_RETENTION_MONTHS);
     for (const type of ['schedules', 'sections', 'faculty', 'curriculum', 'events']) {
       const snap = await getDocs(collection(db, 'archives', type, 'items'));
       for (const d of snap.docs) {

@@ -384,6 +384,16 @@ async function getPublishedSchedules() {
   return snap;
 }
 
+let cachedAllSchedules = null;
+let lastAllSchedulesFetch = 0;
+async function getAllSchedulesForConflict() {
+  const now = Date.now();
+  if (cachedAllSchedules && now - lastAllSchedulesFetch < 5000) return cachedAllSchedules;
+  cachedAllSchedules = await getDocs(collection(db, "schedules"));
+  lastAllSchedulesFetch = now;
+  return cachedAllSchedules;
+}
+
 async function updateRoomSelectionOccupancies() {
 
   try {
@@ -623,6 +633,20 @@ async function handleDrop(e) {
   classData.day = targetDay;
   classData.timeBlock = `${toTime(newStart)}-${toTime(newEnd)}`;
 
+  // 🛡️ CONFLICT DETECTION ON DRAG & DROP ⚓
+  showToast("Checking for conflicts... ⚖️", "info");
+  const conflicts = await checkConflicts(classData, targetSchedId);
+  if (conflicts.hasConflict) {
+    showConflictRecommendations(classData);
+    let msg = "<div style='text-align: center; color: #ef4444; font-weight: 800; font-size: 1.1rem; margin-bottom: 10px;'>MOVE CONFLICT! ⚠️</div>";
+    if (conflicts.room) msg += `<div style='margin-bottom: 8px;'>${conflicts.room}</div>`;
+    if (conflicts.teacher) msg += `<div style='margin-bottom: 8px;'>${conflicts.teacher}</div>`;
+    if (conflicts.blueprint) msg += `<div style='margin-bottom: 8px;'>${conflicts.blueprint}</div>`;
+    msg += "<div style='margin-top: 15px; font-size: 0.85rem; border-top: 1px solid #ddd; padding-top: 10px;'>Force move anyway?</div>";
+    const proceed = await showConfirm("⚠️ ATTENTION", msg);
+    if (!proceed) return;
+  }
+
   // Remove from source
   sched.classes.splice(classIndex, 1);
 
@@ -652,6 +676,9 @@ async function handleDrop(e) {
 let schedules = [];
 let teachers = []; // Store fetched teachers
 let allRooms = []; // Store all available rooms
+// Pre-computed busy sets for the currently open panel slot (populated in openPanel)
+let busyTeachersAtSlot = new Set();
+let busyRoomsAtSlot = new Set();
 let roomOccupancies = {}; // Store occupancy percentages
 let selected = {};
 let isLoaded = false;
@@ -693,8 +720,8 @@ async function hasRoomConflict(n, excludeId) {
     }
   }
 
-  // 2. Check Firebase (Published Schedules)
-  const snap = await getPublishedSchedules();
+  // 2. Check Firebase (All Schedules)
+  const snap = await getAllSchedulesForConflict();
 
   for (const d of snap.docs) {
     if (d.id === excludeId) continue;
@@ -758,8 +785,8 @@ async function hasTeacherConflict(n, excludeId) {
     }
   }
 
-  // 2. Check Firebase
-  const snap = await getPublishedSchedules();
+  // 2. Check Firebase (All Schedules)
+  const snap = await getAllSchedulesForConflict();
 
   for (const d of snap.docs) {
     if (d.id === excludeId) continue;
@@ -1319,18 +1346,30 @@ function getTeacherOptions(query) {
     return !isDuplicate;
   }).sort((a, b) => a.name.localeCompare(b.name));
 
-  // 3. Deduction Logic
-  // If the query IS an exact teacher name, returning ONLY that teacher feels like suggestions are "gone"
-  // So if there's an exact match and query is length > 3, we still show other relevant teachers
+  // Filter out teachers busy at the current slot
+  const available = distinct.filter(t => !busyTeachersAtSlot.has(t.name.trim().toUpperCase()));
+
+  // If ALL relevant teachers are busy, auto-show time slot recommendations
+  if (distinct.length > 0 && available.length === 0 && subjectName) {
+    const currentRoom = document.getElementById('room')?.value?.trim() || '';
+    const blockData = {
+      subject: subjectName,
+      teacher: distinct[0]?.name || '',
+      room: currentRoom,
+      day: selected?.day || '',
+      timeBlock: selected?.block || '',
+      allTeachers: distinct.map(t => t.name)  // pass all busy teachers for slot scanning
+    };
+    setTimeout(() => showConflictRecommendations(blockData), 0);
+  }
+
+  const toFilter = available.length > 0 ? available : distinct;
   if (query) {
-    const filtered = distinct.filter(n => n.name.toLowerCase().includes(query));
-    // If it's a very specific exact match, let's also keep others available
-    if (filtered.length === 1 && filtered[0].name.toLowerCase() === query) {
-      return distinct; // Show all relevant ones if exact match (so user can pick someone else)
-    }
+    const filtered = toFilter.filter(n => n.name.toLowerCase().includes(query));
+    if (filtered.length === 1 && filtered[0].name.toLowerCase() === query) return toFilter;
     return filtered;
   }
-  return distinct;
+  return toFilter;
 }
 
 function getRoomOptions(query) {
@@ -1377,10 +1416,14 @@ function getRoomOptions(query) {
     return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
   });
 
+  // Filter out rooms occupied at the current slot
+  const available = options.filter(r => !busyRoomsAtSlot.has(r.name.trim().toUpperCase()));
+  const toShow = available.length > 0 ? available : options;
+
   if (query) {
-    return options.filter(r => r.name.toLowerCase().includes(query));
+    return toShow.filter(r => r.name.toLowerCase().includes(query));
   }
-  return options;
+  return toShow;
 }
 
 
@@ -1854,6 +1897,80 @@ function renderTable() {
 }
 
 // ───────── PANEL ───────── */
+async function computeBusySetsForSlot(day, timeBlock, excludeSchedId) {
+  busyTeachersAtSlot = new Set();
+  busyRoomsAtSlot = new Set();
+  const targetBlock = parseBlock(timeBlock);
+
+  const snap = await getAllSchedulesForConflict();
+  snap.forEach(d => {
+    if (d.id === excludeSchedId) return;
+    const data = d.data();
+    if (data.section === "EVENTS" || data.section === "EVENT_HOST" || d.id === "DEFAULT_SECTION") return;
+    (data.classes || []).forEach(c => {
+      if (normalizeDay(c.day) !== normalizeDay(day)) return;
+      if (c.subject === "VACANT" || c.subject === "MARKED_VACANT") return;
+      if (!overlaps(parseBlock(c.timeBlock), targetBlock)) return;
+      if (c.teacher && c.teacher !== "NA") busyTeachersAtSlot.add(c.teacher.trim().toUpperCase());
+      if (c.room && c.room !== "NA") busyRoomsAtSlot.add(c.room.trim().toUpperCase());
+    });
+  });
+  // Also check local schedules (other sections loaded in memory)
+  schedules.forEach(s => {
+    if (s.id === excludeSchedId) return;
+    (s.classes || []).forEach(c => {
+      if (normalizeDay(c.day) !== normalizeDay(day)) return;
+      if (c.subject === "VACANT" || c.subject === "MARKED_VACANT") return;
+      if (!overlaps(parseBlock(c.timeBlock), targetBlock)) return;
+      if (c.teacher && c.teacher !== "NA") busyTeachersAtSlot.add(c.teacher.trim().toUpperCase());
+      if (c.room && c.room !== "NA") busyRoomsAtSlot.add(c.room.trim().toUpperCase());
+    });
+  });
+  // Refresh dropdown options silently (don't open them)
+  const teacherInput = document.getElementById('teacher');
+  const roomInput = document.getElementById('room');
+  if (teacherInput && document.getElementById('teacher-dropdown')?.classList.contains('open')) {
+    teacherInput.dispatchEvent(new Event('input'));
+  }
+  if (roomInput && document.getElementById('room-dropdown')?.classList.contains('open')) {
+    roomInput.dispatchEvent(new Event('input'));
+  }
+
+  // Auto-trigger reco if all relevant teachers for the current subject are already busy
+  const subjectVal = document.getElementById('subject')?.value?.trim();
+  checkAllTeachersBusyAndReco();
+}
+
+function checkAllTeachersBusyAndReco() {
+  const subjectVal = document.getElementById('subject')?.value?.trim();
+  if (!subjectVal || busyTeachersAtSlot.size === 0) return;
+
+  const savedBusy = busyTeachersAtSlot;
+  busyTeachersAtSlot = new Set();
+  const allRelevant = getTeacherOptions('').map(t => typeof t === 'object' ? t.name : t);
+  busyTeachersAtSlot = savedBusy;
+
+  if (allRelevant.length === 0) return;
+  if (!allRelevant.every(name => busyTeachersAtSlot.has(name.trim().toUpperCase()))) return;
+
+  showConflictRecommendations({
+    subject: subjectVal,
+    teacher: allRelevant[0],
+    room: document.getElementById('room')?.value?.trim() || '',
+    day: selected?.day || '',
+    timeBlock: selected?.block || '',
+    allTeachers: allRelevant
+  });
+}
+
+// Wire subject field: when subject is picked, check if all its teachers are busy
+document.addEventListener('DOMContentLoaded', () => {
+  const subjectInput = document.getElementById('subject');
+  if (subjectInput) {
+    subjectInput.addEventListener('change', () => checkAllTeachersBusyAndReco());
+  }
+});
+
 function openPanel(id, day, block) {
   // 🛡️ Guard! Double-layer Permissions Check ⚓
   const role = (currentUserRole || localStorage.getItem('userRole') || '').toLowerCase();
@@ -2006,6 +2123,11 @@ function openPanel(id, day, block) {
   if (!isEditor) {
     window.enableTeacherReadOnlyMode();
   }
+
+  // Pre-compute busy teachers/rooms for this slot (async, refreshes dropdowns when done)
+  busyTeachersAtSlot = new Set();
+  busyRoomsAtSlot = new Set();
+  computeBusySetsForSlot(day, block, id);
 }
 
 function handleColorSelect() {
@@ -2493,6 +2615,30 @@ async function findAvailableSlots(teacher, room, excludeSchedId) {
   return results;
 }
 
+async function findAvailableSlotForAnyTeacher(teacherNames, excludeSchedId) {
+  const DAYS_LIST = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const standardSlots = [
+    "07:30 AM-09:00 AM", "09:00 AM-10:30 AM", "10:30 AM-12:00 PM",
+    "01:00 PM-02:30 PM", "02:30 PM-04:00 PM", "04:00 PM-05:30 PM"
+  ];
+  const results = [];
+  for (const day of DAYS_LIST) {
+    for (const slot of standardSlots) {
+      if (day === selected.day && slot === selected.block) continue;
+      for (const teacher of teacherNames) {
+        const testBlock = { day, timeBlock: slot, teacher, room: "NA", subject: "AVAILABILITY_CHECK" };
+        const conflict = await hasTeacherConflict(testBlock, excludeSchedId);
+        if (!conflict) {
+          results.push({ day, slot, teacher });
+          break; // one teacher free at this slot is enough
+        }
+      }
+      if (results.length >= 6) return results;
+    }
+  }
+  return results;
+}
+
 async function showConflictRecommendations(block) {
   const roomSugg = document.getElementById('roomSuggestions');
   const teacherSugg = document.getElementById('teacherSuggestions');
@@ -2508,7 +2654,9 @@ async function showConflictRecommendations(block) {
   try {
     const recommendedRooms = await findAvailableRooms(block.day, block.timeBlock, selected.id, block.subject);
     const recommendedTeachers = await findAvailableTeachers(block.day, block.timeBlock, selected.id, block.subject);
-    const recommendedTimes = await findAvailableSlots(block.teacher, block.room, selected.id);
+    const recommendedTimes = block.allTeachers?.length > 0
+      ? await findAvailableSlotForAnyTeacher(block.allTeachers, selected.id)
+      : await findAvailableSlots(block.teacher, block.room, selected.id);
 
     roomSugg.innerHTML = "";
     if (recommendedRooms.length > 0) {
@@ -2553,7 +2701,7 @@ async function showConflictRecommendations(block) {
           pill.className = 'suggestion-pill';
           pill.style.background = "#dcfce7"; // Light green for time suggestions
           pill.style.borderColor = "#22c55e";
-          pill.innerHTML = `<span>📅</span> ${res.day.slice(0, 3)} ${res.slot.split('-')[0]}`;
+          pill.innerHTML = `<span>📅</span> ${res.day.slice(0, 3)} ${res.slot.split('-')[0]}${res.teacher ? ` · ${res.teacher.split(' ').pop()}` : ''}`;
           pill.onclick = () => {
             const [start, end] = res.slot.split('-');
             const [sTime, sAMPM] = start.trim().split(' ');
@@ -2563,6 +2711,8 @@ async function showConflictRecommendations(block) {
             document.getElementById('startAMPM').value = sAMPM;
             document.getElementById('end').value = eTime;
             document.getElementById('endAMPM').value = eAMPM;
+
+            if (res.teacher) document.getElementById('teacher').value = res.teacher;
 
             // Update selected block so save works correctly
             selected.day = res.day;

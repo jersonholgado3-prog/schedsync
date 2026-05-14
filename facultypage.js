@@ -12,6 +12,7 @@ import {
   deleteDoc,
   setDoc
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { getCachedFaculty, invalidateCache } from "./js/config/db-cache.js";
 import { onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, deleteUser } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
@@ -199,7 +200,7 @@ async function importFacultyMembers(items) {
         succeeded++;
         processed = true;
         if (tempApp) await deleteApp(tempApp);
-        loadTeachers();
+        loadTeachers(true);
         // 300ms delay to avoid rate limits
         await new Promise(res => setTimeout(res, 300));
         if (isCancelled()) break;
@@ -213,7 +214,7 @@ async function importFacultyMembers(items) {
         if (isQuota) {
           showToast(`⚠️ Firebase quota exceeded. Import stopped at ${succeeded}/${items.length}. Try again tomorrow or upgrade your Firebase plan.`, "error");
           clearImportProgress();
-          loadTeachers();
+          loadTeachers(true);
           return;
         } else if (err.code === 'auth/too-many-requests' && retries < 3) {
           const wait = 5000 * (retries + 1); // 5s, 10s, 15s
@@ -232,11 +233,11 @@ async function importFacultyMembers(items) {
     tickImportProgress();
     showToast(`Processing ${i + 1}/${items.length}...`, "info");
   }
-  if (isCancelled()) { loadTeachers(); return; }
+  if (isCancelled()) { loadTeachers(true); return; }
   clearImportProgress();
   showToast(`Successfully processed ${succeeded}/${items.length} faculty!`, "success");
   localStorage.removeItem('importPendingItems');
-  loadTeachers();
+  loadTeachers(true);
 }
 
 // --- SELECTION LOGIC ---
@@ -291,7 +292,7 @@ function initSelectionUI() {
 
       showToast(`${selectedFaculty.length} faculty archived successfully`, "success");
       selectedIds.clear();
-      loadTeachers();
+      loadTeachers(true);
     } catch (error) {
       console.error("Bulk archive error:", error);
       showToast("Failed to archive faculty", "error");
@@ -319,7 +320,7 @@ function initSelectionUI() {
       hideLoading();
       selectedIds.clear();
       updateSelectionBar();
-      loadTeachers();
+      loadTeachers(true);
     }
   };
 
@@ -353,7 +354,7 @@ function initSelectionUI() {
     showToast("All faculty deleted.", "success");
     selectedIds.clear();
     updateSelectionBar();
-    loadTeachers();
+    loadTeachers(true);
   };
 }
 
@@ -401,7 +402,8 @@ function toggleFacultySelection(id, card) {
 
 // --- EXISTING FUNCTIONS ---
 
-async function loadTeachers() {
+async function loadTeachers(forceRefresh = false) {
+  if (forceRefresh) invalidateCache("faculty");
   const facultyGrid = document.getElementById('facultyGrid');
   if (!facultyGrid) return;
 
@@ -417,15 +419,9 @@ async function loadTeachers() {
   }
 
   try {
-    const [teacherSnap, phSnap, teacherCapSnap, phCapSnap, headSnap] = await Promise.all([
-      getDocs(query(collection(db, "users"), where("role", "==", "teacher"))),
-      getDocs(query(collection(db, "users"), where("role", "==", "program head"))),
-      getDocs(query(collection(db, "users"), where("role", "==", "Teacher"))),
-      getDocs(query(collection(db, "users"), where("role", "==", "Program Head"))),
-      getDocs(query(collection(db, "users"), where("role", "==", "head teacher")))
-    ]);
-    const snap = { docs: [...teacherSnap.docs, ...phSnap.docs, ...teacherCapSnap.docs, ...phCapSnap.docs, ...headSnap.docs] };
-    snap.empty = snap.docs.length === 0;
+    const rawData = await getCachedFaculty(db);
+    const snap = { docs: rawData.map(f => ({ id: f.id, data: () => f })), empty: rawData.length === 0 };
+    snap.empty = rawData.length === 0;
 
     if (snap.empty) {
       facultyGrid.innerHTML = "<p style='text-align: center; width: 100%; grid-column: 1/-1;'>No teachers found.</p>";
@@ -433,7 +429,6 @@ async function loadTeachers() {
     }
 
     facultyGrid.innerHTML = "";
-    const rawData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
     // Filter duplicates: prefer UID-indexed docs
     const uniqueMap = new Map();
@@ -637,7 +632,7 @@ function initAddFacultyModal() {
       modal.classList.add('hidden');
       form.reset();
       programGroup.style.display = 'none';
-      loadTeachers();
+      loadTeachers(true);
     } catch (err) {
       console.error('Add faculty error:', err);
       let msg = 'Failed to add faculty.';
@@ -822,7 +817,7 @@ function initAssignSubjectsModal() {
       showToast('Subjects saved!', 'success');
       modal.classList.add('hidden');
       _assignTeacherId = null;
-      loadTeachers();
+      loadTeachers(true);
     } catch (err) {
       showToast('Failed to save subjects.', 'error');
       console.error(err);

@@ -438,13 +438,15 @@ onAuthStateChanged(auth, (user) => {
     listenForEvents();
 
     // Deep link support
-    setTimeout(() => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const eventId = urlParams.get('id');
-      if (eventId && allEvents.length > 0) {
-        const linkedEvent = allEvents.find(e => String(e.createdAt) === eventId);
-        if (linkedEvent) showEventDetails(linkedEvent);
-      }
-    }, 1000);
+    const urlParams = new URLSearchParams(window.location.search);
+    const eventId = urlParams.get('id');
+    if (eventId) {
+      let attempts = 0;
+      const tryOpen = setInterval(() => {
+        const linked = allEvents.find(e => e.id === eventId || String(e.createdAt) === eventId);
+        if (linked) { clearInterval(tryOpen); showEventDetails(linked); }
+        else if (++attempts > 20) clearInterval(tryOpen);
+      }, 200);
+    }
   }
 });

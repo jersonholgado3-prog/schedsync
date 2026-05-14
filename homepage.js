@@ -628,6 +628,7 @@ function initEventCalendar() {
     filtered.forEach(ev => {
       const item = document.createElement('div');
       item.className = 'event-item';
+      item.style.cursor = 'pointer';
       item.innerHTML = `
         <div class="event-time-badge">${(ev.timeBlock || "").split('-')[0]}</div>
         <div class="event-info">
@@ -635,6 +636,9 @@ function initEventCalendar() {
           <div class="event-room">📍 ${(ev.room || "").replace(/\s*\|?\s*\d{1,3}%\s*(?:OCCUPIED)?$/i, "").trim()}</div>
         </div>
       `;
+      item.onclick = () => {
+        window.location.href = `event.html?id=${ev.id || ev.createdAt}`;
+      };
       eventList.appendChild(item);
     });
   };
