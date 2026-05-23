@@ -195,7 +195,7 @@
 .professional-mode .cal-nav-btn,
 .professional-mode .cal-day,
 .professional-mode .widget-action-btn-icon {
-  border: 1.5px solid #64748b !important;
+  border: 1.5px solid #D1D5DB !important;
   border-radius: 12px !important;
   background: #ffffff !important;
   box-shadow: none !important;
@@ -269,7 +269,7 @@ html:not(.professional-mode) .hero-carousel-container,
 html:not(.professional-mode) #draftWidget,
 html:not(.professional-mode) .widget-card {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-  border: 2px solid #64748b !important;
+  border: 2px solid #D1D5DB !important;
   border-radius: 24px !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -547,7 +547,7 @@ html:not(.professional-mode).dark #draftWidget {
   padding: 0.9rem !important;
   padding-right: 2.5rem !important;
   /* PROTECT DELETE AREA 🛡️⚓ */
-  border: 1.5px solid #64748b !important;
+  border: 1.5px solid #D1D5DB !important;
   border-radius: 20px !important;
   background: #ffffff !important;
   margin-bottom: 1rem !important;
@@ -572,7 +572,7 @@ html:not(.professional-mode).dark #draftWidget {
 .announcement-item:hover {
   /* transform: translateY(-4px) !important; -- REMOVED LIFTING EFFECT ⚓ */
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
-  border-color: #64748b !important;
+  border-color: #D1D5DB !important;
 }
 
 .dark .draft-item:hover,
@@ -622,7 +622,7 @@ html:not(.professional-mode).dark #draftWidget {
   width: 42px !important;
   height: 42px !important;
   background: #f1f5f9 !important;
-  border: 1.5px solid #64748b !important;
+  border: 1.5px solid #D1D5DB !important;
   border-radius: 12px !important;
   display: flex !important;
   align-items: center !important;
@@ -765,7 +765,7 @@ html.dark:not(.professional-mode) .announcement-item:hover {
   justify-content: center !important;
   text-align: center !important;
   padding: 1.25rem !important;
-  border: 1.5px solid #64748b !important;
+  border: 1.5px solid #D1D5DB !important;
   border-radius: 20px !important;
   background: #ffffff !important;
   margin-bottom: 1rem !important;

@@ -37,5 +37,12 @@ export const getCachedFaculty = (db) =>
       .filter(u => ["teacher", "program head", "head teacher"].includes((u.role || "").toLowerCase()));
   });
 
+/** All courses */
+export const getCachedCourses = (db) =>
+  _fetch("courses", async () => {
+    const snap = await getDocs(collection(db, "courses"));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  });
+
 /** Invalidate a key when data changes (call after writes) */
 export const invalidateCache = (key) => { delete _cache[key]; };

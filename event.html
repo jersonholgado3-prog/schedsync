@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Events - SchedSync</title>
   <link rel="stylesheet" href="header-styles.css" />
+  <link rel="stylesheet" href="admin-theme.css" />
   <script>
     (function () {
       // 1. Theme Lock 🌙
@@ -21,6 +22,7 @@
       if (mode === 'professional') {
         document.documentElement.classList.add("professional-mode");
       }
+      if (localStorage.getItem("userRole") === "admin") document.documentElement.classList.add("admin-theme");
     })();
   </script>
   <link rel="stylesheet" href="eventpopup.css">
@@ -159,7 +161,7 @@
               <span>Create new Event</span>
             </div>
             <div style="position:relative;display:inline-block;">
-              <div id="eventSelectionBar" style="display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);white-space:nowrap;background:white;border:2px solid black;border-radius:12px;box-shadow:3px 3px 0px black;z-index:50;">
+              <div id="eventSelectionBar" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);white-space:nowrap;background:white;border:2px solid black;border-radius:12px;box-shadow:3px 3px 0px black;z-index:9999;">
                 <div style="display:flex;flex-direction:row;align-items:center;gap:4px;padding:6px 10px;">
                 <span id="eventSelectedCount" style="font-weight:800;font-size:12px;padding:0 4px;">0</span>
                 <button id="eventSelectAllBtn" style="padding:4px 8px;background:white;border:2px solid black;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;">ALL</button>

@@ -20,6 +20,7 @@
       if (mode === 'professional') {
         document.documentElement.classList.add("professional-mode");
       }
+      if (localStorage.getItem("userRole") === "admin") document.documentElement.classList.add("admin-theme");
     })();
   </script>
   <script type="module" src="role-restriction.js"></script>
@@ -27,6 +28,7 @@
   <script type="module" src="userprofile.js"></script>
   <script type="module" src="realtime-notifications.js"></script> <!-- Included for Toasts/Confirm logic -->
   <link rel="stylesheet" href="header-styles.css" />
+  <link rel="stylesheet" href="admin-theme.css" />
   <link rel="stylesheet" href="permissions_styles.css" />
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
   <script>

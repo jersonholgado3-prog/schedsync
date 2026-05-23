@@ -5,6 +5,7 @@ import {
   getDocs,
   limit
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { getCachedRooms } from "./js/config/db-cache.js";
 
 /**
  * Universal Search System with History
@@ -65,12 +66,11 @@ export function initUniversalSearch(db, options = {}) {
 
       // 2. Fetch Rooms
       try {
-        const roomSnap = await getDocs(collection(db, "rooms"));
-        roomSnap.forEach(doc => {
-          const data = doc.data();
+        const roomsArr = await getCachedRooms(db);
+        roomsArr.forEach(data => {
           const roomName = String(data.name || data.room || "Unnamed Room");
           results.push({
-            id: doc.id,
+            id: data.id,
             type: 'room',
             name: roomName,
             url: `roomprofile.html?room=${encodeURIComponent(roomName)}`,

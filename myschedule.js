@@ -47,6 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
    USER ROLE
    ============================= */
 let currentUserRole = "student"; // Default safety
+let hasEditPermission = false; // Set from Firestore only
 
 /* =============================
    ELEMENTS
@@ -93,6 +94,7 @@ async function renderAll(shouldFetch = true) {
       const userData = userDoc.data();
       currentUserRole = userData.role || "student";
       hasPermission = userData.editPermission === true;
+      hasEditPermission = hasPermission;
 
       console.log("Current User Info:", {
         uid: currentUser.uid,
@@ -144,10 +146,14 @@ async function renderAll(shouldFetch = true) {
 
       } else {
         // TEACHER: Only see their own schedules or published ones 🛡️
-        const snap = await getDocs(collection(db, "schedules"));
-        schedules = snap.docs
-          .map(d => ({ id: d.id, ...d.data() }))
-          .filter(s => s.status === 'published' || s.userId === currentUser.uid);
+        const [pubSnap, ownSnap] = await Promise.all([
+          getDocs(query(collection(db, "schedules"), where("status", "==", "published"))),
+          getDocs(query(collection(db, "schedules"), where("userId", "==", currentUser.uid)))
+        ]);
+        const seen = new Set();
+        schedules = [...pubSnap.docs, ...ownSnap.docs]
+          .filter(d => { if (seen.has(d.id)) return false; seen.add(d.id); return true; })
+          .map(d => ({ id: d.id, ...d.data() }));
 
         // Show All UI Sections
         sectionTitles.forEach(el => el.style.display = 'block');
@@ -267,7 +273,7 @@ function renderSection(status, schedules, type = null) {
 
     // Determine buttons based on status & role
     let buttonsHtml = "";
-    const hasPermission = localStorage.getItem('editPermission') === 'true';
+    const hasPermission = hasEditPermission;
 
     if (currentUserRole !== 'student') {
       const viewSchedBtn = `<button class="view-sched-btn" style="background:#005BAB;color:white;font-size:11px;padding:4px 12px;font-weight:800;border-radius:8px;border: 1.5px solid #cbd5e1;box-shadow: 0 2px 8px rgba(0,0,0,0.08);text-transform:uppercase;cursor:pointer;" onclick="event.stopPropagation(); window.location.href='editpage.html?name=${encodeURIComponent(safeName)}'">📅 View Schedules</button>`;

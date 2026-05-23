@@ -41,7 +41,9 @@ export const GENERAL_KEYS = ['MATH', 'ENGLISH', 'PHILOSOPHY', 'SCIENCE', 'FILIPI
 export function getStrandFromSection(section) {
     if (!section) return null;
     const s = section.toUpperCase();
-    if (s.includes("ITM") || s.includes("ICT") || s.includes("TVL")) return "ICT";
+    if (s.includes("MAWD")) return "MAWD";
+    if (s.includes("ITM")) return "ICT";
+    if (s.includes("ICT") || s.includes("TVL")) return "ICT";
     if (s.includes("ABM")) return "ABM";
     if (s.includes("STEM")) return "STEM";
     if (s.includes("HUMSS")) return "HUMSS";

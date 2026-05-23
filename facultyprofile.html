@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Faculty Profile - SchedSync</title>
     <link rel="stylesheet" href="header-styles.css" />
+  <link rel="stylesheet" href="admin-theme.css" />
     <link rel="stylesheet" href="maangas-styles.css" />
     <link rel="stylesheet" href="toast.css">
     <script src="toast.js"></script>
@@ -22,6 +23,7 @@
             if (mode === 'professional') {
                 document.documentElement.classList.add("professional-mode");
             }
+      if (localStorage.getItem("userRole") === "admin") document.documentElement.classList.add("admin-theme");
         })();
     </script>
     <link rel="stylesheet" href="profile_styles.css" />

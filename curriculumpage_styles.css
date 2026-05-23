@@ -86,7 +86,7 @@
     transform: rotate(-90deg);
 }
 
-.course-section.collapsed .terms-grid {
+.course-section.collapsed .terms-list {
     display: none;
 }
 
@@ -98,99 +98,123 @@
     color: #38bdf8;
 }
 
-.terms-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
-}
-
-.category-card {
-    background: white;
-    border: 1.5px solid var(--border-main);
-    border-radius: 15px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    overflow: hidden;
+/* ── Term/Table layout ─────────────────────────────────────────────────────── */
+.terms-list {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    gap: 24px;
 }
 
-.category-header {
+.term-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border: 2px solid var(--border-main, #000);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.term-header {
     background: #005BAB;
     color: white;
-    padding: 15px;
-    font-size: 1.2rem;
+    padding: 10px 16px;
+    font-size: 1rem;
     font-weight: 800;
-    border-bottom: 3px solid black;
     text-transform: uppercase;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
-    transition: background-color 0.2s;
+    letter-spacing: 0.05em;
 }
 
-.category-header:hover {
-    background: #004a8b;
+.dark .term-header {
+    background: #1e40af;
 }
 
-.category-header::after {
-    content: '▼';
-    font-size: 0.8rem;
-    transition: transform 0.3s;
+.table-wrap {
+    overflow-x: auto;
+    width: 100%;
 }
 
-.category-card.collapsed .category-header::after {
-    transform: rotate(-90deg);
+.curriculum-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    min-width: 700px;
 }
 
-.category-body {
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    max-height: 1000px; /* Large enough for content */
-    overflow: hidden;
-    transition: max-height 0.3s ease-out, padding 0.3s ease;
+.curriculum-table thead tr {
+    background: #e2e8f0;
 }
 
-.category-card.collapsed .category-body {
-    max-height: 0;
-    padding-top: 0;
-    padding-bottom: 0;
-    border-bottom-width: 0;
+.dark .curriculum-table thead tr {
+    background: #1e293b;
 }
 
-.category-card.collapsed {
-    height: auto;
+.curriculum-table th {
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 800;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 2px solid #000;
+    white-space: nowrap;
 }
 
-.subject-item {
-    padding: 10px;
-    border: 1.5px solid var(--border-main);
-    border-radius: 8px;
-    background: #f8fafc;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-weight: 600;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.subject-item:hover {
-    background: #dbeafe;
-}
-
-.subject-name {
-    flex: 1;
+.curriculum-table td {
+    padding: 7px 10px;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: top;
     word-break: break-word;
 }
 
-.subject-actions {
-    display: none;
+.dark .curriculum-table td {
+    border-bottom-color: #334155;
+    color: #e2e8f0;
 }
+
+.curriculum-table tbody tr:hover {
+    background: #eff6ff;
+}
+
+.dark .curriculum-table tbody tr:hover {
+    background: #1e293b;
+}
+
+.curriculum-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Course ID col narrow, description wide */
+.curriculum-table td:nth-child(1),
+.curriculum-table th:nth-child(1) { width: 80px; }
+.curriculum-table td:nth-child(2),
+.curriculum-table th:nth-child(2) { width: 80px; }
+.curriculum-table td:nth-child(3),
+.curriculum-table th:nth-child(3) { width: 70px; }
+.curriculum-table td:nth-child(4),
+.curriculum-table th:nth-child(4) { width: 70px; }
+.curriculum-table td:nth-child(5),
+.curriculum-table th:nth-child(5) { min-width: 200px; }
+.curriculum-table td:nth-child(6),
+.curriculum-table th:nth-child(6) { width: 60px; text-align: center; }
+.curriculum-table td:nth-child(7),
+.curriculum-table th:nth-child(7) { width: 130px; }
+.curriculum-table td:nth-child(8),
+.curriculum-table th:nth-child(8) { min-width: 160px; }
+
+.edit-subj-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 2px 4px;
+    opacity: 0.5;
+    transition: opacity 0.2s;
+}
+.edit-subj-btn:hover { opacity: 1; }
+
+/* Keep old card styles for backwards compat but hide them */
+.terms-grid { display: none; }
+.category-card { display: none; }
 
 /* Modals */
 .modal {
@@ -293,4 +317,40 @@
     box-shadow: none !important;
     transform: none !important;
     border-width: 1.5px !important;
+}
+
+
+/* ── Curriculum Group Labels ─────────────────────────────────────────────── */
+.curriculum-group-label {
+    font-size: 0.75rem;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted, #64748b);
+    padding: 0.5rem 0.25rem 0.25rem;
+    margin-top: 1rem;
+    border-bottom: 2px solid currentColor;
+    opacity: 0.6;
+}
+
+/* ── SHS Badge ───────────────────────────────────────────────────────────── */
+.shs-badge {
+    display: inline-block;
+    margin-left: 0.6rem;
+    padding: 0.15rem 0.55rem;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: #f59e0b;
+    color: #000;
+    border: 2px solid #000;
+    border-radius: 999px;
+    vertical-align: middle;
+    line-height: 1.4;
+}
+.dark .shs-badge {
+    background: #d97706;
+    color: #fff;
+    border-color: #fff;
 }

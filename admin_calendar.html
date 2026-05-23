@@ -6,6 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SchedSync - Manage Calendar</title>
     <link rel="stylesheet" href="header-styles.css">
+  <link rel="stylesheet" href="admin-theme.css" />
+    <script>
+      (function () {
+        const theme = localStorage.getItem("theme");
+        if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches))
+          document.documentElement.classList.add("dark");
+      if (localStorage.getItem("userRole") === "admin") document.documentElement.classList.add("admin-theme");
+      })();
+    </script>
     <link rel="stylesheet" href="homepage.css">
     <style>
         .admin-calendar-container {

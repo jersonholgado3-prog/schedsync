@@ -7,6 +7,7 @@
   <title>SchedSync — Edit Schedule</title>
   <link rel="stylesheet" href="maangas-styles.css">
   <link rel="stylesheet" href="header-styles.css">
+  <link rel="stylesheet" href="admin-theme.css" />
   <link rel="stylesheet" href="export-styles.css">
   <style>
     .resize-handle {
@@ -15,15 +16,29 @@
       left: 0;
       right: 0;
       height: 8px;
-      cursor: ns-resize;
+      cursor: s-resize;
       background: linear-gradient(transparent, rgba(0,91,171,0.3));
       border-radius: 0 0 4px 4px;
       opacity: 0;
       transition: opacity 0.15s;
     }
+    .resize-handle-top {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 8px;
+      cursor: n-resize;
+      background: linear-gradient(rgba(0,91,171,0.3), transparent);
+      border-radius: 4px 4px 0 0;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
     td.occupied { position: relative; }
-    td.occupied:hover .resize-handle { opacity: 1; }
+    td.occupied:hover .resize-handle,
+    td.occupied:hover .resize-handle-top { opacity: 1; }
     td.occupied .resize-handle:hover { background: linear-gradient(transparent, rgba(0,91,171,0.6)); }
+    td.occupied .resize-handle-top:hover { background: linear-gradient(rgba(0,91,171,0.6), transparent); }
     tr.resize-highlight td { background: rgba(0,91,171,0.15) !important; outline: 2px solid #005BAB; }
     td.resize-highlight { background: rgba(0,91,171,0.25) !important; outline: 2px solid #005BAB !important; }
   </style>
@@ -44,6 +59,7 @@
       if (mode === 'professional') {
         document.documentElement.classList.add("professional-mode");
       }
+      if (localStorage.getItem("userRole") === "admin") document.documentElement.classList.add("admin-theme");
     })();
 
     // Maangas Logic 🧠✨
@@ -264,6 +280,51 @@
                 style="background-color: #ef4444; color: white; display: none;">Delete</button><button
                 class="btn cancel" onclick="window.closePanel()">Cancel</button></div>
           </aside>
+          <!-- AI Schedule Generator Panel -->
+          <aside class="panel" id="aiPanel">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+              <h2 style="margin:0;text-align:left;flex:1;font-size:1rem;color:#005BAB;text-transform:uppercase;letter-spacing:.05em;border-left:5px solid #FFD200;padding-left:10px;">🤖 AI Schedule Generator</h2>
+              <button onclick="window.closeAiPanel()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#64748b;">✕</button>
+            </div>
+            <div style="font-size:.75rem;font-weight:800;text-transform:uppercase;color:#64748b;margin-bottom:3px;">Section</div>
+            <div id="aiModal_sectionName" style="font-weight:900;font-size:1rem;margin-bottom:14px;color:#000;"></div>
+            <div id="aiModal_curriculumLabel" style="font-size:.75rem;font-weight:800;text-transform:uppercase;color:#64748b;margin-bottom:4px;">Term</div>
+            <div id="aiModal_curriculumGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+              <select id="aiModal_course" class="pill" style="font-size:.85rem;"><option value="">— Select Program —</option></select>
+              <select id="aiModal_term" class="pill" style="font-size:.85rem;"><option value="">— Select Term —</option></select>
+            </div>
+            <!-- Room picker -->
+            <div style="margin-bottom:14px;">
+              <div style="font-size:.75rem;font-weight:800;text-transform:uppercase;color:#64748b;margin-bottom:4px;">Lecture Room</div>
+              <div style="position:relative;">
+                <input id="aiModal_lectureRoom" type="text" placeholder="Search room..." class="pill"
+                  style="font-size:.85rem;width:100%;box-sizing:border-box;">
+                <div id="aiModal_lectureRoomDropdown" class="custom-dropdown" style="position:absolute;top:100%;bottom:auto;z-index:9999;max-height:220px;"></div>
+              </div>
+              <div style="font-size:.7rem;color:#94a3b8;margin-top:3px;">Lab/programming subjects auto-use computer lab.</div>
+            </div>
+            <!-- Step 1: duration config -->
+            <div id="aiModal_durationConfig" style="display:none;">
+              <div style="font-size:.75rem;font-weight:800;text-transform:uppercase;color:#64748b;margin-bottom:6px;">Set Duration per Subject</div>
+              <div id="aiModal_durationRows" style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;margin-bottom:10px;"></div>
+              <button id="aiModal_generateCardsBtn" style="width:100%;padding:10px;background:#FFD200;color:#000;border:2px solid #000;border-radius:10px;font-weight:900;font-size:.9rem;cursor:pointer;">▶ Generate Cards</button>
+            </div>
+            <!-- Step 2: draggable cards -->
+            <div id="aiModal_tray" style="display:none;margin-top:12px;">
+              <div style="font-size:.75rem;font-weight:800;text-transform:uppercase;color:#64748b;margin-bottom:6px;">Drag subjects onto the schedule ↓</div>
+              <div id="aiModal_trayCards" style="display:flex;flex-direction:column;gap:6px;max-height:calc(100vh - 480px);overflow-y:auto;"></div>
+            </div>
+            <!-- Chat -->
+            <div style="margin-top:14px;border-top:1.5px solid #e2e8f0;padding-top:12px;">
+              <div style="font-size:.75rem;font-weight:800;text-transform:uppercase;color:#64748b;margin-bottom:6px;">💬 Ask about the schedule</div>
+              <div id="aiChat_messages" style="display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto;margin-bottom:8px;"></div>
+              <div style="display:flex;gap:6px;">
+                <input id="aiChat_input" type="text" placeholder="e.g. anong sched ng 1pm?" class="pill" style="flex:1;font-size:.85rem;padding:8px 12px;">
+                <button id="aiChat_send" style="padding:8px 14px;background:#005BAB;color:#fff;border:2px solid #000;border-radius:10px;font-weight:900;font-size:.85rem;cursor:pointer;">➤</button>
+              </div>
+            </div>
+          </aside>
+
           <!-- Comment Panel po ! 💬 -->
           <aside class="panel" id="commentPanel">
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
@@ -322,6 +383,7 @@
       <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
       <script src="toast.js"></script>
       <script type="module" src="role-restriction.js"></script>
+      <script src="config.js"></script>
       <script type="module" src="./editpage.js"></script>
       <script type="module" src="realtime-notifications.js"></script>
       <script type="module" src="ui-effects.js"></script>
@@ -357,6 +419,7 @@
       <img src="images/AUDIT.png" alt="Audit Logs"><span>Audit</span>
     </a>
   </nav>
+
 </body>
 
 </html>

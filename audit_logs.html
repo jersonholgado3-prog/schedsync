@@ -8,6 +8,7 @@
     
     <!-- Core Links ⚓ -->
     <link rel="stylesheet" href="header-styles.css">
+  <link rel="stylesheet" href="admin-theme.css" />
     <link rel="stylesheet" href="homepage.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script>
@@ -20,6 +21,7 @@
             if (uiMode === 'professional') {
                 document.documentElement.classList.add("professional-mode");
             }
+      if (localStorage.getItem("userRole") === "admin") document.documentElement.classList.add("admin-theme");
         })();
     </script>
     
@@ -599,6 +601,7 @@
                 listEl.appendChild(logItem);
             });
         }
+
     </script>
   <!-- ?? MOBILE BOTTOM NAVIGATION BAR ? -->
   <nav class="mobile-bottom-nav" id="mobileBottomNav">

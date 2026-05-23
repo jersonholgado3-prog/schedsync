@@ -20,10 +20,12 @@
       if (mode === 'professional') {
         document.documentElement.classList.add("professional-mode");
       }
+      if (localStorage.getItem("userRole") === "admin") document.documentElement.classList.add("admin-theme");
     })();
   </script>
 
   <link rel="stylesheet" href="header-styles.css" />
+  <link rel="stylesheet" href="admin-theme.css" />
   <link rel="stylesheet" href="newschedule_styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
   <script type="module" src="role-restriction.js"></script>

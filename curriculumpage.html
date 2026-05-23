@@ -18,6 +18,7 @@
       if (mode === 'professional') {
         document.documentElement.classList.add("professional-mode");
       }
+      if (localStorage.getItem("userRole") === "admin") document.documentElement.classList.add("admin-theme");
     })();
   </script>
   <script type="module" src="role-restriction.js"></script>
@@ -28,6 +29,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
 
   <link rel="stylesheet" href="header-styles.css" />
+  <link rel="stylesheet" href="admin-theme.css" />
   <link rel="stylesheet" href="skeleton.css" />
   <link rel="stylesheet" href="curriculumpage_styles.css" />
   <title>SchedSync - Curriculum Management</title>
@@ -128,24 +130,40 @@
 
       <main class="dashboard-container p-6">
         <div class="top-controls flex flex-wrap gap-4 mb-8">
+          <!-- Admin controls -->
           <button id="addSubjectBtn"
             class="bg-[#005BAB] text-white border-[3px] border-black rounded-xl px-5 py-2.5 font-bold shadow-[4px_4px_0px_black] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_black] transition-all admin-only"
             style="display: none;">+ Add Subject</button>
-          <button id="migrateDataBtn"
-            class="bg-[#FFD200] text-black border-[3px] border-black rounded-xl px-5 py-2.5 font-bold shadow-[4px_4px_0px_black] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_black] transition-all admin-only"
-            style="display: none;">Migrate Static Data</button>
           <label for="pdfUpload"
             class="bg-[#10b981] text-white border-[3px] border-black rounded-xl px-5 py-2.5 font-bold shadow-[4px_4px_0px_black] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_black] transition-all admin-only"
             style="display: none; cursor: pointer;">
-            + Attach Curriculum PDF(s)
+            📄 Upload PDF(s)
             <input type="file" id="pdfUpload" accept=".pdf" multiple style="display: none;">
+          </label>
+          <label for="xlsxUpload"
+            class="bg-[#7c3aed] text-white border-[3px] border-black rounded-xl px-5 py-2.5 font-bold shadow-[4px_4px_0px_black] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_black] transition-all admin-only"
+            style="display: none; cursor: pointer;">
+            📥 Import Excel
+            <input type="file" id="xlsxUpload" accept=".xlsx,.xls" style="display: none;">
           </label>
           <button id="clearAllBtn"
             class="bg-red-500 text-white border-[3px] border-black rounded-xl px-5 py-2.5 font-bold shadow-[4px_4px_0px_black] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_black] transition-all admin-only"
-            style="display: none;">Clear All</button>
+            style="display: none;">🗑️ Clear All</button>
+          <!-- Export (visible to all) -->
+          <button id="exportAllBtn"
+            class="bg-[#FFD200] text-black border-[3px] border-black rounded-xl px-5 py-2.5 font-bold shadow-[4px_4px_0px_black] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_black] transition-all">
+            📤 Export All (1 Sheet)
+          </button>
+          <button id="exportPerBtn"
+            class="bg-[#f97316] text-white border-[3px] border-black rounded-xl px-5 py-2.5 font-bold shadow-[4px_4px_0px_black] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_black] transition-all">
+            📤 Export Per Course
+          </button>
+          <button id="migrateDataBtn"
+            class="bg-slate-400 text-white border-[3px] border-black rounded-xl px-5 py-2.5 font-bold shadow-[4px_4px_0px_black] transition-all admin-only"
+            style="display: none;">Migrate Static Data</button>
         </div>
 
-        <div class="curriculum-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="curriculumGrid">
+        <div class="curriculum-grid" id="curriculumGrid">
           <!-- Dynamic cards injected here -->
           <div class="col-span-full text-center py-20 opacity-40">No curriculum data available. Attach a PDF to get
             started.</div>
@@ -169,37 +187,17 @@
         <div class="h-1.5 w-20 bg-[#005BAB] rounded-full"></div>
       </div>
 
-      <form id="subjectForm" class="space-y-6">
-        <input type="hidden" id="subjectId">
-        <input type="hidden" id="courseId">
-        <input type="hidden" id="termName">
+      <form id="subjectForm" class="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+        <div id="modalFields" class="space-y-3"></div>
 
-        <div class="space-y-2">
-          <label
-            class="block text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1">Subject
-            Name</label>
-          <input type="text" id="subjectName"
-            class="w-full bg-[var(--input-bg)] border-[2px] border-black p-4 rounded-2xl focus:ring-4 focus:ring-blue-500/20 outline-none transition-all font-bold placeholder:opacity-30 text-[var(--input-text)]"
-            placeholder="e.g. Data Structures" required>
-        </div>
-
-        <div class="space-y-2">
-          <label
-            class="block text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1">Category /
-            Strand</label>
-          <input type="text" id="subjectCategory"
-            class="w-full bg-[var(--input-bg)] border-[2px] border-black p-4 rounded-2xl outline-none font-bold text-[var(--input-text)] placeholder:opacity-30"
-            placeholder="e.g. Major, Core, etc.">
-        </div>
-
-        <div class="pt-4 space-y-3">
+        <div class="pt-2 space-y-3">
           <button type="submit" id="saveSubjectBtn"
             class="w-full bg-[#005BAB] text-white border-[3px] border-black p-4 rounded-2xl shadow-[5px_5px_0px_black] font-black text-lg uppercase hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[8px_8px_0px_black] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all">
             SAVE SUBJECT
           </button>
-
           <button type="button" id="deleteSubjectBtn"
-            class="w-full bg-white dark:bg-slate-900 text-red-500 border-[2px] border-red-500/20 hover:border-red-500 p-3 rounded-2xl font-black text-sm uppercase transition-all hidden">
+            class="w-full bg-white dark:bg-slate-900 text-red-500 border-[2px] border-red-500/20 hover:border-red-500 p-3 rounded-2xl font-black text-sm uppercase transition-all"
+            style="display:none;">
             DELETE SUBJECT
           </button>
         </div>

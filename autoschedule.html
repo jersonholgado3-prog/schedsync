@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auto-Generate Schedule - SchedSync</title>
+  <script>
+    (function () {
+      const theme = localStorage.getItem("theme");
+      if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches))
+        document.documentElement.classList.add("dark");
+      const uiMode = localStorage.getItem("uiMode");
+      const userRole = localStorage.getItem("userRole");
+      const mode = uiMode || ((userRole === 'teacher' || userRole === 'admin') ? 'professional' : 'student');
+      if (mode === 'professional') document.documentElement.classList.add("professional-mode");
+      if (localStorage.getItem("userRole") === "admin") document.documentElement.classList.add("admin-theme");
+    })();
+  </script>
+  <link rel="stylesheet" href="header-styles.css" />
+  <link rel="stylesheet" href="admin-theme.css" />
+  <link rel="stylesheet" href="newschedule_styles.css" />
+  <script type="module" src="role-restriction.js"></script>
+  <style>
+    .autosched-card {
+      background: var(--card-bg, #fff);
+      border: 2.5px solid #000;
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: 6px 6px 0 #000;
+      margin-bottom: 24px;
+    }
+    .autosched-card .card-title {
+      font-size: 1.1rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 18px;
+      color: #005BAB;
+      border-left: 6px solid #FFD200;
+      padding-left: 10px;
+    }
+    .field-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .field-group label { font-weight: 800; font-size: .82rem; text-transform: uppercase; letter-spacing: .04em; color: #64748b; }
+    .field-group input, .field-group select {
+      padding: 10px 14px;
+      border: 2px solid #000;
+      border-radius: 10px;
+      font-family: inherit;
+      font-weight: 700;
+      font-size: .9rem;
+      background: var(--input-bg, #f8fafc);
+      color: var(--input-text, #000);
+      outline: none;
+    }
+    .days-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .day-chip {
+      padding: 7px 14px;
+      border: 2px solid #000;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: .82rem;
+      cursor: pointer;
+      background: #f8fafc;
+      transition: all .15s;
+      user-select: none;
+    }
+    .day-chip.selected { background: #005BAB; color: #fff; }
+    .toggle-row { display: flex; align-items: center; gap: 12px; }
+    .toggle-switch {
+      position: relative; width: 48px; height: 26px; cursor: pointer;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider-bg {
+      position: absolute; inset: 0;
+      background: #cbd5e1; border-radius: 26px; border: 2px solid #000;
+      transition: background .2s;
+    }
+    .toggle-switch input:checked + .toggle-slider-bg { background: #005BAB; }
+    .toggle-slider-bg::before {
+      content: ''; position: absolute;
+      width: 18px; height: 18px; left: 2px; top: 2px;
+      background: #fff; border-radius: 50%; border: 2px solid #000;
+      transition: transform .2s;
+    }
+    .toggle-switch input:checked + .toggle-slider-bg::before { transform: translateX(22px); }
+    .rooms-list { display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; }
+    .room-chip {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 12px; border: 2px solid #000; border-radius: 8px;
+      font-weight: 700; font-size: .82rem; cursor: pointer; background: #f8fafc;
+    }
+    .room-chip.selected { background: #dbeafe; border-color: #005BAB; }
+    .room-chip input[type=checkbox] { width: 15px; height: 15px; cursor: pointer; }
+    .generate-btn {
+      width: 100%; padding: 16px;
+      background: #005BAB; color: #fff;
+      border: 3px solid #000; border-radius: 14px;
+      font-weight: 900; font-size: 1.1rem; text-transform: uppercase;
+      cursor: pointer; box-shadow: 5px 5px 0 #000;
+      transition: all .15s;
+    }
+    .generate-btn:hover { transform: translate(-2px,-2px); box-shadow: 7px 7px 0 #000; }
+    .generate-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: 5px 5px 0 #000; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+    .section-chip {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 12px; border: 2px solid #000; border-radius: 8px;
+      font-weight: 700; font-size: .82rem; cursor: pointer; background: #f8fafc;
+      margin-bottom: 4px;
+    }
+    .section-chip.selected { background: #dcfce7; border-color: #16a34a; }
+    .sections-list { display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow-y: auto; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <aside class="sidebar">
+    <div class="sidebar-header" onclick="window.location.href='homepage.html'">
+      <img src="images/LOGO.png" alt="Logo">
+    </div>
+    <nav class="sidebar-menu">
+      <a href="homepage.html" class="sidebar-link"><img src="images/HOME.png" alt="Home"><span>Home</span></a>
+      <a href="newschedule.html" class="sidebar-link"><img src="images/ADD_SCHED.png" alt="New Schedule"><span>New Schedule</span></a>
+      <a href="myschedule.html" class="sidebar-link"><img src="images/SCHED.png" alt="My Schedule"><span>My Schedule</span></a>
+      <a href="facultypage.html" class="sidebar-link"><img src="images/FACULTY.png" alt="Faculty"><span>Faculty</span></a>
+      <a href="campuspage.html" class="sidebar-link"><img src="images/CAMPUS_ONE.png" alt="Campus"><span>Campus</span></a>
+      <a href="sectionspage.html" class="sidebar-link"><img src="images/SECTIONS.png" alt="Sections"><span>Sections</span></a>
+      <a href="curriculumpage.html" class="sidebar-link"><img src="images/CURRICULUM.png" alt="Curriculum"><span>Curriculum</span></a>
+      <div id="adminSidebarLinks" style="display:none;">
+        <a href="archives.html" class="sidebar-link"><img src="images/ARCHIVE.png" alt="Archives"><span>Archives</span></a>
+        <a href="audit_logs.html" class="sidebar-link"><img src="images/AUDIT.png" alt="Audit"><span>Audit Logs</span></a>
+      </div>
+    </nav>
+  </aside>
+
+  <div class="main-content-wrapper">
+    <header class="header">
+      <div class="left-header">
+        <div class="hamburger-btn">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </div>
+        <div class="logo-container" onclick="window.location.href='homepage.html'">
+          <img src="images/BANNER.png" class="logo-img" alt="SchedSync Logo" style="max-height:100%;width:100%;object-fit:contain;">
+        </div>
+      </div>
+      <div class="page-title">⚡ Auto-Generate Schedule</div>
+      <div class="user-section">
+        <div class="notification-icon-wrapper" onclick="window.openGameNotifications()">
+          <img src="images/BELL.png" alt="Notifications">
+        </div>
+        <div class="user-profile-btn" id="userProfile">
+          <div class="user-name">User</div>
+          <div class="user-avatar" id="headerAvatar">
+            <img src="images/default_shark.jpg" alt="User" style="width:100%;height:100%;object-fit:cover;">
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="main-layout" style="padding: 24px;">
+      <div style="max-width: 860px; margin: 0 auto;">
+
+        <!-- Schedule Info -->
+        <div class="autosched-card">
+          <div class="card-title">Schedule Information</div>
+          <div class="two-col">
+            <div class="field-group">
+              <label>Schedule Name</label>
+              <input type="text" id="schedName" placeholder="e.g. BSCS 1A — 1st Term">
+            </div>
+          </div>
+          <div class="two-col">
+            <div class="field-group">
+              <label>Start Time</label>
+              <input type="time" id="startTime" value="07:00">
+            </div>
+            <div class="field-group">
+              <label>End Time</label>
+              <input type="time" id="endTime" value="17:00">
+            </div>
+          </div>
+          <div class="field-group">
+            <label>Days</label>
+            <div class="days-grid" id="daysGrid">
+              <div class="day-chip selected" data-day="Monday">Mon</div>
+              <div class="day-chip selected" data-day="Tuesday">Tue</div>
+              <div class="day-chip selected" data-day="Wednesday">Wed</div>
+              <div class="day-chip selected" data-day="Thursday">Thu</div>
+              <div class="day-chip selected" data-day="Friday">Fri</div>
+              <div class="day-chip" data-day="Saturday">Sat</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sections -->
+        <div class="autosched-card">
+          <div class="card-title">Sections</div>
+          <div class="field-group">
+            <label>Select Section(s)</label>
+            <div class="sections-list" id="sectionsList">
+              <div style="color:#94a3b8;font-size:.85rem;">Loading sections...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Curriculum -->
+        <div class="autosched-card">
+          <div class="card-title">Curriculum</div>
+          <div class="two-col">
+            <div class="field-group">
+              <label>Program / Course</label>
+              <select id="courseSelect">
+                <option value="">— Select Program —</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label>Term</label>
+              <select id="termSelect">
+                <option value="">— Select Term —</option>
+              </select>
+            </div>
+          </div>
+          <div id="subjectPreview" style="font-size:.82rem;color:#64748b;margin-top:4px;"></div>
+        </div>
+
+        <!-- Lecture Room Selection (shown after term is picked) -->
+        <div class="autosched-card" id="lectureRoomCard" style="display:none;">
+          <div class="card-title">Lecture Rooms</div>
+          <div style="font-size:.82rem;color:#64748b;margin-bottom:10px;">
+            Select rooms for <strong>lecture subjects</strong>. Programming/lab subjects will automatically use available computer labs.
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <button type="button" id="selectAllLectureRooms" style="padding:5px 12px;border:2px solid #000;border-radius:8px;font-weight:700;font-size:.78rem;cursor:pointer;background:#f8fafc;">Select All</button>
+            <button type="button" id="clearAllLectureRooms" style="padding:5px 12px;border:2px solid #000;border-radius:8px;font-weight:700;font-size:.78rem;cursor:pointer;background:#f8fafc;">Clear</button>
+          </div>
+          <div class="rooms-list" id="lectureRoomsList">
+            <div style="color:#94a3b8;font-size:.85rem;">Loading rooms...</div>
+          </div>
+        </div>
+
+        <!-- Teachers & Rooms -->
+        <div class="autosched-card">
+          <div class="card-title">Teachers</div>
+          <div class="field-group">
+            <label>Auto-Assign Teachers</label>
+            <div class="toggle-row">
+              <label class="toggle-switch">
+                <input type="checkbox" id="autoTeacherToggle">
+                <div class="toggle-slider-bg"></div>
+              </label>
+              <span style="font-weight:700;font-size:.88rem;" id="autoTeacherLabel">OFF — all slots will be VACANT</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Prompt -->
+        <div class="autosched-card" id="aiPromptCard">
+          <div class="card-title">🤖 AI Prompt <span style="font-size:.7rem;font-weight:700;background:#FFD200;color:#000;border:2px solid #000;border-radius:6px;padding:2px 8px;margin-left:8px;vertical-align:middle;">BETA</span></div>
+          <div class="field-group" style="margin-top:4px;">
+            <label>Describe your schedule (Tagalog or English)</label>
+            <textarea id="aiPromptInput" rows="3" placeholder="e.g. Gawa ng schedule para sa BSCS 1A, Monday to Friday, 7am to 5pm, 1.5 hours per subject, auto-assign teachers, gamitin lahat ng rooms sa 2nd floor."
+              style="padding:10px 14px;border:2px solid #000;border-radius:10px;font-family:inherit;font-weight:700;font-size:.9rem;background:var(--input-bg,#f8fafc);color:var(--input-text,#000);outline:none;resize:vertical;width:100%;box-sizing:border-box;"></textarea>
+          </div>
+          <button type="button" id="aiGenerateBtn" style="padding:12px 24px;background:#FFD200;color:#000;border:3px solid #000;border-radius:12px;font-weight:900;font-size:.95rem;cursor:pointer;box-shadow:4px 4px 0 #000;transition:all .15s;text-transform:uppercase;">
+            🤖 Generate with AI
+          </button>
+          <div id="aiStatus" style="margin-top:10px;font-size:.82rem;font-weight:700;color:#64748b;display:none;"></div>
+        </div>
+
+        <!-- Generate -->
+        <button class="generate-btn" id="generateBtn">⚡ Generate Schedule</button>
+        <div id="toast-container"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mobile-overlay"></div>
+<script src="config.js"></script>
+<script type="module" src="autoschedule.js"></script>
+<script type="module" src="realtime-notifications.js"></script>
+<script type="module" src="ui-effects.js"></script>
+<nav class="mobile-bottom-nav" id="mobileBottomNav">
+  <a href="homepage.html" class="mob-nav-item" data-page="homepage"><img src="images/HOME.png" alt="Home"><span>Home</span></a>
+  <a href="newschedule.html" class="mob-nav-item" data-page="newschedule"><img src="images/ADD_SCHED.png" alt="New Schedule"><span>New Sched</span></a>
+  <a href="myschedule.html" class="mob-nav-item" data-page="myschedule"><img src="images/SCHED.png" alt="My Schedule"><span>My Sched</span></a>
+  <a href="facultypage.html" class="mob-nav-item" data-page="facultypage"><img src="images/FACULTY.png" alt="Faculty"><span>Faculty</span></a>
+  <a href="campuspage.html" class="mob-nav-item" data-page="campuspage"><img src="images/CAMPUS_ONE.png" alt="Campus"><span>Campus</span></a>
+</nav>
+</body>
+</html>

@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Faculty Members - SchedSync</title>
   <link rel="stylesheet" href="header-styles.css" />
+  <link rel="stylesheet" href="admin-theme.css" />
   <script>
     (function () {
       // 1. Theme Lock 🌙
@@ -21,6 +22,7 @@
       if (mode === 'professional') {
         document.documentElement.classList.add("professional-mode");
       }
+      if (localStorage.getItem("userRole") === "admin") document.documentElement.classList.add("admin-theme");
     })();
   </script>
   <link rel="stylesheet" href="facultypage_styles.css" />
@@ -135,17 +137,28 @@
       <div class="main-layout">
         <div class="content-section">
           <!-- Selection Bar -->
-          <div id="selectionBar" class="selection-bar admin-only" style="display:none">
+          <div id="selectionBar" class="selection-bar" style="display:none">
             <div class="selection-count"><span id="selectedCount">0</span> Selected</div>
             <div class="selection-actions">
               <button id="selectAllBtn" class="action-btn gen-btn">Select All</button>
+              <button id="multiAssignBtn" class="action-btn gen-btn">Assign Subjects</button>
+              <button id="setDeptSHSBtn" class="action-btn gen-btn" style="background:#16a34a;color:#fff;border-color:#16a34a;display:none;">🎓 Set SHS</button>
+              <button id="setDeptTertiaryBtn" class="action-btn gen-btn" style="background:#7c3aed;color:#fff;border-color:#7c3aed;display:none;">🏫 Set Tertiary</button>
               <button id="multiDeleteBtn" class="action-btn delete-btn">Delete</button>
               <button id="cancelSelectionBtn" class="action-btn cancel-btn">Cancel</button>
             </div>
           </div>
 
-          <div class="import-toolbar admin-only" style="display:none; justify-content: flex-end;">
-            <button id="selectModeBtn" class="action-btn gen-btn admin-only">☑️ Select</button>
+          <!-- Department Filter Tabs -->
+          <div style="display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px;">
+            <button class="dept-filter-btn" data-dept="all"      style="padding:7px 18px;border:2px solid #000;border-radius:8px;font-weight:800;font-size:.82rem;cursor:pointer;background:#005BAB;color:#fff;white-space:nowrap;flex-shrink:0;">All</button>
+            <button class="dept-filter-btn" data-dept="SHS"      style="padding:7px 18px;border:2px solid #000;border-radius:8px;font-weight:800;font-size:.82rem;cursor:pointer;background:#f8fafc;color:#000;white-space:nowrap;flex-shrink:0;">🎓 SHS</button>
+            <button class="dept-filter-btn" data-dept="Tertiary" style="padding:7px 18px;border:2px solid #000;border-radius:8px;font-weight:800;font-size:.82rem;cursor:pointer;background:#f8fafc;color:#000;white-space:nowrap;flex-shrink:0;">🏫 Tertiary</button>
+            <button class="dept-filter-btn" data-dept="none"     style="padding:7px 18px;border:2px solid #000;border-radius:8px;font-weight:800;font-size:.82rem;cursor:pointer;background:#f8fafc;color:#000;white-space:nowrap;flex-shrink:0;">⚪ No Dept</button>
+          </div>
+
+          <div class="import-toolbar" style="display:none; justify-content: flex-end;">
+            <button id="selectModeBtn" class="action-btn gen-btn">☑️ Select</button>
             <button id="uploadDocBtn" class="action-btn gen-btn">📄 Upload Document</button>
             <input type="file" id="docImportInput" accept=".pdf,.xlsx,.csv" style="display:none">
           </div>
@@ -244,6 +257,22 @@
   <div class="faculty-modal-box" style="max-width:560px">
     <h2>Assign Subjects</h2>
     <p id="assignTeacherName" style="font-weight:700;margin-bottom:1rem;font-size:0.95rem;"></p>
+    
+    <!-- Bulk Assign Options -->
+    <div id="bulkAssignOptions" style="display:none;margin-bottom:1rem;border:2px solid #000;border-radius:10px;padding:12px;background:#f8fafc;font-size:0.85rem;font-weight:700;">
+      <div style="margin-bottom:8px;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.02em;">Assignment Mode</div>
+      <div style="display:flex;gap:18px;font-weight:600;">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;">
+          <input type="radio" name="bulkAssignMode" value="append" checked style="width:16px;height:16px;cursor:pointer;">
+          <span>Add to existing subjects</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;">
+          <input type="radio" name="bulkAssignMode" value="overwrite" style="width:16px;height:16px;cursor:pointer;">
+          <span>Replace existing subjects</span>
+        </label>
+      </div>
+    </div>
+
     <div style="margin-bottom:0.75rem;"><input type="text" id="subjectSearchInput" placeholder="Search subjects..." style="width:100%;border:2px solid #000;border-radius:10px;padding:8px 12px;font-size:0.85rem;"></div>
     <div id="subjectCheckboxList" style="max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding-right:4px;"></div>
     <div class="modal-actions" style="margin-top:1rem;"><button type="button" id="cancelAssignBtn" class="modal-btn-cancel">Cancel</button><button type="button" id="saveAssignBtn" class="modal-btn-save">Save</button></div>

@@ -1581,3 +1581,10 @@
 }
 .dark input::placeholder, .dark textarea::placeholder { color: #64748b; }
 .dark .faculty-card { background: #1e293b; color: #f1f5f9; border-color: #334155; }
+
+/* 🌙 Dark Mode Bulk Assign Options */
+.dark #bulkAssignOptions {
+    background: #1e293b !important;
+    border-color: #475569 !important;
+    color: #f1f5f9 !important;
+}

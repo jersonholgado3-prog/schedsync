@@ -8,6 +8,7 @@
     <!-- Changed title to Notifications -->
     <title>Notifications - SchedSync</title>
     <link rel="stylesheet" href="header-styles.css" />
+  <link rel="stylesheet" href="admin-theme.css" />
     <script>
         (function () {
             // 1. Theme Lock 🌙
@@ -23,6 +24,7 @@
             if (mode === 'professional') {
                 document.documentElement.classList.add("professional-mode");
             }
+      if (localStorage.getItem("userRole") === "admin") document.documentElement.classList.add("admin-theme");
         })();
     </script>
     <link rel="stylesheet" href="notification_styles.css" />

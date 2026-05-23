@@ -1,5 +1,6 @@
-import { db } from "./js/config/firebase-config.js";
-import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs, where } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { db, auth } from "./js/config/firebase-config.js";
+import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs, getDoc, doc, where } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { toMin, parseBlock, normalizeDay } from "./js/utils/time-utils.js";
 import { initUniversalSearch } from './search.js';
 import { initUserProfile } from "./userprofile.js";
@@ -9,21 +10,35 @@ import { showToast, showConfirm } from "./js/utils/ui-utils.js";
 
 initUniversalSearch(db);
 
+// Module-level editor flag — set from Firestore, not localStorage
+let isEditor = false;
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return;
+  try {
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    if (userDoc.exists()) {
+      const data = userDoc.data();
+      const role = data.role || 'student';
+      isEditor = role === 'admin' || role === 'program head' || data.editPermission === true;
+      // Show select button now that we have the real value
+      if (isEditor) {
+        const btn = document.getElementById('selectModeBtn');
+        if (btn) btn.classList.replace('hidden', 'flex');
+      }
+    }
+  } catch (e) {
+    console.error("campuspage: auth sync failed", e);
+  }
+});
+
 document.addEventListener("DOMContentLoaded", () => {
   initUserProfile("#userProfile");
   initMobileNav();
   listenForRooms();
   // removed updateRoomOccupancies() initial call as it's handled by listenForRooms onSnapshot 🚀⚓
 
-  // Show Select button for editors only
-  const myRole = localStorage.getItem('userRole') || 'student';
-  const myEditPermission = localStorage.getItem('editPermission') === 'true';
-  const isEditor = myRole === 'admin' || myRole === 'program head' || myEditPermission;
-
-  if (isEditor) {
-    const btn = document.getElementById('selectModeBtn');
-    if (btn) btn.classList.replace('hidden', 'flex');
-  }
+  // Select button visibility is handled by onAuthStateChanged above
 
   // Select mode state
   let selectMode = false;
@@ -104,14 +119,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Modal logic
   window.openAddRoomModal = () => {
-    document.getElementById("addRoomModal").classList.remove("hidden");
-    document.getElementById("addRoomModal").classList.add("flex");
+    const m = document.getElementById("addRoomModal");
+    const box = m.querySelector(".add-room-modal-box");
+    m.style.display = "flex";
+    box.style.setProperty("width", "90%", "important");
+    box.style.setProperty("max-width", "420px", "important");
   };
 
   window.closeAddRoomModal = () => {
-    document.getElementById("addRoomModal").classList.add("hidden");
-    document.getElementById("addRoomModal").classList.remove("flex");
-    // Clear inputs
+    const m = document.getElementById("addRoomModal");
+    m.style.display = "none";
     document.getElementById("modalRoomName").value = "";
   };
 
@@ -168,12 +185,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const existingNames = new Set(existingSnap.docs.map(d => d.data().name.toLowerCase()));
     for (const room of rooms) {
       if (existingNames.has(room.name.toLowerCase())) { skipped++; continue; }
-      const firestoreType = ['classroom'].includes(type) ? 'classroom' : ['laboratory'].includes(type) ? 'laboratory' : 'other';
+      const firestoreType = room.type === 'laboratory' ? 'laboratory' : room.type === 'other' ? 'other' : 'classroom';
       await addDoc(collection(db, "rooms"), {
         type: firestoreType,
-        subtype: type,
-        floor: parseInt(floor),
-        name,
+        subtype: firestoreType,
+        floor: room.floor || 1,
+        name: room.name,
+        ...(room.capacity ? { capacity: room.capacity } : {}),
         createdAt: serverTimestamp()
       });
       existingNames.add(room.name.toLowerCase());
@@ -363,10 +381,6 @@ function createRoomPill(name, docId, capacity) {
 
 
   // EDITOR DELETE BUTTON 🗑️⚓🛡️
-  const myRole = localStorage.getItem('userRole') || 'student';
-  const myEditPermission = localStorage.getItem('editPermission') === 'true';
-  const isEditor = myRole === 'admin' || myRole === 'program head' || myEditPermission;
-
   if (isEditor && docId) {
     const delBtn = document.createElement("button");
     delBtn.className = "delete-room-btn absolute top-3 right-3 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-all border-2 border-black shadow-[2px_2px_0px_black] hover:scale-110 active:scale-90 z-30";

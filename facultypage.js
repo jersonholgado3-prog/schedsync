@@ -12,7 +12,7 @@ import {
   deleteDoc,
   setDoc
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-import { getCachedFaculty, invalidateCache } from "./js/config/db-cache.js";
+import { getCachedFaculty, invalidateCache, getCachedCourses } from "./js/config/db-cache.js";
 import { onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, deleteUser } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
@@ -36,9 +36,13 @@ const secondaryConfig = {
 let allFaculty = [];
 let selectedIds = new Set();
 let selectionMode = false;
+let currentDeptFilter = 'all';
 const userRole = localStorage.getItem('userRole') || 'student';
 const hasEditPermission = localStorage.getItem('editPermission') === 'true';
-const isEditor = userRole === 'admin';
+const isAdmin = userRole === 'admin';
+const isProgramHead = userRole === 'program head';
+const canSelect = isAdmin || isProgramHead;
+const isEditor = isAdmin;
 
 // --- DRAG & DROP LOGIC ---
 
@@ -248,8 +252,20 @@ function initSelectionUI() {
   const multiDeleteBtn = document.getElementById('multiDeleteBtn');
   const multiArchiveBtn = document.getElementById('multiArchiveBtn');
   const cancelSelectionBtn = document.getElementById('cancelSelectionBtn');
+  const multiAssignBtn = document.getElementById('multiAssignBtn');
 
-  if (!selectionBar || !isEditor) return;
+  if (!selectionBar || !canSelect) return;
+
+  const toolbar = document.querySelector('.import-toolbar');
+  if (toolbar) toolbar.style.display = 'flex';
+
+  const uploadDocBtn = document.getElementById('uploadDocBtn');
+  if (uploadDocBtn) uploadDocBtn.style.display = isAdmin ? 'block' : 'none';
+
+  // Only admins can delete/archive/generate emails in bulk
+  if (multiDeleteBtn) multiDeleteBtn.style.display = isAdmin ? 'block' : 'none';
+  if (multiArchiveBtn) multiArchiveBtn.style.display = isAdmin ? 'block' : 'none';
+  if (genEmailsBtn) genEmailsBtn.style.display = isAdmin ? 'block' : 'none';
 
   const selectModeBtn = document.getElementById('selectModeBtn');
   if (selectModeBtn) selectModeBtn.onclick = () => {
@@ -257,6 +273,16 @@ function initSelectionUI() {
     updateSelectionBar();
     loadTeachers();
   };
+
+  if (multiAssignBtn) {
+    multiAssignBtn.onclick = () => {
+      if (selectedIds.size === 0) {
+        showToast("Please select at least one faculty member.", "info");
+        return;
+      }
+      openBulkAssignModal();
+    };
+  }
 
   if (genEmailsBtn) genEmailsBtn.onclick = async () => {
     const selectedFaculty = allFaculty.filter(f => selectedIds.has(f.id));
@@ -333,7 +359,10 @@ function initSelectionUI() {
 
   const selectAllBtn = document.getElementById('selectAllBtn');
   if (selectAllBtn) selectAllBtn.onclick = () => {
-    allFaculty.forEach(f => selectedIds.add(f.id));
+    const visible = currentDeptFilter === 'all' ? allFaculty
+      : currentDeptFilter === 'none' ? allFaculty.filter(f => !f.department)
+      : allFaculty.filter(f => f.department === currentDeptFilter);
+    visible.forEach(f => selectedIds.add(f.id));
     updateSelectionBar();
     loadTeachers();
   };
@@ -379,6 +408,10 @@ function updateSelectionBar() {
   if (selectionMode) {
     selectionBar.style.display = 'flex';
     selectedCountEl.textContent = selectedIds.size;
+    // Show/hide dept buttons based on current filter
+    const show = currentDeptFilter === 'all' || currentDeptFilter === 'none';
+    document.getElementById('setDeptSHSBtn').style.display      = show ? '' : 'none';
+    document.getElementById('setDeptTertiaryBtn').style.display = show ? '' : 'none';
   } else {
     selectionBar.style.display = 'none';
   }
@@ -444,7 +477,12 @@ async function loadTeachers(forceRefresh = false) {
       return lastName(a).localeCompare(lastName(b));
     });
 
-    allFaculty.forEach(d => {
+    // Apply department filter
+    const filtered = currentDeptFilter === 'all' ? allFaculty
+      : currentDeptFilter === 'none' ? allFaculty.filter(f => !f.department)
+      : allFaculty.filter(f => f.department === currentDeptFilter);
+
+    filtered.forEach(d => {
       const subjects = (d.subjects || []).join(", ");
       const teacherName = d.username || d.name || "Unnamed Teacher";
       const employmentStatus = d.employmentStatus || d.status || "N/A";
@@ -471,7 +509,7 @@ async function loadTeachers(forceRefresh = false) {
       card.dataset.description = `${subjects} ${employmentStatus} ${roleLabel}`;
 
       card.onclick = (e) => {
-        if (isEditor && selectionMode) {
+        if (canSelect && selectionMode) {
           toggleFacultySelection(d.id, card);
         } else {
           window.location.href = "facultyprofile.html?id=" + d.id;
@@ -479,11 +517,11 @@ async function loadTeachers(forceRefresh = false) {
       };
 
       card.innerHTML = `
-        ${isEditor && selectionMode ? `<div class="checkbox-wrapper" style="display:none"><input type="checkbox" class="faculty-checkbox" ${isSelected ? 'checked' : ''}></div>` : ''}
+        ${canSelect && selectionMode ? `<div class="checkbox-wrapper" style="display:none"><input type="checkbox" class="faculty-checkbox" ${isSelected ? 'checked' : ''}></div>` : ''}
         <div class="faculty-photo" style="position:relative;">
           <img src="${d.photoURL || 'images/default_shark.jpg'}"
             onerror="this.src='images/default_shark.jpg'">
-          <div class="faculty-select-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:50%;background:rgba(0,91,171,0.75);display:${isSelected && isEditor && selectionMode ? 'flex' : 'none'};align-items:center;justify-content:center;font-size:2rem;color:white;font-weight:900;pointer-events:none;">✓</div>
+          <div class="faculty-select-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:50%;background:rgba(0,91,171,0.75);display:${isSelected && canSelect && selectionMode ? 'flex' : 'none'};align-items:center;justify-content:center;font-size:2rem;color:white;font-weight:900;pointer-events:none;">✓</div>
         </div>
         <div class="faculty-name">${teacherName}</div>
         <div class="faculty-details">
@@ -494,6 +532,7 @@ async function loadTeachers(forceRefresh = false) {
         <div class="status-badge ${employmentStatus.toLowerCase().includes('regular') ? 'status-regular' : 'status-parttime'}">
           ${employmentStatus}
         </div>
+        ${d.department ? `<div style="margin-top:4px;display:inline-block;padding:2px 10px;border-radius:20px;font-size:.7rem;font-weight:800;background:${d.department==='SHS'?'#dcfce7':'#ede9fe'};color:${d.department==='SHS'?'#16a34a':'#7c3aed'};border:1.5px solid ${d.department==='SHS'?'#16a34a':'#7c3aed'};">${d.department==='SHS'?'🎓 SHS':'🏫 Tertiary'}</div>` : ''}
         ${canAssignSubjects ? `<button class="assign-subjects-btn" data-id="${d.id}" data-name="${teacherName.replace(/"/g,'&quot;')}" style="margin-top:8px;width:100%;padding:6px;border:2px solid #000;border-radius:8px;background:#fff;font-size:0.75rem;font-weight:700;cursor:pointer;">📚 Assign Subjects</button>` : ''}
       `;
 
@@ -504,7 +543,7 @@ async function loadTeachers(forceRefresh = false) {
         if (assignBtn) {
           assignBtn.addEventListener('click', e => {
             e.stopPropagation();
-            openAssignSubjectsModal(d.id, teacherName, d.subjects || []);
+            openAssignSubjectsModal(d.id, teacherName, d.subjects || [], d.department || '');
           });
         }
       }
@@ -529,6 +568,41 @@ document.addEventListener("DOMContentLoaded", () => {
   loadTeachers();
   const locked = localStorage.getItem('importLocked');
   if (locked) lockImportUI(locked);
+
+  // ── Department filter tabs ──────────────────────────────────────────────────
+  function updateDeptButtons() {
+    const show = currentDeptFilter === 'all' || currentDeptFilter === 'none';
+    document.getElementById('setDeptSHSBtn').style.display      = show ? '' : 'none';
+    document.getElementById('setDeptTertiaryBtn').style.display = show ? '' : 'none';
+  }
+
+  document.querySelectorAll('.dept-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentDeptFilter = btn.dataset.dept;
+      document.querySelectorAll('.dept-filter-btn').forEach(b => {
+        b.style.background = '#f8fafc'; b.style.color = '#000';
+      });
+      btn.style.background = '#005BAB'; btn.style.color = '#fff';
+      updateDeptButtons();
+      loadTeachers();
+    });
+  });
+
+  // ── Bulk set department buttons ─────────────────────────────────────────────
+  async function bulkSetDept(dept) {
+    if (!selectedIds.size) return showToast('No faculty selected', 'error');
+    const batch = writeBatch(db);
+    selectedIds.forEach(id => batch.update(doc(db, 'users', id), { department: dept }));
+    await batch.commit();
+    showToast(`✅ ${selectedIds.size} faculty set to ${dept}`, 'success');
+    selectedIds.clear();
+    selectionMode = false;
+    updateSelectionBar();
+    loadTeachers(true);
+  }
+
+  document.getElementById('setDeptSHSBtn')?.addEventListener('click', () => bulkSetDept('SHS'));
+  document.getElementById('setDeptTertiaryBtn')?.addEventListener('click', () => bulkSetDept('Tertiary'));
 });
 
 function lockImportUI(message) {
@@ -663,6 +737,7 @@ const PROGRAM_KEYWORDS = {
 
 let _assignTeacherId = null;
 let _groupedCourses = [];
+let _isBulkAssign = false;
 
 function rankTerm(s) {
   const u = s.toUpperCase();
@@ -679,8 +754,12 @@ function rankTerm(s) {
   return yr * 10 + sem;
 } // [{name, terms: [{termName, subjects:[]}]}]
 
-async function openAssignSubjectsModal(teacherId, teacherName, currentSubjects) {
+async function openAssignSubjectsModal(teacherId, teacherName, currentSubjects, teacherDept = '') {
+  _isBulkAssign = false;
   _assignTeacherId = teacherId;
+
+  const bulkOptions = document.getElementById('bulkAssignOptions');
+  if (bulkOptions) bulkOptions.style.display = 'none';
 
   const modal = document.getElementById('assignSubjectsModal');
   const nameEl = document.getElementById('assignTeacherName');
@@ -692,22 +771,33 @@ async function openAssignSubjectsModal(teacherId, teacherName, currentSubjects) 
   searchInput.value = '';
   modal.classList.remove('hidden');
 
-  const myRole = localStorage.getItem('userRole') || '';
-  const myProgram = localStorage.getItem('userProgram') || '';
-  const keywords = myRole === 'admin' ? [] : (PROGRAM_KEYWORDS[myProgram] || []);
+  // Determine if a course is SHS based on its term names
+  function isSHSCourse(data) {
+    if (!data.terms) return false;
+    return Object.keys(data.terms).some(t => /G1[12]|GRADE\s*1[12]|SENIOR/i.test(t));
+  }
 
   try {
-    const snap = await getDocs(collection(db, 'courses'));
+    const courseDocs = await getCachedCourses(db);
     _groupedCourses = [];
 
-    snap.docs.forEach(d => {
-      const data = d.data();
+    courseDocs.forEach(d => {
+      const data = d;
       const courseName = data.name || d.id;
-      const matches = keywords.length === 0 || keywords.some(kw => courseName.toUpperCase().includes(kw));
-      if (!matches || !data.terms) return;
+      if (!data.terms) return;
+
+      // Filter by teacher's department
+      const shsCourse = isSHSCourse(data);
+      if (teacherDept === 'SHS'      && !shsCourse) return;
+      if (teacherDept === 'Tertiary' &&  shsCourse) return;
 
       const terms = Object.entries(data.terms)
-        .map(([termName, subjects]) => ({ termName, subjects: (subjects || []).filter(Boolean) }))
+        .map(([termName, subjects]) => ({
+          termName,
+          subjects: (subjects || [])
+            .map(s => typeof s === 'object' ? (s.description || '') : s)
+            .filter(Boolean)
+        }))
         .filter(t => t.subjects.length > 0)
         .sort((a, b) => rankTerm(a.termName) - rankTerm(b.termName));
 
@@ -716,6 +806,65 @@ async function openAssignSubjectsModal(teacherId, teacherName, currentSubjects) 
 
     _groupedCourses.sort((a, b) => a.name.localeCompare(b.name));
     renderGroupedSubjects(currentSubjects, '');
+  } catch (err) {
+    list.innerHTML = '<div style="color:#ef4444;padding:1rem;">Failed to load subjects.</div>';
+    console.error(err);
+  }
+}
+
+async function openBulkAssignModal() {
+  _isBulkAssign = true;
+  _assignTeacherId = null;
+
+  const bulkOptions = document.getElementById('bulkAssignOptions');
+  if (bulkOptions) bulkOptions.style.display = 'block';
+
+  const modal = document.getElementById('assignSubjectsModal');
+  const nameEl = document.getElementById('assignTeacherName');
+  const list = document.getElementById('subjectCheckboxList');
+  const searchInput = document.getElementById('subjectSearchInput');
+
+  nameEl.textContent = `Assigning subjects to ${selectedIds.size} selected faculty members`;
+  list.innerHTML = '<div style="text-align:center;padding:1rem;color:#64748b;">Loading subjects...</div>';
+  searchInput.value = '';
+  modal.classList.remove('hidden');
+
+  const myRole = localStorage.getItem('userRole') || '';
+
+  function isSHSCourse(data) {
+    if (!data.terms) return false;
+    return Object.keys(data.terms).some(t => /G1[12]|GRADE\s*1[12]|SENIOR/i.test(t));
+  }
+
+  try {
+  try {
+    const courseDocs = await getCachedCourses(db);
+    _groupedCourses = [];
+
+    courseDocs.forEach(d => {
+      const data = d;
+      const courseName = data.name || d.id;
+      if (!data.terms) return;
+
+      const shsCourse = isSHSCourse(data);
+      if (currentDeptFilter === 'SHS'      && !shsCourse) return;
+      if (currentDeptFilter === 'Tertiary' &&  shsCourse) return;
+
+      const terms = Object.entries(data.terms)
+        .map(([termName, subjects]) => ({
+          termName,
+          subjects: (subjects || [])
+            .map(s => typeof s === 'object' ? (s.description || '') : s)
+            .filter(Boolean)
+        }))
+        .filter(t => t.subjects.length > 0)
+        .sort((a, b) => rankTerm(a.termName) - rankTerm(b.termName));
+
+      if (terms.length > 0) _groupedCourses.push({ name: courseName, terms });
+    });
+
+    _groupedCourses.sort((a, b) => a.name.localeCompare(b.name));
+    renderGroupedSubjects([], '');
   } catch (err) {
     list.innerHTML = '<div style="color:#ef4444;padding:1rem;">Failed to load subjects.</div>';
     console.error(err);
@@ -732,52 +881,72 @@ function renderGroupedSubjects(currentSubjects, filter) {
     return;
   }
 
-  let html = '';
-  _groupedCourses.forEach((course, ci) => {
-    // Flatten all subjects in this course for filtering
-    const allCourseSubjects = course.terms.flatMap(t => t.subjects);
-    const matchingSubjects = q ? allCourseSubjects.filter(s => s.toLowerCase().includes(q)) : allCourseSubjects;
-    if (matchingSubjects.length === 0) return;
+  // For SHS: flat deduplicated list (all SHS courses share the same subjects pool)
+  const isSHSMode = currentDeptFilter === 'SHS' || (_groupedCourses.length > 0 && _groupedCourses.every(c =>
+    c.terms.every(t => /G1[12]|GRADE\s*1[12]|SENIOR/i.test(t.termName))
+  ));
 
-    const checkedCount = matchingSubjects.filter(s => currentSet.has(s)).length;
-    html += `
-      <div class="assign-course-group">
-        <div class="assign-course-header" style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#f1f5f9;border:2px solid #000;border-radius:10px;cursor:pointer;font-weight:800;font-size:0.85rem;user-select:none;">
-          <span>📁 ${course.name}</span>
-          <span style="font-size:0.75rem;color:#64748b;">${checkedCount > 0 ? `${checkedCount} selected · ` : ''}▼</span>
-        </div>
-        <div class="assign-course-body" style="display:none;flex-direction:column;gap:4px;padding:6px 0 0 8px;">
-    `;
+  if (isSHSMode) {
+    const seen = new Set();
+    const allSubjects = _groupedCourses.flatMap(c => c.terms.flatMap(t => t.subjects))
+      .filter(s => { if (seen.has(s)) return false; seen.add(s); return true; })
+      .filter(s => !q || s.toLowerCase().includes(q))
+      .sort();
 
-    if (q) {
-      // Flat list when searching
-      matchingSubjects.forEach(s => {
-        html += subjectCheckboxHTML(s, currentSet.has(s));
-      });
-    } else {
-      // Grouped by term
-      course.terms.forEach(term => {
-        if (term.subjects.length === 0) return;
-        html += `<div style="font-size:0.75rem;font-weight:700;color:#94a3b8;padding:4px 0 2px;">${term.termName}</div>`;
-        term.subjects.forEach(s => {
-          html += subjectCheckboxHTML(s, currentSet.has(s));
-        });
-      });
+    if (!allSubjects.length) {
+      list.innerHTML = '<div style="text-align:center;padding:1rem;color:#64748b;">No subjects found.</div>';
+      return;
     }
+    list.innerHTML = `<div style="display:flex;flex-direction:column;gap:4px;">${allSubjects.map(s => subjectCheckboxHTML(s, currentSet.has(s))).join('')}</div>`;
+    return;
+  }
 
-    html += `</div></div>`;
+  // Tertiary: flat sections per department, subjects shared across depts go to General
+  const DEPT_GROUPS = [
+    { label: 'IT / CS',           match: c => /\b(IT|CS|BSIT|BSCS|ICT|COMPUTER)\b/i.test(c) },
+    { label: 'HM',                match: c => /\b(HM|HOSPITALITY|HOTEL)\b/i.test(c) },
+    { label: 'TM',                match: c => /\b(TM|TOURISM)\b/i.test(c) },
+    { label: 'AIS / Accountancy', match: c => /\b(AIS|ACCOUNTANCY|BSAC|BSBA)\b/i.test(c) },
+  ];
+
+  // Track which groups each subject belongs to
+  const subjGroups = {}; // subject -> Set<groupLabel>
+  _groupedCourses.forEach(course => {
+    const group = DEPT_GROUPS.find(g => g.match(course.name));
+    const label = group ? group.label : 'General';
+    course.terms.flatMap(t => t.subjects).forEach(s => {
+      if (!subjGroups[s]) subjGroups[s] = new Set();
+      subjGroups[s].add(label);
+    });
+  });
+
+  // Build final groups: subject goes to its group only if exclusive to that group, else General
+  const finalGroups = {};
+  [...DEPT_GROUPS.map(g => g.label), 'General'].forEach(l => { finalGroups[l] = new Set(); });
+
+  Object.entries(subjGroups).forEach(([s, groups]) => {
+    const nonGeneral = [...groups].filter(g => g !== 'General');
+    if (nonGeneral.length === 1) {
+      finalGroups[nonGeneral[0]].add(s); // exclusive to one dept
+    } else {
+      finalGroups['General'].add(s); // shared across depts or already general
+    }
+  });
+
+  let html = '';
+  [...DEPT_GROUPS.map(g => g.label), 'General'].forEach(label => {
+    let subjects = [...finalGroups[label]].sort();
+    if (q) {
+      // Show all subjects if query matches the section label, else filter by subject name
+      const labelMatch = label.toLowerCase().includes(q);
+      subjects = labelMatch ? subjects : subjects.filter(s => s.toLowerCase().includes(q));
+    }
+    if (!subjects.length) return;
+    html += `<div style="font-size:.72rem;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;padding:10px 4px 4px;border-top:1.5px solid #e2e8f0;margin-top:4px;">${label}</div>`;
+    subjects.forEach(s => { html += subjectCheckboxHTML(s, currentSet.has(s)); });
   });
 
   list.innerHTML = html || '<div style="text-align:center;padding:1rem;color:#64748b;">No subjects found.</div>';
-
-  // Toggle open/close
-  list.querySelectorAll('.assign-course-header').forEach(h => {
-    h.addEventListener('click', () => {
-      const body = h.nextElementSibling;
-      const isOpen = body.style.display === 'flex';
-      body.style.display = isOpen ? 'none' : 'flex';
-    });
-  });
 }
 
 function subjectCheckboxHTML(s, checked) {
@@ -796,8 +965,8 @@ function initAssignSubjectsModal() {
 
   if (!modal) return;
 
-  cancelBtn.addEventListener('click', () => { modal.classList.add('hidden'); _assignTeacherId = null; });
-  modal.addEventListener('click', e => { if (e.target === modal) { modal.classList.add('hidden'); _assignTeacherId = null; } });
+  cancelBtn.addEventListener('click', () => { modal.classList.add('hidden'); _assignTeacherId = null; _isBulkAssign = false; });
+  modal.addEventListener('click', e => { if (e.target === modal) { modal.classList.add('hidden'); _assignTeacherId = null; _isBulkAssign = false; } });
 
   searchInput.addEventListener('input', () => {
     // Preserve currently checked values before re-render
@@ -808,15 +977,40 @@ function initAssignSubjectsModal() {
   });
 
   saveBtn.addEventListener('click', async () => {
-    if (!_assignTeacherId) return;
+    if (!_isBulkAssign && !_assignTeacherId) return;
+    if (_isBulkAssign && selectedIds.size === 0) return;
+
     const selected = Array.from(document.querySelectorAll('#subjectCheckboxList input[type=checkbox]:checked')).map(cb => cb.value);
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving...';
     try {
-      await setDoc(doc(db, 'users', _assignTeacherId), { subjects: selected }, { merge: true });
-      showToast('Subjects saved!', 'success');
+      if (_isBulkAssign) {
+        const bulkMode = document.querySelector('input[name="bulkAssignMode"]:checked').value; // 'append' or 'overwrite'
+        const batch = writeBatch(db);
+        
+        for (const teacherId of selectedIds) {
+          const docRef = doc(db, 'users', teacherId);
+          if (bulkMode === 'overwrite') {
+            batch.update(docRef, { subjects: selected });
+          } else {
+            const teacherObj = allFaculty.find(f => f.id === teacherId);
+            const existingSubjects = teacherObj ? (teacherObj.subjects || []) : [];
+            const combinedSubjects = Array.from(new Set([...existingSubjects, ...selected]));
+            batch.update(docRef, { subjects: combinedSubjects });
+          }
+        }
+        await batch.commit();
+        showToast('Subjects assigned in bulk successfully!', 'success');
+        selectedIds.clear();
+        selectionMode = false;
+        updateSelectionBar();
+      } else {
+        await setDoc(doc(db, 'users', _assignTeacherId), { subjects: selected }, { merge: true });
+        showToast('Subjects saved!', 'success');
+      }
       modal.classList.add('hidden');
       _assignTeacherId = null;
+      _isBulkAssign = false;
       loadTeachers(true);
     } catch (err) {
       showToast('Failed to save subjects.', 'error');

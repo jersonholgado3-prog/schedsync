@@ -28,7 +28,7 @@ function showToast(message, type = "info") {
     if (!container) return;
 
     const toast = document.createElement("div");
-    toast.className = `toast - message ${type} `;
+    toast.className = `toast-message ${type}`;
 
     // Icon based on type
     let icon = "";

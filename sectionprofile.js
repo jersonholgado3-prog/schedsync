@@ -8,6 +8,20 @@ let currentSectionName = "";
 let currentSectionClasses = [];
 const normalizeDay = d => (d||"").trim().toLowerCase();
 
+let _teacherMap = null; // email -> display name cache
+async function resolveTeacherDisplay(value) {
+    if (!value || value === 'NA' || !value.includes('@')) return value;
+    if (!_teacherMap) {
+        _teacherMap = {};
+        const snap = await getDocs(query(collection(db, "users"), where("role", "in", ["teacher", "program head", "Program Head"])));
+        snap.forEach(d => {
+            const t = d.data();
+            if (t.email) _teacherMap[t.email.toLowerCase()] = t.username || t.displayName || t.fullName || t.email;
+        });
+    }
+    return _teacherMap[value.toLowerCase()] || value;
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
     initUserProfile("#userProfile");
 
@@ -146,7 +160,7 @@ async function fetchSectionSchedule(sectionName, userRole = 'student', hasEditPe
         `;
         container.appendChild(headerDiv);
 
-        renderTable(nonVacant);
+        await renderTable(nonVacant);
 
     } catch (error) {
         console.error("Error fetching section schedule:", error);
@@ -154,7 +168,7 @@ async function fetchSectionSchedule(sectionName, userRole = 'student', hasEditPe
     }
 }
 
-function renderTable(classes) {
+async function renderTable(classes) {
     const tbody = document.getElementById("tbody");
     if (!tbody) return;
     tbody.innerHTML = "";
@@ -203,7 +217,7 @@ function renderTable(classes) {
                 }
                 if (span > 1) td.rowSpan = span;
                 td.classList.add("occupied");
-                td.innerHTML = `<div style="font-weight:bold;font-size:12px;">${c.subject}</div><div style="font-size:11px;margin-top:2px;">${c.section||""}</div><div style="font-size:11px;opacity:0.8;">${c.teacher||""}</div>`;
+                td.innerHTML = `<div style="font-weight:bold;font-size:12px;">${c.subject}</div><div style="font-size:11px;margin-top:2px;">${c.section||""}</div><div style="font-size:11px;opacity:0.8;">${await resolveTeacherDisplay(c.teacher||"")}</div>`;
                 if (c.color) { td.style.setProperty('background-color', c.color, 'important'); td.style.setProperty('color','#000','important'); }
             } else {
                 td.classList.add("vacant-empty");

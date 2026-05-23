@@ -13,6 +13,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { initUserProfile } from "./userprofile.js";
+import { getCachedSections } from "./js/config/db-cache.js";
 import { initUniversalSearch } from "./search.js";
 import { archiveItem } from "./archive-item.js";
 import { showConfirm } from "./js/utils/ui-utils.js";
@@ -90,9 +91,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const selectedEvents = allEvents.filter(e => selectedEventIds.has(e.id || String(e.createdAt)));
 
-    // Archive all selected
+    // Archive all selected (best-effort)
     for (const ev of selectedEvents) {
-      await archiveItem('events', ev.id || String(ev.createdAt), ev, 'Bulk deleted by admin');
+      try { await archiveItem('events', ev.id || String(ev.createdAt), ev, 'Bulk deleted by admin'); } catch (_) {}
     }
 
     // Delete academic_calendar docs
@@ -149,8 +150,8 @@ async function listenForEvents() {
   // Fetch Section Mapping
   let sectionMap = {};
   try {
-    const sectionSnap = await getDocs(collection(db, "sections"));
-    sectionSnap.forEach(s => { sectionMap[s.id] = s.data().name; });
+    const sectionsArr = await getCachedSections(db);
+    sectionsArr.forEach(s => { sectionMap[s.id] = s.name; });
   } catch (e) { console.error("Could not fetch sections map:", e); }
 
   const defaultRef = doc(db, "schedules", "DEFAULT_SECTION");

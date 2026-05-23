@@ -30,12 +30,14 @@
             .catch(err => console.error('SchedSync SW: Failed ❌', err));
         });
       }
+      if (localStorage.getItem("userRole") === "admin") document.documentElement.classList.add("admin-theme");
     })();
   </script>
   <script type="module" src="role-restriction.js"></script>
   <script type="module" src="homepage.js"></script>
 
   <link rel="stylesheet" href="header-styles.css" />
+  <link rel="stylesheet" href="admin-theme.css" />
   <title>SchedSync - Homepage</title>
   <link rel="stylesheet" href="homepage.css" />
   <link rel="stylesheet" href="skeleton.css" />

@@ -63,6 +63,53 @@ async function getAccessToken() {
 }
 
 /**
+ * Delete all Firebase Auth accounts except admins.
+ * Uses Identity Toolkit REST API with service account token.
+ */
+async function deleteNonAdminAuthAccounts(db) {
+  const { collection, getDocs } = await import("https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js");
+
+  // Get admin UIDs from Firestore to preserve them
+  const usersSnap = await getDocs(collection(db, 'users'));
+  const adminUids = new Set(
+    usersSnap.docs.filter(d => d.data().role === 'admin').map(d => d.id)
+  );
+
+  const token = await getAccessToken();
+
+  // List all Auth users (paginated)
+  let nextPageToken = null;
+  const uidsToDelete = [];
+
+  do {
+    const url = `https://identitytoolkit.googleapis.com/v1/projects/${SA.project_id}/accounts:query`;
+    const body = { returnSecureToken: false, maxResults: 500 };
+    if (nextPageToken) body.nextPageToken = nextPageToken;
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    (data.userInfo || []).forEach(u => {
+      if (!adminUids.has(u.localId)) uidsToDelete.push(u.localId);
+    });
+    nextPageToken = data.nextPageToken;
+  } while (nextPageToken);
+
+  // Delete in batches of 100
+  for (let i = 0; i < uidsToDelete.length; i += 100) {
+    const batch = uidsToDelete.slice(i, i + 100);
+    await fetch(`https://identitytoolkit.googleapis.com/v1/projects/${SA.project_id}/accounts:batchDelete`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ localIds: batch, force: true })
+    });
+  }
+}
+
+/**
  * Reset a user's password using Firebase Auth REST API (Admin)
  * @param {string} uid - Firebase Auth UID
  * @param {string} newPassword
@@ -83,4 +130,47 @@ export async function adminResetPassword(uid, newPassword) {
   const data = await res.json();
   if (data.error) throw new Error(data.error.message);
   return data;
+}
+
+/**
+ * Delete all Firestore data except admin accounts.
+ * Deletes: schedules, sections, rooms, courses, notifications,
+ *          audit_logs, edit_requests, academic_calendar,
+ *          archives (subcollections), and non-admin users.
+ */
+export async function deleteAllData(db) {
+  const { collection, getDocs, deleteDoc, doc, query, where } =
+    await import("https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js");
+
+  const FLAT_COLLECTIONS = [
+    'schedules', 'sections', 'rooms', 'courses',
+    'notifications', 'audit_logs', 'edit_requests', 'academic_calendar',
+    'comments', 'presence'
+  ];
+
+  // Delete all docs in flat collections
+  for (const col of FLAT_COLLECTIONS) {
+    const snap = await getDocs(collection(db, col));
+    await Promise.all(snap.docs.map(d => deleteDoc(doc(db, col, d.id))));
+  }
+
+  // Delete archives subcollections
+  const ARCHIVE_TYPES = ['curriculum', 'faculty', 'rooms', 'schedules', 'sections'];
+  for (const type of ARCHIVE_TYPES) {
+    try {
+      const snap = await getDocs(collection(db, 'archives', type, 'items'));
+      await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+    } catch (_) { /* subcollection may not exist */ }
+  }
+
+  // Delete non-admin users from Firestore
+  const usersSnap = await getDocs(collection(db, 'users'));
+  await Promise.all(
+    usersSnap.docs
+      .filter(d => d.data().role !== 'admin')
+      .map(d => deleteDoc(doc(db, 'users', d.id)))
+  );
+
+  // Delete non-admin Firebase Auth accounts
+  await deleteNonAdminAuthAccounts(db);
 }

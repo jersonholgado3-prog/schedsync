@@ -1,0 +1,67 @@
+/*
+ * admin-theme.css — Professional flat style for admin accounts.
+ * Sharp corners, light borders, no heavy shadows or dark outlines.
+ * Applied when html.admin-theme is present.
+ */
+
+html.admin-theme {
+  --at-radius: 0px;
+  --at-border: 1px solid #e5e7eb;
+  --at-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+/* ── GLOBAL: subtle professional rounding ───────────────────── */
+html.admin-theme *:not(img):not(svg):not(circle):not(path):not(.logo-container):not(.logo-section):not(.sidebar-icon):not([class*="icon-wrapper"]):not([class*="icon-container"]) {
+  border-radius: 10px !important;
+}
+
+/* ── BORDERS: replace dark/thick outlines with light 1px ───── */
+html.admin-theme .widget-card,
+html.admin-theme .card,
+html.admin-theme .modal-content,
+html.admin-theme .panel,
+html.admin-theme .widget-action-btn-icon,
+html.admin-theme button:not(.resume-edit-dismiss),
+html.admin-theme input,
+html.admin-theme select,
+html.admin-theme textarea,
+html.admin-theme table,
+html.admin-theme th,
+html.admin-theme td {
+  border: var(--at-border) !important;
+  box-shadow: none !important;
+}
+
+/* keep dismiss button unstyled */
+html.admin-theme .resume-edit-dismiss {
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+html.admin-theme .sidebar.collapsed .resume-edit-dismiss {
+  display: none !important;
+}
+
+/* ── SHADOWS: strip heavy shadows ──────────────────────────── */
+html.admin-theme .widget-card,
+html.admin-theme .card,
+html.admin-theme .header,
+html.admin-theme .modal-content,
+html.admin-theme .panel {
+  box-shadow: var(--at-shadow) !important;
+}
+
+/* ── FOCUS: thin blue outline instead of thick ring ────────── */
+html.admin-theme *:focus,
+html.admin-theme *:focus-visible {
+  outline: 1px solid #2563eb !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+}
+
+/* ── DARK MODE ──────────────────────────────────────────────── */
+html.admin-theme.dark {
+  --at-border: 1px solid #334155;
+  --at-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}

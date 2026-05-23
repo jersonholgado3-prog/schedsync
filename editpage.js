@@ -5,6 +5,7 @@ import {
   getDoc,
   doc,
   updateDoc,
+  setDoc,
   query,
   where,
   addDoc,
@@ -17,6 +18,7 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/fi
 import { toMin, toTime, to12, parseBlock, overlaps, cleanSection, normalizeDay, normalizeTimeBlock } from "./js/utils/time-utils.js";
 import { showToast, showConfirm, showPrompt, showLoading, hideLoading } from "./js/utils/ui-utils.js";
 import { initUserProfile } from "./userprofile.js";
+import { getCachedCourses, getCachedRooms } from "./js/config/db-cache.js";
 import { initMobileNav } from "./js/ui/mobile-nav.js";
 import { initUniversalSearch } from "./search.js";
 import { SUBJECT_DATA, getStrandFromSection } from "./subject-data.js";
@@ -47,6 +49,19 @@ let comments = []; // Global store
 let isSaving = false; // 🔒 Prevents double-clicks/duplicate saves
 
 
+
+// Allow drops anywhere (required so tray cards can be dropped on grid cells)
+document.addEventListener('dragover', e => {
+  if (e.dataTransfer.types.includes('application/tray-card')) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  }
+});
+// Capture phase — intercepts drop before any element handler
+document.addEventListener('drop', e => {
+  const raw = e.dataTransfer.getData('application/tray-card');
+  if (raw) { e.stopPropagation(); handleDrop(e); }
+}, true);
 
 // Initialize user profile and set current user
 document.addEventListener("DOMContentLoaded", () => {
@@ -389,7 +404,7 @@ let lastAllSchedulesFetch = 0;
 async function getAllSchedulesForConflict() {
   const now = Date.now();
   if (cachedAllSchedules && now - lastAllSchedulesFetch < 5000) return cachedAllSchedules;
-  cachedAllSchedules = await getDocs(collection(db, "schedules"));
+  cachedAllSchedules = await getDocs(query(collection(db, "schedules"), where("status", "==", "published")));
   lastAllSchedulesFetch = now;
   return cachedAllSchedules;
 }
@@ -498,6 +513,17 @@ const panel = document.getElementById("panel");
 const colgroup = document.querySelector("colgroup");
 const theadTr = document.querySelector("thead tr");
 
+// Allow tray card drops through the scroll container
+const tableScroll = document.querySelector('.table-scroll');
+if (tableScroll) {
+  tableScroll.addEventListener('dragover', e => {
+    if (e.dataTransfer.types.includes('application/tray-card')) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+    }
+  });
+}
+
 if (!tbody || !colgroup || !theadTr) {
   console.error("SchedSync: One or more table elements (tbody, colgroup, theadTr) not found!", { tbody, colgroup, theadTr });
 } else {
@@ -508,6 +534,9 @@ if (!tbody || !colgroup || !theadTr) {
 let draggedSource = null;
 
 function handleDragStart(e) {
+  // Ignore drags that originate from outside tbody (e.g. tray cards from aiPanel)
+  if (!tbody || !tbody.contains(e.target)) return;
+
   if (e.target.classList.contains('resize-handle')) {
     e.preventDefault();
     return;
@@ -536,7 +565,10 @@ function handleDragStart(e) {
 }
 
 function handleDragOver(e) {
-  e.preventDefault(); // Required for drop
+  e.preventDefault();
+  if (e.dataTransfer.types.includes('application/tray-card')) {
+    e.dataTransfer.dropEffect = 'copy';
+  }
   const target = e.target.closest('td, #deleteBtn');
   if (!target) return;
 
@@ -547,9 +579,7 @@ function handleDragOver(e) {
 
   const td = target.closest('td');
   if (td) {
-    if (!td.classList.contains('occupied')) {
-      td.classList.add('drag-over-target');
-    }
+    td.classList.add('drag-over-target');
   }
 }
 
@@ -570,15 +600,166 @@ function handleDragLeave(e) {
 
 async function handleDrop(e) {
   e.preventDefault();
-  
+
+  // ── TRAY CARD DROP ──────────────────────────────────────────────────────────
+  const rawTray = e.dataTransfer.getData('application/tray-card');
+  const trayData = rawTray ? JSON.parse(rawTray) : null;
+
   // 🛡️ ROLE GUARD: Only Editors can drop/move items ⚓
   const role = (currentUserRole || localStorage.getItem('userRole') || '').toLowerCase();
   const hasPermission = hasEditPermission;
   const isEditor = role === 'admin' || role === 'program head' || hasPermission;
-  if (!isEditor) return;
+
+  if (trayData) {
+    if (!isEditor) return;
+    if (window._trayDropHandled) return;
+    window._trayDropHandled = true;
+    setTimeout(() => { window._trayDropHandled = false; }, 500);
+    const target = e.target.closest('td') || document.elementFromPoint(e.clientX, e.clientY)?.closest('td');
+    if (!target) return;
+    if (target.classList.contains('inactive-day-hint') || target.classList.contains('inactive-day')) {
+      showToast('⚠️ That day is not active for this section.', 'error');
+      return;
+    }
+    target.classList.remove('drag-over-target');
+    document.body.classList.remove('is-dragging');
+
+    const { subject, teacher, room, color, duration } = trayData;
+    const schedId = target.dataset.schedId;
+    const day = target.dataset.day;
+    const startMin = parseInt(target.dataset.start);
+    if (!schedId || !day || isNaN(startMin)) {
+      showToast(`Drop failed: missing cell data (schedId=${schedId}, day=${day}, start=${target.dataset.start})`, 'error');
+      return;
+    }
+
+    const endMin = startMin + Math.round((duration || 1.5) * 60);
+    const timeBlock = `${toTime(startMin)}-${toTime(endMin)}`;
+    const classData = { subject, teacher, room: room || 'NA', day, timeBlock, color: color || '' };
+
+    showToast('Checking for conflicts... ⚖️', 'info');
+    // Bust cache AND sync local schedules array so deleted schedules aren't counted
+    cachedAllSchedules = null;
+    const freshSnap = await getDocs(query(collection(db, 'schedules'), where("status", "==", "published")));
+    const freshIds = new Set(freshSnap.docs.map(d => d.id));
+    schedules = schedules.filter(s => freshIds.has(s.id));
+    // Update classes for any modified schedules
+    freshSnap.docs.forEach(d => {
+      const local = schedules.find(s => s.id === d.id);
+      if (local) local.classes = d.data().classes || [];
+    });
+    const conflicts = await checkConflicts(classData, schedId);
+
+    // Check same-section overlap
+    const sched = schedules.find(s => s.id === schedId);
+    if (!sched) { showToast('Schedule not found! ❌', 'error'); return; }
+    const newBlock = parseBlock(classData.timeBlock);
+    const sectionOverlap = (sched.classes || []).find(c =>
+      normalizeDay(c.day) === normalizeDay(classData.day) &&
+      overlaps(parseBlock(c.timeBlock), newBlock)
+    );
+    if (sectionOverlap) {
+      if (sectionOverlap.subject === 'VACANT' || sectionOverlap.subject === 'MARKED_VACANT') {
+        // Remove the vacant block so the new class can take its place
+        sched.classes = sched.classes.filter(c => c !== sectionOverlap);
+      } else {
+        showToast(`⚠️ ${sectionOverlap.subject} already occupies that slot.`, 'error');
+        return;
+      }
+    }
+
+    if (conflicts.hasConflict) {
+      // Auto-open AI panel so user sees the reco
+      document.getElementById('aiPanel')?.classList.add('open');
+
+      showToast('⚠️ Conflict detected! Check recommendations in the AI panel.', 'error');
+
+      const chatMsgs = document.getElementById('aiChat_messages');
+      if (chatMsgs) {
+        chatMsgs.querySelector('.ai-conflict-bubble')?.remove();
+        const bubble = document.createElement('div');
+        bubble.className = 'ai-conflict-bubble';
+        bubble.style.cssText = 'background:#eff6ff;border:2px solid #3b82f6;border-radius:10px;padding:10px;font-size:.78rem;margin-top:4px;';
+        bubble.innerHTML = `<div style="font-weight:900;color:#ef4444;margin-bottom:6px;">⚠️ CONFLICT — ${subject} (${day} ${toTime(startMin)})</div>`;
+        if (conflicts.room)    bubble.innerHTML += `<div style="margin-bottom:4px;">${conflicts.room}</div>`;
+        if (conflicts.teacher) bubble.innerHTML += `<div style="margin-bottom:4px;">${conflicts.teacher}</div>`;
+        bubble.innerHTML += `<div class="ai-reco-loading" style="font-weight:700;color:#2563eb;margin-top:6px;">✨ Loading smart recommendations...</div>`;
+        chatMsgs.appendChild(bubble);
+        chatMsgs.scrollTop = chatMsgs.scrollHeight;
+
+        try {
+          const tempSelected = selected;
+          selected = { id: schedId };
+          const recTeachers = await findAvailableTeachers(classData.day, classData.timeBlock, schedId, subject);
+          const recTimes = await findAvailableSlots(teacher, room, schedId);
+          selected = tempSelected;
+
+          const recoDiv = document.createElement('div');
+          recoDiv.style.cssText = 'margin-top:8px;';
+
+          if (recTeachers.length) {
+            recoDiv.innerHTML += `<div style="font-size:.72rem;font-weight:800;color:#1e293b;margin-bottom:4px;">👤 Available Teachers</div>`;
+            const tw = document.createElement('div');
+            tw.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;';
+            recTeachers.slice(0, 4).forEach(t => {
+              const p = document.createElement('div');
+              p.style.cssText = 'background:#dbeafe;border:1.5px solid #3b82f6;border-radius:8px;padding:3px 8px;font-size:.72rem;font-weight:700;cursor:pointer;';
+              p.textContent = t;
+              tw.appendChild(p);
+            });
+            recoDiv.appendChild(tw);
+          }
+
+          if (recTimes.length) {
+            recoDiv.innerHTML += `<div style="font-size:.72rem;font-weight:800;color:#1e293b;margin-bottom:4px;">📅 Free Slots for ${teacher?.split(' ').pop() || 'Teacher'}</div>`;
+            const sw = document.createElement('div');
+            sw.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;';
+            recTimes.slice(0, 4).forEach(r => {
+              const p = document.createElement('div');
+              p.style.cssText = 'background:#dcfce7;border:1.5px solid #22c55e;border-radius:8px;padding:3px 8px;font-size:.72rem;font-weight:700;';
+              p.textContent = `${r.day.slice(0,3)} ${r.slot.split('-')[0].trim()}`;
+              sw.appendChild(p);
+            });
+            recoDiv.appendChild(sw);
+          }
+
+          if (!recTeachers.length && !recTimes.length) {
+            recoDiv.innerHTML = '<div style="font-size:.72rem;color:#64748b;">No alternatives found.</div>';
+          }
+
+          bubble.querySelector('.ai-reco-loading')?.replaceWith(recoDiv);
+          chatMsgs.scrollTop = chatMsgs.scrollHeight;
+        } catch(err) { console.warn('Reco load failed:', err); }
+      }
+      return; // auto-cancel — don't place
+    }
+
+    pushToHistory();
+    sched.classes = sched.classes || [];
+    sched.classes.push(classData);
+
+    // Re-render immediately so the block appears without waiting for Firestore
+    renderTable();
+
+    try {
+      await updateDoc(doc(db, 'schedules', schedId), { classes: sched.classes });
+      showToast(`${subject} placed! ✅`, 'success');
+    } catch(err) {
+      console.error('Tray drop save failed:', err);
+      showToast(`Failed to save: ${err.message}`, 'error');
+      // Rollback
+      sched.classes.pop();
+      renderTable();
+    }
+
+    window._trayDragCard = null;
+    return;
+  }
 
   const target = e.target.closest('td, #deleteBtn');
   if (!target || !draggedSource) return;
+
+  if (!isEditor) return; // grid-to-grid moves require edit permission
 
   // Cleanup styles
   document.body.classList.remove('is-dragging');
@@ -592,10 +773,9 @@ async function handleDrop(e) {
   }
 
   const targetTd = target.closest('td');
-  if (!targetTd || targetTd.classList.contains('occupied')) {
-    showToast("Invalid drop zone! 🛡️", "warning");
-    return;
-  }
+  if (!targetTd) return;
+
+  const isOccupied = targetTd.classList.contains('occupied');
 
   // Move Logic
   const sourceData = { ...draggedSource };
@@ -616,7 +796,6 @@ async function handleDrop(e) {
 
   if (classIndex === -1) return;
 
-  // Clone class data
   const classData = { ...sched.classes[classIndex] };
   const sourceParts = parseBlock(sourceData.block);
   const duration = sourceParts.end - sourceParts.start;
@@ -650,12 +829,29 @@ async function handleDrop(e) {
   // Remove from source
   sched.classes.splice(classIndex, 1);
 
-  // Remove existing content at target if it's VACANT
-  targetSched.classes = (targetSched.classes || []).filter(
+  if (isOccupied) {
+    // SWAP: find the target class and move it to the source slot
+    const targetClassIndex = targetSched.classes.findIndex(
+      c => c.day === targetDay && overlaps(parseBlock(c.timeBlock), { start: newStart, end: newEnd })
+    );
+    if (targetClassIndex !== -1) {
+      const targetClassData = { ...targetSched.classes[targetClassIndex] };
+      // Move target class to source slot
+      targetClassData.day = sourceData.day;
+      targetClassData.timeBlock = sourceData.block;
+      targetSched.classes.splice(targetClassIndex, 1);
+      sched.classes.push(targetClassData);
+    }
+  } else {
+    // Remove existing VACANT at target
+    targetSched.classes = (targetSched.classes || []).filter(
       c => !(c.day === targetDay && parseBlock(c.timeBlock).start === newStart)
-  );
+    );
+  }
 
-  // Add to target
+  // Place dragged class at target
+  classData.day = targetDay;
+  classData.timeBlock = `${toTime(newStart)}-${toTime(newEnd)}`;
   targetSched.classes.push(classData);
 
   renderTable();
@@ -675,6 +871,15 @@ async function handleDrop(e) {
 /* ───────── STATE ───────── */
 let schedules = [];
 let teachers = []; // Store fetched teachers
+const _trayCache = {}; // schedId → { courseId, termValue, durations, cards built }
+
+/** If stored teacher value looks like an email, resolve to display name from teachers array */
+function resolveTeacherDisplay(value) {
+  if (!value || value === 'NA') return value;
+  if (!value.includes('@')) return value; // already a display name
+  const match = teachers.find(t => t.email && t.email.toLowerCase() === value.toLowerCase());
+  return match ? match.name : value;
+}
 let allRooms = []; // Store all available rooms
 // Pre-computed busy sets for the currently open panel slot (populated in openPanel)
 let busyTeachersAtSlot = new Set();
@@ -882,12 +1087,13 @@ async function load() {
       dynamicSubjects_raw.push({ id: d.id, ...data });
       if (data.terms) {
         Object.values(data.terms).forEach(subjects => {
-          subjects.forEach(name => {
-            // Flatten into the expected format
+          subjects.forEach(subj => {
+            const name = typeof subj === 'object' ? (subj.description || '') : subj;
+            if (!name) return;
             dynamicSubjects.push({
               id: `course_${d.id}_${name}`,
               name: name,
-              category: data.name // Using course name as category
+              category: data.name
             });
           });
         });
@@ -992,7 +1198,6 @@ async function load() {
     } else {
       // Query schedules
       let q;
-      const urlParams = new URLSearchParams(window.location.search);
       const filterName = urlParams.get("name");
 
       if (currentUserRole === 'admin') {
@@ -1050,6 +1255,7 @@ async function fetchTeachers() {
       const t = d.data();
       teachers.push({
         name: t.username || t.displayName || t.fullName || (t.lastName ? `Teacher ${t.lastName}` : "Unknown Teacher"),
+        email: t.email || "",
         forte: t.forte || "GENERAL",
         subjects: t.subjects || [],
         avatar: t.photoURL || ""
@@ -1109,6 +1315,7 @@ function setupCustomDropdown(inputId, dropdownId, getOptions) {
           const occ = item.occupancy || 0;
           const occColor = occ > 70 ? '#ef4444' : occ > 30 ? '#f97316' : '#10b981';
           const textColor = (occ > 30 && occ <= 70) ? '#000' : '#fff';
+          div.title = '';
           div.innerHTML = `
               <div class="avatar-mini" style="background: ${occColor}; display:flex; align-items:center; justify-content:center; color:${textColor}; font-size:12px; font-weight:900; min-width:42px; height:42px; border: 2px solid ${occColor}; box-shadow: 0 0 10px ${occColor}66;">
                 ${occ}%
@@ -1236,7 +1443,10 @@ function getSubjectOptions(query) {
                       else if (simpleTerm.includes("THIRD TERM") || simpleTerm.includes("TERM 3") || simpleTerm.includes("3RD TERM")) simpleTerm = "THIRD TERM";
                       
                       if (!termGroups[simpleTerm]) termGroups[simpleTerm] = new Set();
-                      c.terms[originalTermName].forEach(s => termGroups[simpleTerm].add(s));
+                      c.terms[originalTermName].forEach(s => {
+                          const desc = typeof s === 'object' ? (s.description || '') : s;
+                          if (desc) termGroups[simpleTerm].add(desc);
+                      });
                   }
               });
           }
@@ -1437,19 +1647,39 @@ function initResizeHandles() {
       e.preventDefault();
       const td = handle.closest('td');
       if (!td) return;
-
       td.setAttribute('draggable', 'false');
-
       resizeState = {
         schedId: td.dataset.schedId,
         day: td.dataset.day,
         originalBlock: td.dataset.block,
         td: td,
+        type: 'end',
         currentEndMin: null,
         hasMoved: false
       };
+      document.body.style.cursor = 's-resize';
+      document.addEventListener('mousemove', handleResizeMove);
+      document.addEventListener('mouseup', handleResizeEnd);
+    });
+  });
 
-      document.body.style.cursor = 'ns-resize';
+  document.querySelectorAll('.resize-handle-top').forEach(handle => {
+    handle.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const td = handle.closest('td');
+      if (!td) return;
+      td.setAttribute('draggable', 'false');
+      resizeState = {
+        schedId: td.dataset.schedId,
+        day: td.dataset.day,
+        originalBlock: td.dataset.block,
+        td: td,
+        type: 'start',
+        currentStartMin: null,
+        hasMoved: false
+      };
+      document.body.style.cursor = 'n-resize';
       document.addEventListener('mousemove', handleResizeMove);
       document.addEventListener('mouseup', handleResizeEnd);
     });
@@ -1491,31 +1721,53 @@ function handleResizeMove(e) {
   if (!timeCell) return;
 
   const parts = timeCell.textContent.trim().split('-');
-  const newEndMin = toMin(parts[1]?.trim());
   const block = parseBlock(resizeState.originalBlock);
-  if (!newEndMin || newEndMin <= block.start) return;
-  if (newEndMin === resizeState.currentEndMin) return;
 
-  resizeState.currentEndMin = newEndMin;
+  if (resizeState.type === 'end') {
+    const newEndMin = toMin(parts[1]?.trim());
+    if (!newEndMin || newEndMin <= block.start) return;
+    if (newEndMin === resizeState.currentEndMin) return;
+    resizeState.currentEndMin = newEndMin;
 
-  // Live rowspan update
-  let spanCount = 0, counting = false;
-  for (const tr of tbody.querySelectorAll('tr')) {
-    const tc = tr.querySelector('.time-cell');
-    if (!tc) continue;
-    const p = tc.textContent.trim().split('-');
-    const rowStart = toMin(p[0]?.trim());
-    const rowEnd = toMin(p[1]?.trim());
-    if (rowStart === block.start) counting = true;
-    if (counting) spanCount++;
-    if (rowEnd === newEndMin) { counting = false; break; }
+    // Live rowspan update
+    let spanCount = 0, counting = false;
+    for (const tr of tbody.querySelectorAll('tr')) {
+      const tc = tr.querySelector('.time-cell');
+      if (!tc) continue;
+      const p = tc.textContent.trim().split('-');
+      const rowStart = toMin(p[0]?.trim());
+      const rowEnd = toMin(p[1]?.trim());
+      if (rowStart === block.start) counting = true;
+      if (counting) spanCount++;
+      if (rowEnd === newEndMin) { counting = false; break; }
+    }
+    if (spanCount > 0) resizeState.td.rowSpan = spanCount;
+
+    showResizeLabel(`${to12(toTime(block.start))} – ${to12(toTime(newEndMin))}`, e.clientX, e.clientY);
+
+  } else {
+    // type === 'start': drag top handle to move start time
+    const newStartMin = toMin(parts[0]?.trim());
+    if (!newStartMin || newStartMin >= block.end) return;
+    if (newStartMin === resizeState.currentStartMin) return;
+    resizeState.currentStartMin = newStartMin;
+
+    // Live rowspan update: count rows from newStart to block.end
+    let spanCount = 0, counting = false;
+    for (const tr of tbody.querySelectorAll('tr')) {
+      const tc = tr.querySelector('.time-cell');
+      if (!tc) continue;
+      const p = tc.textContent.trim().split('-');
+      const rowStart = toMin(p[0]?.trim());
+      const rowEnd = toMin(p[1]?.trim());
+      if (rowStart === newStartMin) counting = true;
+      if (counting) spanCount++;
+      if (rowEnd === block.end) { counting = false; break; }
+    }
+    if (spanCount > 0) resizeState.td.rowSpan = spanCount;
+
+    showResizeLabel(`${to12(toTime(newStartMin))} – ${to12(toTime(block.end))}`, e.clientX, e.clientY);
   }
-  if (spanCount > 0) resizeState.td.rowSpan = spanCount;
-
-  // Show floating label
-  const endLabel = to12(toTime(newEndMin));
-  const startLabel = to12(toTime(block.start));
-  showResizeLabel(`${startLabel} – ${endLabel}`, e.clientX, e.clientY);
 }
 
 async function handleResizeEnd() {
@@ -1525,18 +1777,19 @@ async function handleResizeEnd() {
   document.removeEventListener('mousemove', handleResizeMove);
   document.removeEventListener('mouseup', handleResizeEnd);
 
-  // Re-enable drag
   if (resizeState.td) resizeState.td.setAttribute('draggable', 'true');
-
-  // Clear highlights
   document.querySelectorAll('.resize-highlight').forEach(el => el.classList.remove('resize-highlight'));
   hideResizeLabel();
 
-  if (!resizeState.hasMoved || !resizeState.currentEndMin) {
+  const hasMoved = resizeState.hasMoved;
+  const isEnd = resizeState.type === 'end';
+  const newVal = isEnd ? resizeState.currentEndMin : resizeState.currentStartMin;
+
+  if (!hasMoved || !newVal) {
     resizeState = null;
     return;
   }
-  
+
   const sched = schedules.find(s => s.id === resizeState.schedId);
   if (!sched) { resizeState = null; return; }
 
@@ -1545,11 +1798,16 @@ async function handleResizeEnd() {
     normalizeDay(c.day) === normalizeDay(resizeState.day) &&
     parseBlock(c.timeBlock).start === block.start
   );
+
   if (classItem) {
-    classItem.timeBlock = `${toTime(block.start)}-${toTime(resizeState.currentEndMin)}`;
+    if (isEnd) {
+      classItem.timeBlock = `${toTime(block.start)}-${toTime(newVal)}`;
+    } else {
+      classItem.timeBlock = `${toTime(newVal)}-${toTime(block.end)}`;
+    }
     try {
       await updateDoc(doc(db, "schedules", sched.id), { classes: sched.classes });
-      showToast('Class duration updated! ⏱️', 'success');
+      showToast('Class time updated! ⏱️', 'success');
     } catch (err) {
       console.error('Resize save failed:', err);
       showToast('Failed to save resize', 'error');
@@ -1650,6 +1908,9 @@ function renderTable() {
                 return isEditor ? `
                 <button class="day-action delete-target" onclick="window.clearSection('${s.id}')" title="Clear Entire Section" style="background: #ef4444; color: white; border: 1.5px solid #cbd5e1; padding: 0.4rem 1.2rem; border-radius: 50px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.08); font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
                   <span style="font-size: 1rem;">🗑️</span> CLEAR SECTION
+                </button>
+                <button class="day-action" onclick="window.openAiSchedModal('${s.id}','${s.section}')" title="AI Generate Schedule" style="background: #FFD200; color: #000; border: 1.5px solid #000; padding: 0.4rem 1.2rem; border-radius: 50px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.08); font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
+                  <span style="font-size: 1rem;">🤖</span> AI GENERATE
                 </button>
                 ` : '';
               })()}
@@ -1774,10 +2035,10 @@ function renderTable() {
             td.innerHTML = `
               <div style="display: flex; flex-direction: column; gap: 0.2rem;">
                 <strong style="font-size: 1.05rem; font-weight: 800; line-height: 1.2; color: #1e293b; text-transform: uppercase;">${c.subject}</strong>
-                <span style="font-size: 0.85rem; font-weight: 600; color: #334155; opacity: 0.95;">${c.teacher}</span>
+                <span style="font-size: 0.85rem; font-weight: 600; color: #334155; opacity: 0.95;">${resolveTeacherDisplay(c.teacher)}</span>
                 <span style="font-size: 0.85rem; font-weight: 800; color: #1e293b;">${(c.room || "").replace(/\s*\|?\s*\d{1,3}%\s*(?:OCCUPIED)?$/i, "").trim()}</span>
               </div>
-              ${currentUserRole !== 'student' ? '<div class="resize-handle" draggable="false" title="Drag to resize"></div>' : ''}
+              ${currentUserRole !== 'student' ? '<div class="resize-handle-top" draggable="false" title="Drag to move start time"></div><div class="resize-handle" draggable="false" title="Drag to resize end time"></div>' : ''}
             `;
             td.classList.add("occupied");
             td.style.padding = "0.6rem 0.4rem";
@@ -1817,9 +2078,8 @@ function renderTable() {
         }
 
         td.onclick = async () => {
-          const rawRole = currentUserRole || localStorage.getItem('userRole');
+          const rawRole = currentUserRole;
           const role = (rawRole || "").toLowerCase();
-          const hasEditPermission = localStorage.getItem('editPermission') === 'true';
           const isEditor = role === 'admin' || role === 'program head' || hasEditPermission;
 
           // 🛡️ VIEW-ONLY USERS: Occupied cells open comment panel, empty cells do nothing ⚓
@@ -1974,7 +2234,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function openPanel(id, day, block) {
   // 🛡️ Guard! Double-layer Permissions Check ⚓
   const role = (currentUserRole || localStorage.getItem('userRole') || '').toLowerCase();
-  const isEditor = role === 'admin';
+  const isEditor = role === 'admin' || role === 'program head' || hasEditPermission;
 
   // Non-editors go straight to comment panel
   if (!isEditor) {
@@ -2006,6 +2266,10 @@ function openPanel(id, day, block) {
 
   // Use class for SMOOTH DRAWING 🚀🦈
   panel.classList.add("open");
+  const commentPanel = document.getElementById("commentPanel");
+  if (commentPanel) commentPanel.classList.remove("open");
+  const aiPanel = document.getElementById("aiPanel");
+  if (aiPanel) aiPanel.classList.remove("open");
 
   // Force center on mobile/landscape to fix "Lower Right" bug ⚓🛡️
   if (window.innerWidth <= 768 || (window.innerWidth <= 950 && window.innerHeight < window.innerWidth)) {
@@ -2019,8 +2283,9 @@ function openPanel(id, day, block) {
   if (suggArea) suggArea.style.display = 'none';
 
   const sched = schedules.find(s => s.id === id);
+  if (!sched) { showToast("Schedule not found.", "error"); return; }
   const c = (sched.classes || []).find(
-    x => x.day === day && x.timeBlock === block
+    x => normalizeDay(x.day) === normalizeDay(day) && normalizeTimeBlock(x.timeBlock) === normalizeTimeBlock(block)
   );
 
   let subj = c?.subject || "";
@@ -2217,8 +2482,8 @@ async function findAvailableTeachers(day, timeBlock, excludeSchedId, subjectName
   // 1. Check Local Schedules
   schedules.forEach(s => {
     (s.classes || []).forEach(c => {
-      if (c.day === day && c.teacher && c.teacher !== "NA" && c.subject !== "VACANT" && c.subject !== "MARKED_VACANT") {
-        if (s.id === excludeSchedId && c.day === selected.day && c.timeBlock === selected.block) return;
+      if (normalizeDay(c.day) === normalizeDay(day) && c.teacher && c.teacher !== "NA" && c.subject !== "VACANT" && c.subject !== "MARKED_VACANT") {
+        if (s.id === excludeSchedId && normalizeDay(c.day) === normalizeDay(selected.day) && normalizeTimeBlock(c.timeBlock) === normalizeTimeBlock(selected.block)) return;
 
         if (overlaps(parseBlock(c.timeBlock), targetBlock)) {
           unavailableTeachers.add(c.teacher.trim().toUpperCase());
@@ -2238,7 +2503,7 @@ async function findAvailableTeachers(day, timeBlock, excludeSchedId, subjectName
 
     const data = d.data();
     (data.classes || []).forEach(c => {
-      if (c.day === day && c.teacher && c.teacher !== "NA" && c.subject !== "VACANT" && c.subject !== "MARKED_VACANT") {
+      if (normalizeDay(c.day) === normalizeDay(day) && c.teacher && c.teacher !== "NA" && c.subject !== "VACANT" && c.subject !== "MARKED_VACANT") {
         if (overlaps(parseBlock(c.timeBlock), targetBlock)) {
           unavailableTeachers.add(c.teacher.trim().toUpperCase());
         }
@@ -2279,11 +2544,6 @@ async function findAvailableTeachers(day, timeBlock, excludeSchedId, subjectName
 
     return hasForteMatch;
   });
-
-  // 🧪 FALLBACK: If no specialists found, suggest any free teacher 🦾
-  if (filtered.length === 0 && subjectName) {
-    filtered = teachers.filter(t => !unavailableTeachers.has(t.name.trim().toUpperCase())).slice(0, 3);
-  }
 
   return filtered.map(t => t.name).slice(0, 5);
 }
@@ -2337,11 +2597,13 @@ async function saveClass() {
       saveBtn.innerHTML = "Saving...";
     }
 
-    pushToHistory(); // Capture state before modification ⚓
-    if ((currentUserRole || '').toLowerCase() !== 'admin') {
+    const _saveRole = (currentUserRole || '').toLowerCase();
+    const _isEditor = _saveRole === 'admin' || _saveRole === 'program head' || hasEditPermission;
+    if (!_isEditor) {
       showToast("You don't have permission to edit schedules.", "error");
       return;
     }
+    pushToHistory(); // Capture state before modification ⚓
     const ref = doc(db, "schedules", selected.id);
     const sched = schedules.find(s => s.id === selected.id);
 
@@ -2714,9 +2976,9 @@ async function showConflictRecommendations(block) {
 
             if (res.teacher) document.getElementById('teacher').value = res.teacher;
 
-            // Update selected block so save works correctly
+            // Update selected so saveClass() targets the new slot
             selected.day = res.day;
-            // Note: block.timeBlock will be updated by saveClass from inputs
+            selected.block = res.slot;
 
             showToast(`Moving to ${res.day} ${res.slot}...`, "info");
             if (window.saveClass) window.saveClass();
@@ -2746,7 +3008,8 @@ function closePanel() {
 }
 
 function markAsVacant() {
-  if ((currentUserRole || '').toLowerCase() !== 'admin') {
+  const _mvRole = (currentUserRole || '').toLowerCase();
+  if (_mvRole !== 'admin' && _mvRole !== 'program head' && !hasEditPermission) {
     showToast("You don't have permission to edit schedules.", "error");
     return;
   }
@@ -2757,7 +3020,8 @@ function markAsVacant() {
 }
 
 function deleteClass(targetEl = null) {
-  if ((currentUserRole || '').toLowerCase() !== 'admin') {
+  const _dcRole = (currentUserRole || '').toLowerCase();
+  if (_dcRole !== 'admin' && _dcRole !== 'program head' && !hasEditPermission) {
     showToast("You don't have permission to edit schedules.", "error");
     return;
   }
@@ -2960,7 +3224,11 @@ function deleteClass(targetEl = null) {
 
 
 async function save() {
-  if (currentUserRole === 'teacher' && localStorage.getItem('editPermission') !== 'true') {
+  if (isSaving) {
+    showToast("Publish in progress, please wait... ⏳", "info");
+    return;
+  }
+  if (currentUserRole === 'teacher' && !hasEditPermission) {
     if (window.requestEditPermission) window.requestEditPermission();
     return;
   }
@@ -2973,6 +3241,7 @@ async function save() {
   if (!confirmed) return;
 
   showLoading('Publishing schedule...');
+  isSaving = true;
   try {
   for (const s of schedules) {
     const isOverride = !!s.targetDate;
@@ -2985,7 +3254,7 @@ async function save() {
       classes: s.classes || []
     };
 
-    if (isOverride && s.id === "TEMP_SYNC") {
+    if (isOverride && s.id.startsWith('TEMP_')) {
       savePayload.scheduleName = s.scheduleName || "Temporary Override";
       savePayload.originalId = s.originalId || null;
       savePayload.section = s.section || "General";
@@ -3035,6 +3304,7 @@ async function save() {
     console.error('Save failed:', err);
     showToast('Failed to publish schedule', 'error');
   } finally {
+    isSaving = false;
     hideLoading();
   }
 }
@@ -3377,7 +3647,7 @@ function showDownloadFormatSelector(callback) {
 }
 
 function copyDayInSection(schedId, day) {
-  if (currentUserRole === 'teacher' && localStorage.getItem('editPermission') !== 'true') {
+  if (currentUserRole === 'teacher' && !hasEditPermission) {
     if (window.requestEditPermission) window.requestEditPermission();
     return;
   }
@@ -3397,7 +3667,7 @@ function copyDayInSection(schedId, day) {
 }
 
 async function pasteDayToSection(schedId, targetDay) {
-  if (currentUserRole === 'teacher' && localStorage.getItem('editPermission') !== 'true') {
+  if (currentUserRole === 'teacher' && !hasEditPermission) {
     if (window.requestEditPermission) window.requestEditPermission();
     return;
   }
@@ -3410,7 +3680,8 @@ async function pasteDayToSection(schedId, targetDay) {
   const sched = schedules.find(s => s.id === schedId);
   if (!sched) return;
 
-  showConfirm(`Paste classes into ${sched.section} ${targetDay}?`, async () => {
+  showConfirm(`Paste classes into ${sched.section} ${targetDay}?`).then(async (confirmed) => {
+    if (!confirmed) return;
     pushToHistory(); 
 
     const newClasses = copiedDayClasses.map(c => ({
@@ -3443,7 +3714,7 @@ async function pasteDayToSection(schedId, targetDay) {
 }
 
 async function clearDayInSection(schedId, day) {
-  if (currentUserRole === 'teacher' && localStorage.getItem('editPermission') !== 'true') {
+  if (currentUserRole === 'teacher' && !hasEditPermission) {
     if (window.requestEditPermission) window.requestEditPermission();
     return;
   }
@@ -3451,7 +3722,8 @@ async function clearDayInSection(schedId, day) {
   const sched = schedules.find(s => s.id === schedId);
   if (!sched) return;
 
-  showConfirm(`Clear all classes for ${day} in ${sched.section}?`, async () => {
+  showConfirm(`Clear all classes for ${day} in ${sched.section}?`).then(async (confirmed) => {
+    if (!confirmed) return;
     pushToHistory(); 
     const updated = (sched.classes || []).filter(c => c.day !== day);
     sched.classes = updated;
@@ -3472,7 +3744,7 @@ async function clearDayInSection(schedId, day) {
 }
 
 async function clearSection(schedId) {
-  if (currentUserRole === 'teacher' && localStorage.getItem('editPermission') !== 'true') {
+  if (currentUserRole === 'teacher' && !hasEditPermission) {
     if (window.requestEditPermission) window.requestEditPermission();
     return;
   }
@@ -3674,7 +3946,7 @@ window.saveClass = saveClass;
 window.save = save;
 
 window.enableTeacherReadOnlyMode = function() {
-  const panel = document.getElementById('editPanel');
+  const panel = document.getElementById('panel');
   if (!panel) return;
   // Block all form fields
   panel.querySelectorAll('input, select, textarea').forEach(el => {
@@ -3758,18 +4030,13 @@ async function initPresence() {
 
   const updateStatus = async () => {
     try {
-      await updateDoc(presenceDocRef, {
+      await setDoc(presenceDocRef, {
+        schedId: schedId,
+        userId: currentUser.uid,
+        username: currentUser.displayName || "Unknown",
+        photoURL: currentUser.photoURL || "images/default_shark.jpg",
         lastSeen: serverTimestamp()
-      }).catch(async (e) => {
-        await addDoc(collection(db, "presence"), {
-          id: `${schedId}_${currentUser.uid}`,
-          schedId: schedId,
-          userId: currentUser.uid,
-          username: currentUser.displayName || "Unknown",
-          photoURL: currentUser.photoURL || "images/default_shark.jpg",
-          lastSeen: serverTimestamp()
-        });
-      });
+      }, { merge: true });
     } catch (e) { console.error("Presence error:", e); }
   };
 
@@ -3810,6 +4077,9 @@ window.openCommentPanel = async function (schedId, day, block, force = false) {
     return console.error("commentPanel not found");
   }
 
+  const aiPanel = document.getElementById('aiPanel');
+  if (aiPanel) aiPanel.classList.remove('open');
+
   if (force === 'refresh') {
     showToast("Refreshing comments...", "info");
     if (window.listenForComments) {
@@ -3819,9 +4089,9 @@ window.openCommentPanel = async function (schedId, day, block, force = false) {
     }
   }
 
-  let rawRole = currentUserRole || localStorage.getItem('userRole');
+  let rawRole = currentUserRole;
   let role = (rawRole || "").toLowerCase();
-  let hasPermission = localStorage.getItem('editPermission') === 'true';
+  let hasPermission = hasEditPermission;
   const isAdmin = role === 'admin';
   const sched = (schedules || []).find(s => s.id === schedId);
   const isOwner = sched && (sched.userId === currentUser?.uid);
@@ -4000,7 +4270,11 @@ function listenForComments() {
     snap.forEach(d => {
       comments.push({ ...d.data(), docId: d.id });
     });
-    renderTable(); 
+    // Only update comment count badges, not the full table
+    const commentPanel = document.getElementById('commentPanel');
+    if (commentPanel && commentPanel.classList.contains('open')) {
+      if (typeof renderComments === 'function') renderComments();
+    }
   });
 }
 
@@ -4074,8 +4348,683 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     initDraggablePanel('panel');
     initDraggablePanel('commentPanel');
+    initDraggablePanel('aiPanel');
   });
 } else {
   initDraggablePanel('panel');
   initDraggablePanel('commentPanel');
+  initDraggablePanel('aiPanel');
 }
+
+// ── AI SCHEDULE MODAL ─────────────────────────────────────────────────────────
+const GROQ_API_KEY = APP_CONFIG.GROQ_API_KEY;
+
+// ── AI PANEL CHAT ────────────────────────────────────────────────────────────
+async function askGroqChat(question, schedId) {
+  // Build schedule context for the current section + all loaded sections
+  const contextLines = [];
+  schedules.forEach(s => {
+    (s.classes || []).forEach(c => {
+      if (!c.subject || c.subject === 'VACANT' || c.subject === 'MARKED_VACANT') return;
+      contextLines.push(`${s.section} | ${c.day} | ${c.timeBlock} | ${c.subject} | Teacher: ${c.teacher || 'TBA'} | Room: ${c.room || 'TBA'}`);
+    });
+  });
+
+  const systemPrompt = `You are a school schedule assistant for SchedSync. Answer questions about the schedule concisely in the same language the user uses (Filipino or English).
+Current schedule data (Section | Day | Time | Subject | Teacher | Room):
+${contextLines.join('\n') || 'No schedule data loaded.'}`;
+
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: question }
+      ],
+      temperature: 0.3,
+      max_tokens: 300
+    })
+  });
+  if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || `HTTP ${res.status}`); }
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content?.trim() || '(walang sagot)';
+}
+
+window.openAiSchedModal = async (schedId, sectionName) => {
+  if (window._aiModalOpening) return;
+  window._aiModalOpening = true;
+  setTimeout(() => { window._aiModalOpening = false; }, 2000);
+
+  const panel = document.getElementById('aiPanel');
+  
+  // Close other panels
+  const mainPanel = document.getElementById('panel');
+  if (mainPanel) mainPanel.classList.remove('open');
+  const commentPanel = document.getElementById('commentPanel');
+  if (commentPanel) commentPanel.classList.remove('open');
+
+  document.getElementById('aiModal_sectionName').textContent = sectionName;
+  window._currentTrayCacheKey = schedId;
+
+  // Only reset tray if no cache for this section
+  if (!_trayCache[schedId]?.cardsBuilt) {
+    const tray = document.getElementById('aiModal_tray');
+    if (tray) tray.style.display = 'none';
+    const trayCards = document.getElementById('aiModal_trayCards');
+    if (trayCards) trayCards.innerHTML = '';
+  }
+
+  panel.classList.add('open');
+  
+  // Force center on mobile/landscape if needed (similar to other panels)
+  if (window.innerWidth <= 768 || (window.innerWidth <= 950 && window.innerHeight < window.innerWidth)) {
+    panel.style.left = '50%';
+    panel.style.top = '45%'; 
+    panel.style.transform = 'translate(-50%, -45%) scale(1)';
+  }
+
+  window.closeAiPanel = function() {
+    document.getElementById('aiPanel').classList.remove('open');
+  };
+
+  // ── Chat wiring ──────────────────────────────────────────────────────────
+  const chatInput = document.getElementById('aiChat_input');
+  const chatSend  = document.getElementById('aiChat_send');
+  const chatMsgs  = document.getElementById('aiChat_messages');
+
+  function appendMsg(text, role) {
+    const d = document.createElement('div');
+    const isUser = role === 'user';
+    d.style.cssText = `align-self:${isUser ? 'flex-end' : 'flex-start'};max-width:90%;padding:7px 10px;border-radius:10px;font-size:.82rem;font-weight:${isUser ? '700' : '600'};background:${isUser ? '#005BAB' : '#f1f5f9'};color:${isUser ? '#fff' : '#1e293b'};white-space:pre-wrap;word-break:break-word;`;
+    d.textContent = text;
+    chatMsgs.appendChild(d);
+    chatMsgs.scrollTop = chatMsgs.scrollHeight;
+    return d;
+  }
+
+  async function sendChat() {
+    const q = chatInput.value.trim();
+    if (!q) return;
+    chatInput.value = '';
+    appendMsg(q, 'user');
+    const thinking = appendMsg('...', 'ai');
+    chatSend.disabled = true;
+    try {
+      const answer = await askGroqChat(q, schedId);
+      thinking.textContent = answer;
+    } catch(err) {
+      thinking.textContent = `Error: ${err.message}`;
+    } finally {
+      chatSend.disabled = false;
+    }
+  }
+
+  chatSend.onclick = sendChat;
+  chatInput.onkeydown = e => { if (e.key === 'Enter') sendChat(); };
+
+  const DAYS_SHORT = ['Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  // Load courses into dropdown
+  const courseSelect = document.getElementById('aiModal_course');
+  const termSelect   = document.getElementById('aiModal_term');
+  courseSelect.innerHTML = '<option value="">— Select Program —</option>';
+  termSelect.innerHTML   = '<option value="">— Select Term —</option>';
+
+  const allCourses = (await getCachedCourses(db)).sort((a,b) => (a.name||'').localeCompare(b.name||''));
+
+  // Auto-detect curriculum from section name and hide the program dropdown
+  const sectionUpper = sectionName.toUpperCase();
+  const strand = getStrandFromSection(sectionName); // e.g. "ICT", "ABM", "STEM"
+
+  // Filter courses to strand-relevant ones if strand is detected
+  const strandKeywords = { ICT: ['ICT','TVL','ITM','MAWD'], ABM: ['ABM'], STEM: ['STEM'], HUMSS: ['HUMSS'], GAS: ['GAS'], MAWD: ['MAWD','ITM','ICT'] };
+  const keywords = strand ? (strandKeywords[strand] || [strand]) : null;
+  const filteredCourses = keywords ? allCourses.filter(c => keywords.some(k => c.name.toUpperCase().includes(k))) : allCourses;
+  const coursesToShow = filteredCourses.length ? filteredCourses : allCourses;
+
+  coursesToShow.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id; opt.textContent = c.name;
+    courseSelect.appendChild(opt);
+  });
+
+  const autoMatch = coursesToShow.find(c => {
+    const n = c.name.toUpperCase();
+    // Direct section name contains course name or vice versa
+    if (sectionUpper.includes(n) || n.split(' ').some(w => w.length > 2 && sectionUpper.includes(w))) return true;
+    // Strand match (ICT, ABM, STEM, HUMSS, etc.)
+    if (strand && (n.includes(strand) || n === strand)) return true;
+    // MAWD → MAWD course
+    if (strand === 'MAWD' && (n.includes('MAWD') || n.includes('ITM'))) return true;
+    // ICT/TVL/ITM → ICT
+    if (strand === 'ICT' && (n.includes('TVL') || n.includes('ICT') || n.includes('ITM'))) return true;
+    return false;
+  });
+
+  if (autoMatch) {
+    courseSelect.value = autoMatch.id;
+    // Hide program dropdown, show only term
+    courseSelect.style.display = 'none';
+    document.getElementById('aiModal_curriculumLabel').textContent = 'Term';
+    document.getElementById('aiModal_curriculumGrid').style.gridTemplateColumns = '1fr';
+    // Populate terms filtered by level
+    termSelect.innerHTML = '<option value="">— Select Term —</option>';
+    const levelMatch = sectionUpper.match(/[A-Z]+(\d{1,2})\d{2}$|[A-Z]+(\d{1,2})$/);
+    const level = levelMatch ? (levelMatch[1] || levelMatch[2] || '') : '';
+    const termKeys = Object.keys(autoMatch.terms || {});
+    const filtered = termKeys.filter(t => {
+      if (!level) return true;
+      const tu = t.toUpperCase();
+      if (level === '11') return tu.includes('G11') || tu.includes('GRADE 11');
+      if (level === '12') return tu.includes('G12') || tu.includes('GRADE 12');
+      if (level === '1')  return tu.includes('FIRST YEAR')  || tu.includes('1ST YEAR');
+      if (level === '2')  return tu.includes('SECOND YEAR') || tu.includes('2ND YEAR');
+      if (level === '3')  return tu.includes('THIRD YEAR')  || tu.includes('3RD YEAR');
+      if (level === '4')  return tu.includes('FOURTH YEAR') || tu.includes('4TH YEAR');
+      return true;
+    });
+    // If level filter wiped everything, show all terms
+    const toShow = filtered.length ? filtered : termKeys;
+    toShow.sort((a, b) => {
+      const rank = s => {
+        const u = s.toUpperCase();
+        let yr = 0, sem = 0;
+        if      (u.includes('FIRST YEAR')  || u.includes('G11') || u.includes('1ST YEAR'))  yr = 1;
+        else if (u.includes('SECOND YEAR') || u.includes('G12') || u.includes('2ND YEAR'))  yr = 2;
+        else if (u.includes('THIRD YEAR')  || u.includes('3RD YEAR'))  yr = 3;
+        else if (u.includes('FOURTH YEAR') || u.includes('4TH YEAR'))  yr = 4;
+        const m = u.match(/TERM\s*(\d)/);
+        if (m) sem = parseInt(m[1]);
+        else if (u.includes('FIRST TERM')  || u.includes('FIRST SEM'))  sem = 1;
+        else if (u.includes('SECOND TERM') || u.includes('SECOND SEM')) sem = 2;
+        else if (u.includes('THIRD TERM')  || u.includes('THIRD SEM'))  sem = 3;
+        return yr * 10 + sem;
+      };
+      return rank(a) - rank(b);
+    });
+    toShow.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t; opt.textContent = t;
+      termSelect.appendChild(opt);
+    });
+  } else {
+    // Fallback: show both dropdowns
+    courseSelect.style.display = '';
+    document.getElementById('aiModal_curriculumLabel').textContent = 'Curriculum';
+    document.getElementById('aiModal_curriculumGrid').style.gridTemplateColumns = '1fr 1fr';
+  }
+
+  // Determine if SHS section (grade 11/12 → room 201-211, else 301-401)
+  const isSHS = (() => {
+    const m = sectionName.toUpperCase().match(/[A-Z]+(\d{1,2})\d{2}$/);
+    const lvl = m ? m[1] : '';
+    return lvl === '11' || lvl === '12';
+  })();
+
+  // Load rooms once for auto-assignment
+  const allRooms = (await getCachedRooms(db)).sort((a,b) => a.name.localeCompare(b.name));
+
+  // Ensure occupancy is fresh before showing the picker
+  await updateRoomSelectionOccupancies();
+
+  // Wire the lecture room picker using the same rich dropdown as the edit panel
+  function getModalRoomOptions(query) {
+    return allRooms
+      .filter(r => (r.subtype || r.type || 'classroom').toLowerCase() !== 'laboratory')
+      .filter(r => !query || r.name.toLowerCase().includes(query))
+      .map(r => ({
+        name: r.name,
+        type: 'room',
+        occupancy: roomOccupancies[r.name] || 0,
+        roomType: 'Lecture Room'
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+  }
+  setupCustomDropdown('aiModal_lectureRoom', 'aiModal_lectureRoomDropdown', getModalRoomOptions);
+
+  function getAutoRoom(subjectName) {
+    const sn = (subjectName || '').toLowerCase();
+    const isLab = sn.includes('computer') || sn.includes('lab') || sn.includes('programming') ||
+                  sn.includes('web') || sn.includes('animation') || sn.includes('mobile') || sn.includes('systems');
+    if (isLab) {
+      const comlab = allRooms.find(r => (r.subtype || r.type || '').toLowerCase() === 'laboratory');
+      return comlab ? comlab.name : '';
+    }
+    if (sn.includes('pe') || sn.includes('pathfit') || sn.includes('physical')) {
+      const gym = allRooms.find(r => (r.subtype || r.type || '').toLowerCase() === 'other');
+      return gym ? gym.name : '';
+    }
+    if (sn.includes('kitchen') || sn.includes('cookery')) {
+      const kitchen = allRooms.find(r => (r.subtype || r.type || '').toLowerCase() === 'kitchen');
+      return kitchen ? kitchen.name : '';
+    }
+    // Use picker selection for lecture subjects
+    return document.getElementById('aiModal_lectureRoom').value || '';
+  }
+
+  function getAutoTeacher(subjectName) {
+    const sn = (subjectName || '').toLowerCase();
+    if (sn.includes('club') || sn.includes('homeroom')) return '';
+    if (!teachers || !teachers.length) return 'VACANT';
+    const match = teachers.find(t =>
+      (t.subjects || []).some(s => {
+        const sd = typeof s === 'object' ? (s.description || '') : s;
+        return sd.toLowerCase().includes(sn) || sn.includes(sd.toLowerCase().substring(0, 6));
+      })
+    );
+    return match ? match.name : (teachers[0]?.name || 'VACANT');
+  }
+
+  const TRAY_COLORS = ['#bfdbfe','#bbf7d0','#fde68a','#fecaca','#ddd6fe','#fed7aa','#a7f3d0','#e9d5ff','#fce7f3','#cffafe'];
+
+  function buildDurationConfig(subjects) {
+    document.getElementById('aiModal_tray').style.display = 'none';
+    const config = document.getElementById('aiModal_durationConfig');
+    const rowsDiv = document.getElementById('aiModal_durationRows');
+    rowsDiv.innerHTML = '';
+    subjects.forEach((subj, idx) => {
+      const name = typeof subj === 'object' ? (subj.description || subj.courseId || '') : subj;
+      if (!name) return;
+      const units = typeof subj === 'object' && subj.units ? parseFloat(subj.units) : 1.5;
+      const defaultHrs = Math.round(units * 2) / 2 || 1.5; // round to nearest 0.5
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:7px 10px;background:#f8fafc;border-radius:8px;border:1.5px solid #e2e8f0;';
+      row.innerHTML = `
+        <span style="flex:1;font-weight:700;font-size:.82rem;color:#1e293b;word-break:break-word;">${name}</span>
+        <input type="number" min="0.5" max="8" step="0.5" value="${defaultHrs}"
+          data-subj-idx="${idx}"
+          style="width:52px;padding:4px 6px;border:2px solid #000;border-radius:6px;font-weight:800;font-size:.85rem;text-align:center;">
+        <span style="font-size:.7rem;color:#64748b;font-weight:600;">hrs</span>
+      `;
+      rowsDiv.appendChild(row);
+    });
+    config.style.display = 'block';
+
+    document.getElementById('aiModal_generateCardsBtn').onclick = () => buildCards(subjects);
+  }
+
+  function buildCards(subjects) {
+    const rowsDiv = document.getElementById('aiModal_durationRows');
+    const inputs = rowsDiv.querySelectorAll('input[data-subj-idx]');
+    const durations = {};
+    inputs.forEach(inp => { durations[inp.dataset.subjIdx] = parseFloat(inp.value) || 1.5; });
+
+    // Save to cache
+    if (window._currentTrayCacheKey) {
+      _trayCache[window._currentTrayCacheKey] = {
+        ..._trayCache[window._currentTrayCacheKey],
+        durations,
+        cardsBuilt: true
+      };
+    }
+
+    const tray = document.getElementById('aiModal_tray');
+    const cards = document.getElementById('aiModal_trayCards');
+    cards.innerHTML = '';
+    let cardIdx = 0;
+    subjects.forEach((subj, idx) => {
+      const name = typeof subj === 'object' ? (subj.description || subj.courseId || '') : subj;
+      if (!name) return;
+      const duration = durations[idx] ?? 1.5;
+      const teacher = getAutoTeacher(name);
+      const room = getAutoRoom(name);
+      const color = TRAY_COLORS[cardIdx % TRAY_COLORS.length];
+      cardIdx++;
+      const card = document.createElement('div');
+      card.draggable = true;
+      card.style.cssText = `padding:10px 12px;background:${color};border:1.5px solid #00000022;border-radius:10px;cursor:grab;user-select:none;`;
+      card.innerHTML = `
+        <div style="font-weight:800;font-size:.85rem;color:#1e293b;margin-bottom:4px;cursor:grab;">${name}</div>
+        <div style="font-size:.72rem;color:#374151;cursor:grab;">${teacher ? `👤 ${teacher} &nbsp;` : ''}🏫 ${room || '—'} &nbsp;⏱ ${duration}h</div>
+      `;
+      card.addEventListener('dragstart', e => {
+        const payload = JSON.stringify({ subject: name, teacher, room, color, duration });
+        e.dataTransfer.effectAllowed = 'copy';
+        e.dataTransfer.setData('application/tray-card', payload);
+        e.dataTransfer.setData('text/plain', payload);
+        const ghost = card.cloneNode(true);
+        ghost.style.cssText = card.style.cssText + ';position:fixed;top:-1000px;left:-1000px;width:' + card.offsetWidth + 'px;pointer-events:none;';
+        document.body.appendChild(ghost);
+        e.dataTransfer.setDragImage(ghost, ghost.offsetWidth / 2, 20);
+        setTimeout(() => ghost.remove(), 0);
+        window._trayDragCard = card;
+        card.style.opacity = '0.4';
+        document.body.classList.add('is-dragging');
+      });
+      card.addEventListener('dragend', () => {
+        card.style.opacity = '1';
+        document.body.classList.remove('is-dragging');
+      });
+      cards.appendChild(card);
+    });
+    tray.style.display = 'block';
+  }
+
+  courseSelect.onchange = () => {
+    termSelect.innerHTML = '<option value="">— Select Term —</option>';
+    document.getElementById('aiModal_durationConfig').style.display = 'none';
+    document.getElementById('aiModal_tray').style.display = 'none';
+    const course = coursesToShow.find(c => c.id === courseSelect.value);
+    if (!course?.terms) return;
+    const rankTerm = s => {
+      const u = s.toUpperCase();
+      let yr = 0, sem = 0;
+      if      (u.includes('FIRST YEAR')  || u.includes('G11') || u.includes('1ST YEAR'))  yr = 1;
+      else if (u.includes('SECOND YEAR') || u.includes('G12') || u.includes('2ND YEAR'))  yr = 2;
+      else if (u.includes('THIRD YEAR')  || u.includes('3RD YEAR'))  yr = 3;
+      else if (u.includes('FOURTH YEAR') || u.includes('4TH YEAR'))  yr = 4;
+      const m = u.match(/TERM\s*(\d)/);
+      if (m) sem = parseInt(m[1]);
+      else if (u.includes('FIRST TERM')  || u.includes('FIRST SEM'))  sem = 1;
+      else if (u.includes('SECOND TERM') || u.includes('SECOND SEM')) sem = 2;
+      else if (u.includes('THIRD TERM')  || u.includes('THIRD SEM'))  sem = 3;
+      return yr * 10 + sem;
+    };
+    Object.keys(course.terms).sort((a, b) => rankTerm(a) - rankTerm(b)).forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t; opt.textContent = t;
+      termSelect.appendChild(opt);
+    });
+  };
+
+  termSelect.onchange = () => {
+    const course = coursesToShow.find(c => c.id === courseSelect.value);
+    const subjects = course?.terms?.[termSelect.value] || [];
+    document.getElementById('aiModal_tray').style.display = 'none';
+    if (!subjects.length) { document.getElementById('aiModal_durationConfig').style.display = 'none'; return; }
+
+    // Update cache key
+    window._currentTrayCacheKey = schedId;
+    _trayCache[schedId] = { ..._trayCache[schedId], courseId: courseSelect.value, termValue: termSelect.value };
+
+    buildDurationConfig(subjects);
+
+    // Restore saved durations if available
+    const cached = _trayCache[schedId];
+    if (cached?.durations) {
+      document.getElementById('aiModal_durationRows').querySelectorAll('input[data-subj-idx]').forEach(inp => {
+        if (cached.durations[inp.dataset.subjIdx] != null) inp.value = cached.durations[inp.dataset.subjIdx];
+      });
+    }
+    // Auto-rebuild cards if they were already generated
+    if (cached?.cardsBuilt) buildCards(subjects);
+  };
+
+  // If autoMatch already selected, trigger term population
+  if (autoMatch) {
+    courseSelect.dispatchEvent(new Event('change'));
+  }
+
+  // Restore cached term selection for this schedId
+  const cached = _trayCache[schedId];
+  if (cached?.courseId && cached?.termValue) {
+    // Only re-dispatch courseSelect if it differs from autoMatch (avoids double buildCards)
+    if (courseSelect.value !== cached.courseId) {
+      courseSelect.value = cached.courseId;
+      courseSelect.dispatchEvent(new Event('change'));
+    }
+    setTimeout(() => {
+      termSelect.value = cached.termValue;
+      termSelect.dispatchEvent(new Event('change'));
+    }, 0);
+  }
+};
+
+async function runAiSchedGenerate(schedId, sectionName, allRooms, allCourses) {
+  const extraPrompt  = document.getElementById('aiModal_prompt').value.trim();
+  const courseId     = document.getElementById('aiModal_course').value;
+  const termName     = document.getElementById('aiModal_term').value;
+  const statusEl     = document.getElementById('aiModal_status');
+  const btn          = document.getElementById('aiModal_generateBtn');
+
+  const selectedRoomNames = [...document.querySelectorAll('#aiModal_rooms input:checked')].map(cb => cb.value);
+  if (!selectedRoomNames.length) return showToast('Select at least one room', 'error');
+
+  const subjectRows = document.querySelectorAll('#aiModal_subjectRows > div');
+  const subjectSchedule = [];
+  subjectRows.forEach(row => {
+    const name  = row.querySelector('span').title || row.querySelector('span').textContent.trim();
+    const hours = parseFloat(row.querySelector('input[type=number]').value) || 1;
+    const startVal = row.querySelector('input[type=time]').value;
+    const days  = [...row.querySelectorAll('input[type=checkbox]:checked')].map(cb => cb.value);
+    if (days.length > 0) subjectSchedule.push({ subject: name, hours, days, start: startVal });
+  });
+
+  // If no subjects manually set, AI will infer them from section name + prompt
+  const hasManualSubjects = subjectSchedule.length > 0;
+
+  btn.disabled = true; btn.textContent = '⏳ Thinking...';
+  statusEl.style.display = 'block'; statusEl.style.color = '#64748b';
+  statusEl.textContent = 'Loading data...';
+
+  try {
+    // ── 1. Fetch everything in parallel ──────────────────────────────────────
+    const [t1, t2, allSchedSnap] = await Promise.all([
+      getDocs(query(collection(db, 'users'), where('role', '==', 'teacher'))),
+      getDocs(query(collection(db, 'users'), where('role', '==', 'program head'))),
+      getAllSchedulesForConflict()
+    ]);
+
+    const facultyList = [...t1.docs, ...t2.docs].map(d => {
+      const t = d.data();
+      const name = t.username || t.displayName || t.fullName || t.name || t.email;
+      return { name, subjects: (t.subjects || []).map(s => typeof s === 'object' ? s.description || s : s) };
+    }).filter(f => f.name);
+
+    // ── 2. Build busy intervals per day ──────────────────────────────────────
+    // busyByDay[day] = [ {start:min, end:min, room, teacher} ]
+    const busyByDay = {};
+    allSchedSnap.forEach(d => {
+      if (d.id === schedId) return;
+      const data = d.data();
+      if (data.section === 'EVENTS' || data.section === 'EVENT_HOST' || d.id === 'DEFAULT_SECTION') return;
+      (data.classes || []).forEach(c => {
+        const subj = (c.subject || '').trim().toUpperCase();
+        if (!subj || subj === 'VACANT' || subj === 'MARKED_VACANT') return;
+        const b = parseBlock(c.timeBlock);
+        if (!b.start || !b.end) return;
+        const day = normalizeDay(c.day);
+        if (!busyByDay[day]) busyByDay[day] = [];
+        busyByDay[day].push({
+          start: b.start, end: b.end,
+          room:    (c.room    && c.room    !== 'NA') ? c.room.trim().toUpperCase()    : null,
+          teacher: (c.teacher && c.teacher !== 'NA') ? c.teacher.trim().toUpperCase() : null
+        });
+      });
+    });
+
+    // Helper: does interval [s,e) overlap any busy slot for a room/teacher on a day?
+    function isRoomBusy(day, roomName, s, e) {
+      return (busyByDay[normalizeDay(day)] || []).some(b =>
+        b.room === roomName.toUpperCase() && s < b.end && b.start < e
+      );
+    }
+    function isTeacherBusy(day, teacherName, s, e) {
+      return (busyByDay[normalizeDay(day)] || []).some(b =>
+        b.teacher === teacherName.toUpperCase() && s < b.end && b.start < e
+      );
+    }
+
+    // ── 3. Ask AI only for the ordered plan (no times/rooms/teachers) ─────────
+    statusEl.textContent = 'Asking AI for plan...';
+
+    const schedDesc = hasManualSubjects
+      ? subjectSchedule.map(s => {
+          const startPart = s.start ? ` (start at ${s.start})` : '';
+          return `- ${s.subject}: ${s.hours}h on ${s.days.join(', ')}${startPart}`;
+        }).join('\n')
+      : '(none provided — infer from section name and instructions below)';
+
+    const aiPrompt = `You are a Philippine SHS/college schedule planner. Output ONLY a raw JSON object, no markdown.
+
+SECTION: ${sectionName}
+PROGRAM/TERM: ${courseId && termName ? `${courseId} — ${termName}` : 'Infer from section name'}
+
+TASK: Output an ordered list of schedule blocks per day.
+${hasManualSubjects ? 'Use the subjects listed below.' : 'Infer the correct subjects for this section based on the Philippine K-12 or college curriculum. Include all core, applied, and strand-specific subjects appropriate for this section.'}
+Do NOT assign rooms or teachers — just subjects, hours, days, and order.
+
+${hasManualSubjects ? `SUBJECTS:\n${schedDesc}` : ''}
+
+ADDITIONAL INSTRUCTIONS: ${extraPrompt || 'None'}
+
+OUTPUT FORMAT:
+{"plan":[
+  {"day":"Monday","subject":"Math","hours":3,"startAt":"07:30","note":""},
+  {"day":"Monday","subject":"Science","hours":1.5,"startAt":"","note":"after Math"},
+  {"day":"Monday","subject":"VACANT","hours":1,"startAt":"","note":"lunch break"},
+  ...
+]}
+
+Rules:
+- "startAt" = "HH:MM" (24h) only if a specific start time is given, else ""
+- "subject" = exact subject name, or "VACANT" for breaks/vacant slots
+- Include ALL days and subjects
+- Respect the additional instructions for ordering, breaks, and start times`;
+
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: aiPrompt }],
+        temperature: 0.1,
+        response_format: { type: 'json_object' }
+      })
+    });
+
+    if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || `HTTP ${res.status}`); }
+    const aiData = await res.json();
+    const plan = JSON.parse(aiData.choices?.[0]?.message?.content || '{}').plan || [];
+    if (!plan.length) throw new Error('AI returned empty plan');
+    console.log('[AI] Plan:', JSON.stringify(plan, null, 2));
+
+    // ── 4. JS assigns times, rooms, teachers — guaranteed conflict-free ───────
+    statusEl.textContent = 'Assigning slots...';
+
+    // Track what we've placed so far (so subjects on same day don't overlap each other)
+    // placedByDay[day] = [ {start, end, room, teacher} ]
+    const placedByDay = {};
+
+    function nextFreeStart(day, fromMin) {
+      // Find the earliest minute >= fromMin that doesn't overlap anything placed or busy
+      const all = [...(busyByDay[normalizeDay(day)] || []), ...(placedByDay[normalizeDay(day)] || [])];
+      let cursor = fromMin;
+      let changed = true;
+      while (changed) {
+        changed = false;
+        for (const b of all) {
+          if (cursor < b.end && b.start < cursor + 1) { // cursor is inside a busy block
+            cursor = b.end;
+            changed = true;
+          }
+        }
+      }
+      return cursor;
+    }
+
+    function pickFreeRoom(day, start, end) {
+      return selectedRoomNames.find(r => !isRoomBusy(day, r, start, end) &&
+        !(placedByDay[normalizeDay(day)] || []).some(p => p.room === r.toUpperCase() && start < p.end && p.start < end)
+      ) || selectedRoomNames[0]; // fallback to first if all busy
+    }
+
+    function pickTeacher(day, subjName, start, end) {
+      const subjUpper = subjName.toUpperCase();
+      // Find teacher who teaches this subject and is free
+      const match = facultyList.find(f =>
+        f.subjects.some(s => subjUpper.includes((typeof s === 'string' ? s : s.description || '').toUpperCase().slice(0, 8).trim()) ||
+          (typeof s === 'string' ? s : s.description || '').toUpperCase().includes(subjUpper.slice(0, 8).trim())) &&
+        !isTeacherBusy(day, f.name, start, end) &&
+        !(placedByDay[normalizeDay(day)] || []).some(p => p.teacher === f.name.toUpperCase() && start < p.end && p.start < end)
+      );
+      return match ? match.name : 'NA';
+    }
+
+    const DEFAULT_START = 450; // 7:30 AM in minutes
+    const classes = [];
+
+    // Group plan by day, maintain order
+    const planByDay = {};
+    plan.forEach(item => {
+      const d = item.day;
+      if (!planByDay[d]) planByDay[d] = [];
+      planByDay[d].push(item);
+    });
+
+    for (const [day, items] of Object.entries(planByDay)) {
+      let cursor = DEFAULT_START;
+      if (!placedByDay[normalizeDay(day)]) placedByDay[normalizeDay(day)] = [];
+
+      for (const item of items) {
+        const durationMin = Math.round((item.hours || 1) * 60);
+        const isVacant = (item.subject || '').toUpperCase() === 'VACANT';
+
+        // Honor explicit startAt
+        if (item.startAt) {
+          const [hh, mm] = item.startAt.split(':').map(Number);
+          const forced = hh * 60 + mm;
+          if (forced > cursor) cursor = forced;
+        }
+
+        // Skip past any busy/placed blocks
+        cursor = nextFreeStart(day, cursor);
+
+        const start = cursor;
+        const end   = start + durationMin;
+
+        if (isVacant) {
+          // Just advance cursor, no entry
+          cursor = end;
+          continue;
+        }
+
+        const room    = pickFreeRoom(day, start, end);
+        const teacher = pickTeacher(day, item.subject, start, end);
+
+        // Record as placed
+        placedByDay[normalizeDay(day)].push({
+          start, end,
+          room: room.toUpperCase(),
+          teacher: teacher.toUpperCase()
+        });
+
+        classes.push({
+          day,
+          timeBlock: `${to12(toTime(start))}-${to12(toTime(end))}`,
+          subject: item.subject,
+          teacher,
+          room
+        });
+
+        cursor = end;
+      }
+    }
+
+    if (!classes.length) throw new Error('No classes could be scheduled');
+    console.log('[AI] Final classes:', JSON.stringify(classes, null, 2));
+
+    await updateDoc(doc(db, 'schedules', schedId), { classes });
+
+    statusEl.textContent = `✅ ${classes.length} slots scheduled, conflict-free!`;
+    statusEl.style.color = '#16a34a';
+    showToast(`✅ ${classes.length} slots generated for ${sectionName}`, 'success');
+
+    setTimeout(() => {
+      document.getElementById('aiPanel').classList.remove('open');
+      isLoaded = false;
+      load();
+    }, 1200);
+
+  } catch (err) {
+    console.error('[AI]', err);
+    statusEl.textContent = `❌ ${err.message}`;
+    statusEl.style.color = '#dc2626';
+    showToast('AI error: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = '🤖 Generate with AI';
+  }
+}
+

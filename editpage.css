@@ -886,17 +886,22 @@ td.vacant-marked {
 .dropdown-item-rich .item-meta {
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
 }
 
 .dropdown-item-rich .item-name {
     font-weight: 800;
     font-size: 0.9rem;
+    overflow: visible;
+    white-space: normal;
 }
 
 .dropdown-item-rich .item-sub {
     font-size: 0.75rem;
     color: #64748b;
     font-weight: 600;
+    pointer-events: none;
 }
 
 .avatar-mini {
@@ -1281,3 +1286,5 @@ td.drag-selecting {
   outline-offset: -2px;
   cursor: cell !important;
 }
+
+

@@ -20,6 +20,7 @@ import { initUniversalSearch } from "./search.js";
 import { initUserProfile } from "./userprofile.js";
 import { initMobileNav } from "./js/ui/mobile-nav.js";
 import { showToast, showConfirm, showLoading, hideLoading } from "./js/utils/ui-utils.js";
+import { getCachedRooms } from "./js/config/db-cache.js";
 
 // Global Messaging 🔔
 const messaging = getMessaging(app);
@@ -457,7 +458,6 @@ function initDraftSchedules(uid, role, hasPerm) {
 
       item.innerHTML = `
         <div class="draft-delete" onclick="event.stopPropagation(); window.deleteDraftGroup('${g.name}')" title="Delete Draft Group">✕</div>
-        <div class="draft-archive" onclick="event.stopPropagation(); window.archiveDraftGroup('${g.name}')" title="Archive Draft Group" style="position:absolute;top:8px;right:35px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:#fff;border:2px solid #3b82f6;border-radius:6px;cursor:pointer;font-size:14px;z-index:10;">📦</div>
         <div class="draft-icon-box">📝</div>
         <div class="draft-content">
           <div class="draft-title">${g.name}</div>
@@ -774,15 +774,14 @@ async function initAdminAnalytics() {
   chartContainers.forEach(c => c.style.opacity = '0.3');
 
   try {
-    const [schedSnap, roomsSnap] = await Promise.all([
+    const [schedSnap, rooms] = await Promise.all([
       getDocs(query(collection(db, "schedules"), where("status", "==", "published"))),
-      getDocs(collection(db, "rooms"))
+      getCachedRooms(db)
     ]);
     // ... rest of logic
     chartContainers.forEach(c => c.style.opacity = '1');
 
     const schedules = schedSnap.docs.map(d => d.data());
-    const rooms = roomsSnap.docs.map(d => d.data());
 
     // 1. Room Usage by Floor
     const floorUsage = { "Floor 1": 0, "Floor 2": 0, "Floor 3": 0, "Floor 4": 0, "Others": 0 };

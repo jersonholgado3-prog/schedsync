@@ -7,6 +7,7 @@ import { auth, db, app } from "./js/config/firebase-config.js";
 import { addDoc, collection, doc, updateDoc, setDoc, deleteDoc, arrayUnion, getDocs, getDoc, query, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { showToast, showConfirm } from "./js/utils/ui-utils.js";
 import { archiveItem } from "./archive-item.js";
+import { getCachedRooms, getCachedSections } from "./js/config/db-cache.js";
 
 console.log("Loading EventModal script...");
 
@@ -62,47 +63,23 @@ const overlaps = (t1, t2) => {
 // DELETED CAMPUS_ROOMS
 
 async function fetchAllRooms(db) {
-  // Check if we can get rooms dynamically from firestore
   try {
-    const snap = await getDocs(collection(db, "rooms"));
-    if (!snap.empty) {
-      const rooms = snap.docs.map(d => {
-        const rawName = d.data().name || "";
-        // Nuclear Sanitization (Catch "Room 2060%" even if dikit)
-        const cleanName = rawName.replace(/\s*\|?\s*\d{1,3}%\s*(?:OCCUPIED)?$/i, "").trim();
-
-        return {
-          name: cleanName || rawName,
-          type: d.data().type || "classroom"
-        };
-      });
-
-      // Custom Numeric Sort
-      return rooms.sort((a, b) => {
-        const nameA = a.name.toUpperCase();
-        const nameB = b.name.toUpperCase();
-
-        const isRoomA = nameA.startsWith("ROOM");
-        const isRoomB = nameB.startsWith("ROOM");
-
-        // If both are "Room XXX", sort numerically
-        if (isRoomA && isRoomB) {
-          const numA = parseInt(nameA.replace(/\D/g, "")) || 0;
-          const numB = parseInt(nameB.replace(/\D/g, "")) || 0;
-          return numA - numB;
-        }
-
-        // Rooms always come before non-rooms (Labs, Kitchen, etc.)
+    const rooms = await getCachedRooms(db);
+    if (rooms.length) {
+      const mapped = rooms.map(d => ({
+        name: (d.name || "").replace(/\s*\|?\s*\d{1,3}%\s*(?:OCCUPIED)?$/i, "").trim() || d.name,
+        type: d.type || "classroom"
+      }));
+      return mapped.sort((a, b) => {
+        const nameA = a.name.toUpperCase(), nameB = b.name.toUpperCase();
+        const isRoomA = nameA.startsWith("ROOM"), isRoomB = nameB.startsWith("ROOM");
+        if (isRoomA && isRoomB) return (parseInt(nameA.replace(/\D/g, "")) || 0) - (parseInt(nameB.replace(/\D/g, "")) || 0);
         if (isRoomA && !isRoomB) return -1;
         if (!isRoomA && isRoomB) return 1;
-
-        // Both are specialized, sort alphabetically
         return nameA.localeCompare(nameB);
       });
     }
   } catch (e) { console.warn("Firestore rooms fetch failed", e); }
-
-  // Fallback map (Removed hardcoded list to favor Firestore exclusively)
   return [];
 }
 
@@ -153,11 +130,9 @@ function parseBlockInMins(block) {
 async function checkRoomConflicts(db, roomName, day, timeBlock) {
   try {
     // 1. Fetch Section Names once
-    const sectionSnap = await getDocs(collection(db, "sections"));
+    const sectionsArr = await getCachedSections(db);
     const sectionMap = {};
-    sectionSnap.forEach(s => {
-      sectionMap[s.id] = s.data().name;
-    });
+    sectionsArr.forEach(s => { sectionMap[s.id] = s.name; });
 
     // 2. Only check published schedules to reduce data usage
     const q = query(collection(db, "schedules"), where("status", "==", "published"));

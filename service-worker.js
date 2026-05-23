@@ -1,46 +1,51 @@
-const CACHE_NAME = 'schedsync-v5';
+const CACHE_NAME = 'schedsync-v6';
 
-// Activate Event: Cleanup old caches 🧹
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            console.log('SchedSync SW: Clearing old cache:', cache);
-            return caches.delete(cache);
-          }
-        })
-      );
-    })
+const STATIC_EXTS = ['.js', '.css', '.png', '.jpg', '.jpeg', '.webp', '.svg', '.woff2', '.woff'];
+
+function isStatic(url) {
+  return STATIC_EXTS.some(ext => url.includes(ext));
+}
+
+// Activate: clear old caches
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    )
   );
-  // Claim clients immediately
   self.clients.claim();
 });
 
-// Fetch Event: Network-First Strategy with error handling
-self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
-  // Ignore non-http/https requests
-  if (!event.request.url.startsWith('http')) return;
-  // Ignore Firestore/Firebase scripts
-  if (event.request.url.includes('firestore.googleapis.com') || event.request.url.includes('firebasejs')) return;
+self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET') return;
+  const url = e.request.url;
+  if (!url.startsWith('http')) return;
+  if (url.includes('firestore.googleapis.com') || url.includes('firebasejs') || url.includes('googleapis.com')) return;
 
-  event.respondWith(
-    fetch(event.request)
-      .then((networkResponse) => {
-        // Only cache if valid and successful (200)
-        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
+  if (isStatic(url)) {
+    // Cache-first: serve from cache instantly, update in background
+    e.respondWith(
+      caches.open(CACHE_NAME).then(cache =>
+        cache.match(e.request).then(cached => {
+          const fetchPromise = fetch(e.request).then(res => {
+            if (res && res.status === 200 && res.type === 'basic') cache.put(e.request, res.clone());
+            return res;
           });
-        }
-        return networkResponse;
-      })
-      .catch(() => {
-        // Fallback to cache if network fails
-        return caches.match(event.request);
-      })
-  );
+          return cached || fetchPromise;
+        })
+      )
+    );
+  } else {
+    // Network-first for HTML pages
+    e.respondWith(
+      fetch(e.request)
+        .then(res => {
+          if (res && res.status === 200 && res.type === 'basic') {
+            caches.open(CACHE_NAME).then(cache => cache.put(e.request, res.clone()));
+          }
+          return res;
+        })
+        .catch(() => caches.match(e.request))
+    );
+  }
 });

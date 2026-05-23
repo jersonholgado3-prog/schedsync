@@ -58,7 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentUser = null;
     let selectedScheduleType = "regular";
     const userRole = localStorage.getItem('userRole') || 'student';
-    const hasEditPermission = localStorage.getItem('editPermission') === 'true';
+    let hasEditPermission = localStorage.getItem('editPermission') === 'true';
     const isEditor = userRole === 'admin' || userRole === 'program head' || hasEditPermission;
 
     // UI Elements
@@ -85,10 +85,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (user) {
             currentUser = user;
             // Update isAdmin for local UI logic (modal editing)
-            const userDoc = await getDocs(query(collection(db, "users")));
-            const currentUserDoc = userDoc.docs.find(d => d.id === user.uid);
-            if (currentUserDoc && currentUserDoc.data().role === 'admin') {
-                isAdmin = true;
+            const currentUserDoc = await getDoc(doc(db, "users", user.uid));
+            if (currentUserDoc.exists()) {
+                const data = currentUserDoc.data();
+                if (data.role === 'admin') isAdmin = true;
+                hasEditPermission = data.editPermission === true;
             }
             await loadAvailablePrograms();
             listenForSections();
@@ -183,11 +184,18 @@ document.addEventListener("DOMContentLoaded", () => {
     closeScheduleModal.onclick = () => {
         scheduleModal.classList.add("hidden");
         scheduleModal.classList.remove("flex");
+        _schedFormSubmitting = false;
+        const submitBtn = scheduleForm.querySelector('button[type="submit"]');
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'SAVE SECTION'; }
     };
 
+    let _schedFormSubmitting = false;
     scheduleForm.onsubmit = async (e) => {
         e.preventDefault();
-        showToast("Starting save process... 🏁", "info");
+        if (_schedFormSubmitting) return;
+        _schedFormSubmitting = true;
+        const submitBtn = scheduleForm.querySelector('button[type="submit"]');
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Saving...'; }
         console.log("SchedSync DEBUG - Saving with:", { start: startTimeInput.value, end: endTimeInput.value });
         
         if (!currentUser) {
@@ -347,6 +355,9 @@ document.addEventListener("DOMContentLoaded", () => {
             // --- FIX 2: Always surface the real error message ---
             console.error("DEBUG - Schedule Save Error:", error);
             showToast(`❌ Save failed: ${error?.message || JSON.stringify(error) || "Unknown error"}`, "error");
+            _schedFormSubmitting = false;
+            const submitBtn = scheduleForm.querySelector('button[type="submit"]');
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'SAVE SECTION'; }
         }
     };
 
@@ -385,8 +396,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function renderSections(sections) {
+        const wasSelectMode = sectionsGrid.classList.contains('select-mode');
         sectionsGrid.innerHTML = "";
         sectionsGrid.className = "space-y-8";
+        if (wasSelectMode) sectionsGrid.classList.add('select-mode');
 
         if (sections.length === 0) {
             sectionsGrid.innerHTML = '<div class="col-span-full text-center py-10 opacity-50">No sections found.</div>';
@@ -566,9 +579,27 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
+    const selectAllBtn = document.getElementById('selectAllBtn');
+    if (selectAllBtn) {
+        selectAllBtn.onclick = () => {
+            const allSelected = allSections.every(s => selectedIds.has(s.id));
+            if (allSelected) {
+                selectedIds.clear();
+                selectAllBtn.textContent = 'Select All';
+            } else {
+                allSections.forEach(s => selectedIds.add(s.id));
+                selectAllBtn.textContent = 'Deselect All';
+            }
+            renderSections(allSections);
+            updateSelectionBar();
+        };
+    }
+
     cancelSelectionBtn.onclick = () => {
         selectedIds.clear();
         document.getElementById('sections-grid')?.classList.remove('select-mode');
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        if (selectAllBtn) selectAllBtn.textContent = 'Select All';
         renderSections(allSections);
         updateSelectionBar();
     };
@@ -600,6 +631,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 const sanitizedName = section.name.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
                 const email = `${sanitizedName}@stamaria.sti.edu`;
                 const password = `SCHEDSYNC${sanitizedName}`;
+
+                // Check duplicate email in Firestore users
+                const emailCheck = await getDocs(query(collection(db, "users"), where("email", "==", email)));
+                if (!emailCheck.empty && emailCheck.docs[0].id !== section.authUid) {
+                    showToast(`Email ${email} already in use by another account. Skipping.`, "error");
+                    failed++;
+                    tickImportProgress();
+                    continue;
+                }
 
                 let tempApp = null;
                 try {
@@ -763,15 +803,31 @@ document.addEventListener("DOMContentLoaded", () => {
                 // For editing, we just update program and grade. 
                 // Name will be re-generated based on these.
                 const name = `${strand}${gradeCode}01`; // Defaulting to 01 for edit single
+                // Check duplicate name (exclude self)
+                const dupCheck = await getDocs(query(collection(db, "sections"), where("name", "==", name)));
+                if (!dupCheck.empty && dupCheck.docs[0].id !== id) {
+                    showToast(`Section "${name}" already exists.`, "error");
+                    return;
+                }
                 const sectionData = { name, strand, gradeLevel, updatedAt: new Date().toISOString() };
                 await updateDoc(doc(db, "sections", id), sectionData);
                 showToast("Section updated", "success");
             } else {
-                // For adding multiple sections
+                // For adding multiple sections — check all names first
                 const batch = writeBatch(db);
+                const namesToAdd = [];
                 for (let i = 1; i <= count; i++) {
                     const paddedNum = i.toString().padStart(2, '0');
-                    const name = `${strand}${gradeCode}${paddedNum}`;
+                    namesToAdd.push(`${strand}${gradeCode}${paddedNum}`);
+                }
+                // Batch duplicate check
+                const existingSnap = await getDocs(query(collection(db, "sections"), where("name", "in", namesToAdd)));
+                if (!existingSnap.empty) {
+                    const dupes = existingSnap.docs.map(d => d.data().name).join(", ");
+                    showToast(`Duplicate section(s) already exist: ${dupes}`, "error");
+                    return;
+                }
+                for (const name of namesToAdd) {
                     const sectionData = { 
                         name, 
                         strand, 
