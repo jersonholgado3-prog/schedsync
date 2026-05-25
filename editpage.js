@@ -4357,7 +4357,7 @@ if (document.readyState === 'loading') {
 }
 
 // ── AI SCHEDULE MODAL ─────────────────────────────────────────────────────────
-const GROQ_API_KEY = APP_CONFIG.GROQ_API_KEY;
+const GROQ_PROXY_URL = '/api/groq';
 
 // ── AI PANEL CHAT ────────────────────────────────────────────────────────────
 async function askGroqChat(question, schedId) {
@@ -4374,9 +4374,9 @@ async function askGroqChat(question, schedId) {
 Current schedule data (Section | Day | Time | Subject | Teacher | Room):
 ${contextLines.join('\n') || 'No schedule data loaded.'}`;
 
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  const res = await fetch(GROQ_PROXY_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'llama-3.3-70b-versatile',
       messages: [

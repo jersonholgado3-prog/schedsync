@@ -1,48 +1,22 @@
-const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { onRequest } = require("firebase-functions/v2/https");
 const { initializeApp } = require("firebase-admin/app");
-const { getFirestore } = require("firebase-admin/firestore");
-const https = require("https");
 
 initializeApp();
 
-const ONESIGNAL_APP_ID = "ef82a79a-5e7a-4a5f-83a6-e2b90b8302c9";
-const ONESIGNAL_API_KEY = "os_v2_app_56bkpgs6pjff7a5g4k4qxayczfelnogxafiuaye5gz47agi4llpb6xjskn2rcvrg7rwkve3fv3byvtgvcq2dhczfvzey3kujaixlfhy";
+// TODO: sendPushOnNotification — finding replacement for OneSignal
+// exports.sendPushOnNotification = ...
 
-exports.sendPushOnNotification = onDocumentCreated("notifications/{notifId}", async (event) => {
-  const data = event.data.data();
-  const title = data.title || "SchedSync";
-  const body = data.message || "";
-
-  const db = getFirestore();
-  const playersSnap = await db.collection("oneSignalPlayers").get();
-  if (playersSnap.empty) return;
-
-  const playerIds = playersSnap.docs.map(d => d.data().playerId).filter(Boolean);
-  if (!playerIds.length) return;
-
-  const payload = JSON.stringify({
-    app_id: ONESIGNAL_APP_ID,
-    include_player_ids: playerIds,
-    headings: { en: title },
-    contents: { en: body },
-    chrome_web_icon: "/images/LOGO.png"
-  });
-
-  return new Promise((resolve, reject) => {
-    const req = https.request({
-      hostname: "onesignal.com",
-      path: "/api/v1/notifications",
+exports.groqProxy = onRequest({ cors: true }, async (req, res) => {
+  if (req.method !== "POST") return res.status(405).send("Method Not Allowed");
+  try {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Basic ${ONESIGNAL_API_KEY}`
-      }
-    }, (res) => {
-      res.on("data", () => {});
-      res.on("end", resolve);
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.GROQ_API_KEY}` },
+      body: JSON.stringify(req.body)
     });
-    req.on("error", reject);
-    req.write(payload);
-    req.end();
-  });
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });

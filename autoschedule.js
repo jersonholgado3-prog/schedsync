@@ -418,7 +418,7 @@ async function generate() {
 }
 
 
-const GROQ_API_KEY = APP_CONFIG.GROQ_API_KEY;
+const GROQ_PROXY_URL = '/api/groq';
 
 // ── AI PROMPT HANDLER ─────────────────────────────────────────────────────────
 function setupAiPrompt() {
@@ -500,11 +500,9 @@ EXAMPLE OUTPUT for "Monday 11:30am-1pm subject1, break 1pm-2pm, 2pm-4pm subject2
 Now generate for this request:
 ${prompt}`;
 
-      const res = await fetch(
-        `https://api.groq.com/openai/v1/chat/completions`,
-        {
+      const res = await fetch(GROQ_PROXY_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: 'llama-3.3-70b-versatile',
             messages: [{ role: 'user', content: systemPrompt }],
