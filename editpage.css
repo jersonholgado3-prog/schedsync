@@ -1182,12 +1182,26 @@ table td.sched-toolbar-cell {
     border-right: 1px solid #bfdbfe !important;
     border-bottom: 1px solid #bfdbfe !important;
     color: #64748b !important;
+    padding: 0.25rem !important;
+    overflow: hidden;
+}
+table td.sched-toolbar-cell .day-actions {
+    gap: 0.2rem !important;
+    flex-wrap: nowrap;
+}
+table td.sched-toolbar-cell .day-action {
+    padding: 4px 5px !important;
+    flex-shrink: 0;
 }
 .sched-actions-badge {
     background: rgba(59,130,246,0.08);
     border: 1px solid #bfdbfe;
 }
 .sched-viewonly { color: #64748b; }
+.day-btn-label { display: none; }
+@media (min-width: 1400px) {
+    .day-btn-label { display: inline; }
+}
 
 .dark table .sched-section-header,
 .dark table td.sched-section-header {
@@ -1202,6 +1216,8 @@ table td.sched-toolbar-cell {
     border-right: 1px solid #1e3a5f !important;
     border-bottom: 1px solid #1e3a5f !important;
     color: #475569 !important;
+    padding: 0.25rem !important;
+    overflow: hidden;
 }
 .dark .sched-actions-badge {
     background: rgba(255,255,255,0.06);

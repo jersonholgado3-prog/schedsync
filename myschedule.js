@@ -803,6 +803,49 @@ function editSchedule(id) {
   window.location.href = `editpage.html?id=${id}`;
 }
 
+function exportRAF(classes, sectionName, filename) {
+  const DAY_ABBR = { monday:'M', tuesday:'T', wednesday:'W', thursday:'Th', friday:'F', saturday:'S', sunday:'Su' };
+  const wb = XLSX.utils.book_new();
+  const wsData = [
+    ['STI COLLEGE STA. MARIA'],
+    ['ACADEMICS'],
+    [],
+    ['COURSE DESCRIPTION','UNITS','CLASS NO./SECTION','DAYS','TIME','ROOM','INSTRUCTOR']
+  ];
+  const DAY_ORDER = ['M','T','W','Th','F','S','Su'];
+  const grouped = new Map();
+  classes.forEach(c => {
+    const [s, e] = (c.timeBlock || '').split('-');
+    const time = s && e ? `${to12(s.trim())} - ${to12(e.trim())}` : (c.timeBlock || '');
+    const dayAbbr = DAY_ABBR[(c.day||'').toLowerCase()] || c.day || '';
+    const key = `${c.subject}|${sectionName}|${c.room||''}|${c.teacher||''}|${time}`;
+    if (!grouped.has(key)) grouped.set(key, { subject:c.subject, section:sectionName, room:c.room||'', instructor:c.teacher||'', days:[], times:[] });
+    const g = grouped.get(key);
+    if (!g.days.includes(dayAbbr)) g.days.push(dayAbbr);
+    if (!g.times.includes(time)) g.times.push(time);
+  });
+  grouped.forEach(g => {
+    g.days.sort((a,b) => DAY_ORDER.indexOf(a) - DAY_ORDER.indexOf(b));
+    wsData.push([g.subject, '', g.section, g.days.join('/'), g.times.join('\n'), g.room, g.instructor]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!merges'] = [{ s:{r:0,c:0}, e:{r:0,c:6} }, { s:{r:1,c:0}, e:{r:1,c:6} }];
+  ws['!cols'] = [{wch:30},{wch:7},{wch:18},{wch:7},{wch:20},{wch:8},{wch:18}];
+  const med = { style:'medium' };
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let R = range.s.r; R <= range.e.r; R++) {
+    for (let C = 0; C <= 6; C++) {
+      const ref = XLSX.utils.encode_cell({r:R,c:C});
+      if (!ws[ref]) ws[ref] = {t:'s',v:''};
+      ws[ref].s = { alignment:{vertical:'center',horizontal:C===0?'left':'center',wrapText:true}, font:{name:'Calibri',sz:9} };
+      if (R === 3) ws[ref].s.border = {top:med,bottom:med,left:med,right:med};
+    }
+  }
+  ws['!rows'] = wsData.map((_,i) => i >= 4 ? {hpt:30} : {hpt:15});
+  XLSX.utils.book_append_sheet(wb, ws, 'Schedule');
+  XLSX.writeFile(wb, filename);
+}
+
 function downloadSchedule(id, format = null, isBatch = false) {
   if (!format) {
     showDownloadFormatSelector((f) => downloadSchedule(id, f, false));
@@ -848,186 +891,12 @@ function downloadSchedule(id, format = null, isBatch = false) {
 
   if (format === 'excel') {
     try {
-      const wb = XLSX.utils.book_new();
-      const wsData = [];
-
-      // Document Headers
-      wsData.push(["STI COLLEGE SANTA MARIA"]);
-      wsData.push(["OFFICIAL CLASS RECORD"]);
-      wsData.push([`SECTION: ${sched.section || "N/A"}`]);
-      wsData.push(["ACADEMIC YEAR 2025-2026"]);
-      wsData.push([]); // Spacer
-
-      const daySet = new Set();
-      (sched.selectedDays || []).forEach(d => { if (d) daySet.add(d); });
-      (sched.classes || []).forEach(c => { if (c && c.day) daySet.add(c.day); });
-      let localDays = Array.from(daySet);
-      if (localDays.length === 0) localDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-      const ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-      localDays.sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b));
-
-      // Grid Column Headers
-      const headerRow = ["TIME BLOCK", ...localDays];
-      wsData.push(headerRow);
-
-      // Build Schedule Matrix
-      const timePoints = new Set();
-      const START_MIN_EXPORT = 450;
-      const END_MIN_EXPORT = 1080;
-      const INTERVAL_EXPORT = 90;
-      for (let m = START_MIN_EXPORT; m <= END_MIN_EXPORT; m += INTERVAL_EXPORT) timePoints.add(m);
-      (sched.classes || []).forEach(c => {
-        const block = parseBlock(c.timeBlock);
-        if (block) {
-          timePoints.add(block.start);
-          timePoints.add(block.end);
-        }
-      });
-      const sortedPoints = Array.from(timePoints).sort((a, b) => a - b);
-      const matrixIntervals = [];
-      for (let i = 0; i < sortedPoints.length - 1; i++) {
-        const start = sortedPoints[i];
-        const end = sortedPoints[i + 1];
-        if (start >= END_MIN_EXPORT) break;
-        matrixIntervals.push({
-          start: start,
-          end: end,
-          label: `${to12(toTime(start))} - ${to12(toTime(end))}`
-        });
-      }
-
-      matrixIntervals.forEach(interval => {
-        const row = [interval.label];
-        localDays.forEach(day => {
-          // Find class matching day and time interval
-          const classItem = (sched.classes || []).find(c => {
-            const classDays = Array.isArray(c.day) ? c.day : [c.day];
-            const dayMatch = classDays.some(d => normalizeDay(d) === normalizeDay(day));
-            if (!dayMatch) return false;
-
-            const block = parseBlock(c.timeBlock);
-            if (!block) return false;
-
-            // Overlap check: block spans this interval if:
-            // class start < interval end AND class end > interval start
-            return block.start < interval.end && block.end > interval.start;
-          });
-
-          if (classItem && classItem.subject !== "VACANT" && classItem.subject !== "MARKED_VACANT") {
-            const cleanRoom = (classItem.room || "").replace(/\s*\|?\s*\d{1,3}%\s*(?:OCCUPIED)?$/i, "").trim();
-            row.push(`${classItem.subject}\n${classItem.teacher}\nRoom ${cleanRoom}`);
-          } else {
-            row.push("");
-          }
-        });
-        wsData.push(row);
-      });
-
-      // 4. Footer
-      wsData.push([]);
-      wsData.push(["GENERATED VIA SCHEDSYNC ENGINE"]);
-
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-      // Define Merges
-      ws['!merges'] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: localDays.length } },
-        { s: { r: 1, c: 0 }, e: { r: 1, c: localDays.length } },
-        { s: { r: 2, c: 0 }, e: { r: 2, c: localDays.length } },
-        { s: { r: 3, c: 0 }, e: { r: 3, c: localDays.length } },
-        { s: { r: wsData.length - 1, c: 0 }, e: { r: wsData.length - 1, c: localDays.length } }
-      ];
-
-      // Apply Styling
-      const range = XLSX.utils.decode_range(ws['!ref']);
-      const STI_BLUE = "005BAB";
-      const STI_YELLOW = "FFD200";
-      const BORDER_COLOR = "000000";
-
-      for (let R = range.s.r; R <= range.e.r; ++R) {
-        for (let C = range.s.c; C <= range.e.c; ++C) {
-          const cell_ref = XLSX.utils.encode_cell({ r: R, c: C });
-          if (!ws[cell_ref]) ws[cell_ref] = { t: 's', v: '' };
-
-          ws[cell_ref].s = {
-            alignment: { vertical: "center", horizontal: "center", wrapText: true },
-            font: { name: "Inter", sz: 10, color: { rgb: "000000" } }
-          };
-
-          if (R === 0) ws[cell_ref].s.font = { name: "Inter", sz: 14, bold: true, color: { rgb: STI_BLUE } };
-          if (R === 1) ws[cell_ref].s.font = { name: "Inter", sz: 24, bold: true, color: { rgb: "000000" } };
-          if (R === 2) {
-            ws[cell_ref].s.fill = { fgColor: { rgb: STI_YELLOW } };
-            ws[cell_ref].s.font = { name: "Inter", sz: 12, bold: true };
-          }
-          if (R === 3) ws[cell_ref].s.font = { name: "Inter", sz: 10, bold: true, color: { rgb: "64748b" } };
-
-          if (R === 5) {
-            ws[cell_ref].s.fill = { fgColor: { rgb: STI_BLUE } };
-            ws[cell_ref].s.font = { name: "Inter", sz: 11, bold: true, color: { rgb: "FFFFFF" } };
-            ws[cell_ref].s.border = {
-              top: { style: "medium", color: { rgb: BORDER_COLOR } },
-              bottom: { style: "thick", color: { rgb: BORDER_COLOR } },
-              left: { style: "medium", color: { rgb: BORDER_COLOR } },
-              right: { style: "medium", color: { rgb: BORDER_COLOR } }
-            };
-          }
-
-          if (R > 5 && C === 0 && R < wsData.length - 2) {
-            ws[cell_ref].s.font.bold = true;
-            ws[cell_ref].s.fill = { fgColor: { rgb: "F1F5F9" } };
-            ws[cell_ref].s.border = {
-              left: { style: "medium", color: { rgb: BORDER_COLOR } },
-              right: { style: "medium", color: { rgb: BORDER_COLOR } },
-              bottom: { style: "thin", color: { rgb: "cbd5e1" } }
-            };
-          }
-
-          if (R > 5 && C > 0 && R < wsData.length - 2) {
-            const interval = matrixIntervals[R - 6];
-            const day = localDays[C - 1];
-            const classItem = (sched.classes || []).find(c => {
-              const classDays = Array.isArray(c.day) ? c.day : [c.day];
-              const dayMatch = classDays.some(d => normalizeDay(d) === normalizeDay(day));
-              if (!dayMatch) return false;
-              const block = parseBlock(c.timeBlock);
-              return block && block.start < interval.end && block.end > interval.start;
-            });
-
-            ws[cell_ref].s.border = {
-              bottom: { style: "thin", color: { rgb: "cbd5e1" } },
-              right: { style: "thin", color: { rgb: "cbd5e1" } }
-            };
-
-            if (classItem && classItem.subject !== "VACANT" && classItem.subject !== "MARKED_VACANT") {
-              const hexColor = (classItem.color || "#BFDBFE").replace("#", "");
-              ws[cell_ref].s.fill = { fgColor: { rgb: hexColor } };
-              ws[cell_ref].s.font.bold = true;
-              ws[cell_ref].s.font.sz = 11;
-              if (C === range.e.c) {
-                ws[cell_ref].s.border.right = { style: "medium", color: { rgb: BORDER_COLOR } };
-              }
-            }
-          }
-
-          if (R === wsData.length - 1) ws[cell_ref].s.font = { name: "Inter", sz: 9, italic: true, color: { rgb: "94a3b8" } };
-        }
-      }
-
-      ws['!cols'] = [{ wch: 25 }, ...localDays.map(() => ({ wch: 40 }))];
-      ws['!rows'] = wsData.map((r, i) => {
-        if (i < 4) return { hpt: 40 };
-        if (i === 1) return { hpt: 60 };
-        if (i > 5 && i < wsData.length - 2) return { hpt: 85 };
-        return { hpt: 30 };
-      });
-
-      XLSX.utils.book_append_sheet(wb, ws, "Schedule");
-      XLSX.writeFile(wb, `${sched.section || 'Schedule'}_Export.xlsx`);
-      showToast("Records saved", "success");
+      const classes = (sched.classes || []).filter(c => c.subject && c.subject !== 'VACANT' && c.subject !== 'MARKED_VACANT');
+      exportRAF(classes, sched.section || '', `${(sched.section || 'Schedule').replace(/\s+/g,'_')}_Export.xlsx`);
+      showToast('Records saved', 'success');
     } catch (err) {
-      console.error("Export Error:", err);
-      showToast("Download failed", "error");
+      console.error('Export Error:', err);
+      showToast('Download failed', 'error');
     }
   } else {
     // FALLBACK TO CSV

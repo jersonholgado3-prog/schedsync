@@ -512,12 +512,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     deleteBtn.title = "Delete Section";
                     deleteBtn.onclick = async (e) => {
                         e.stopPropagation();
-                        const { showArchiveModal } = await import('./archive-modal.js');
-                        const reason = await showArchiveModal(1, `section "${section.name}"`);
-                        if (reason === null) return;
-                        const { archiveItem } = await import('./archive-item.js');
-                        const success = await archiveItem('sections', section.id, section, reason, section.academicYear || '');
-                        if (success) { await deleteDoc(doc(db, 'sections', section.id)); loadSections(); }
+                        const confirmed = await showConfirm("DELETE SECTION", `Permanently delete section "${section.name}"? This cannot be undone.`);
+                        if (!confirmed) return;
+                        await deleteDoc(doc(db, 'sections', section.id));
+                        loadSections();
                     };
                     card.appendChild(deleteBtn);
                 }
@@ -742,19 +740,17 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const selectedSections = allSections.filter(s => selectedIds.has(s.id));
-        const confirmed = await showConfirm("ARCHIVE SELECTED", `Move ${selectedSections.length} sections to Archives?`);
+        const confirmed = await showConfirm("DELETE SELECTED", `Permanently delete ${selectedSections.length} sections? This cannot be undone.`);
         
         if (confirmed) {
             try {
-                showToast("Archiving sections... ⏳", "info");
-                const { archiveItem } = await import('./archive-item.js');
+                showToast("Deleting sections... ⏳", "info");
                 
                 for (const section of selectedSections) {
-                    await archiveItem('sections', section.id, section, '', section.academicYear || '');
                     await deleteDoc(doc(db, "sections", section.id));
                 }
 
-                showToast(`✅ Archived ${selectedSections.length} sections.`, "success");
+                showToast(`✅ Deleted ${selectedSections.length} sections.`, "success");
                 selectedIds.clear();
                 updateSelectionBar();
             } catch (error) {
@@ -851,25 +847,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
     deleteSectionBtn.onclick = async () => {
         const id = document.getElementById("sectionId").value;
-        const confirmed = await showConfirm("ARCHIVE SECTION", "Move this section to Archives? You can restore it later.");
+        const confirmed = await showConfirm("DELETE SECTION", "Permanently delete this section? This cannot be undone.");
         if (confirmed) {
             try {
-                // Get section data first to get the email and password
                 const sectionSnap = await getDoc(doc(db, "sections", id));
                 if (sectionSnap.exists()) {
                     const sectionData = sectionSnap.data();
                     const email = sectionData.sectionEmail;
                     const password = sectionData.defaultPassword;
 
-                    // 1. Delete Auth Account first (requires credentials)
                     if (email && password) {
                         showToast(`Deleting Auth account for ${email}...`, "info");
                         await deleteAuthAccount(email, password);
                     }
 
-                    // 2. Archive the section
-                    const { archiveItem } = await import('./archive-item.js');
-                    await archiveItem('sections', id, sectionData, '', sectionData.academicYear || '');
                     await deleteDoc(doc(db, "sections", id));
                     if (email) {
                         const userQuery = query(collection(db, "users"), where("email", "==", email));
@@ -882,7 +873,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }
                 
-                showToast("Section archived successfully", "success");
+                showToast("Section deleted successfully", "success");
                 sectionModal.classList.add("hidden");
                 sectionModal.classList.remove("flex");
             } catch (error) {

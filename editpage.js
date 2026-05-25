@@ -1946,15 +1946,15 @@ function renderTable() {
       const isPasteReady = copiedDayClasses && copiedDayClasses.length > 0;
       toolbarHtml += `
         <td class="sched-toolbar-cell" style="text-align: center; vertical-align: middle; padding: 0.4rem;">
-          <div class="day-actions" style="display: flex; justify-content: center; gap: 0.35rem;">
+          <div class="day-actions" style="display: flex; justify-content: center; gap: 0.2rem;">
             ${(() => {
               const role = (currentUserRole || localStorage.getItem('userRole') || '').toLowerCase();
               const hasPermission = hasEditPermission;
               const isEditor = role === 'admin' || role === 'program head' || hasPermission;
               return isEditor ? `
-              <button class="day-action" onclick="window.copyDayInSection('${s.id}', '${d}')" title="Copy ${d}" style="cursor:pointer;background:${_dark ? 'linear-gradient(135deg,#60a5fa,#93c5fd)' : 'linear-gradient(135deg,#93c5fd,#bfdbfe)'};border:none;border-radius:6px;padding:4px 8px;display:flex;align-items:center;gap:4px;box-shadow:0 2px 6px rgba(147,197,253,0.4);transition:all 0.15s;color:${_dark ? '#fff' : '#1e40af'};font-size:0.65rem;font-weight:700;letter-spacing:0.5px;" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'"><img src="images/COPY.png" style="width:12px;height:12px;object-fit:contain;filter:${_dark ? 'brightness(0) invert(1)' : 'brightness(0) saturate(100%) invert(18%) sepia(90%) saturate(1500%) hue-rotate(210deg)'};display:block;"> COPY</button>
-              <button class="day-action paste ${isPasteReady ? 'ready' : ''}" onclick="window.pasteDayToSection('${s.id}', '${d}')" title="Paste to ${d}" style="cursor:pointer;background:${isPasteReady ? (_dark ? 'linear-gradient(135deg,#67e8f9,#a5f3fc)' : 'linear-gradient(135deg,#a5f3fc,#cffafe)') : (_dark ? 'linear-gradient(135deg,#94a3b8,#cbd5e1)' : 'linear-gradient(135deg,#e2e8f0,#f1f5f9)')};border:none;border-radius:6px;padding:4px 8px;display:flex;align-items:center;gap:4px;box-shadow:0 2px 6px rgba(0,0,0,0.1);transition:all 0.15s;color:${isPasteReady ? '#0e7490' : (_dark ? '#fff' : '#64748b')};font-size:0.65rem;font-weight:700;letter-spacing:0.5px;" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'"><img src="images/PASTE.png" style="width:12px;height:12px;object-fit:contain;filter:brightness(0) ${isPasteReady ? 'saturate(100%) invert(25%) sepia(80%) saturate(1000%) hue-rotate(170deg)' : (_dark ? 'invert(1)' : 'invert(0.4)')};display:block;"> PASTE</button>
-              <button class="day-action delete-target" onclick="window.clearDayInSection('${s.id}', '${d}')" title="Clear ${d}" style="cursor:pointer;background:${_dark ? 'linear-gradient(135deg,#fca5a5,#fecaca)' : 'linear-gradient(135deg,#fecaca,#fee2e2)'};border:none;border-radius:6px;padding:4px 8px;display:flex;align-items:center;gap:4px;box-shadow:0 2px 6px rgba(252,165,165,0.4);transition:all 0.15s;color:${_dark ? '#fff' : '#b91c1c'};font-size:0.65rem;font-weight:700;letter-spacing:0.5px;" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'"><img src="images/TRASH.png" style="width:12px;height:12px;object-fit:contain;filter:brightness(0) ${_dark ? 'invert(1)' : 'saturate(100%) invert(20%) sepia(80%) saturate(2000%) hue-rotate(340deg)'};display:block;"> CLEAR</button>
+              <button class="day-action" onclick="window.copyDayInSection('${s.id}', '${d}')" title="Copy ${d}" style="cursor:pointer;background:${_dark ? 'linear-gradient(135deg,#60a5fa,#93c5fd)' : 'linear-gradient(135deg,#93c5fd,#bfdbfe)'};border:none;border-radius:6px;padding:4px 5px;display:flex;align-items:center;box-shadow:0 2px 6px rgba(147,197,253,0.4);transition:all 0.15s;" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'"><img src="images/COPY.png" style="width:12px;height:12px;object-fit:contain;filter:${_dark ? 'brightness(0) invert(1)' : 'brightness(0) saturate(100%) invert(18%) sepia(90%) saturate(1500%) hue-rotate(210deg)'};display:block;"></button>
+              <button class="day-action paste ${isPasteReady ? 'ready' : ''}" onclick="window.pasteDayToSection('${s.id}', '${d}')" title="Paste to ${d}" style="cursor:pointer;background:${isPasteReady ? (_dark ? 'linear-gradient(135deg,#67e8f9,#a5f3fc)' : 'linear-gradient(135deg,#a5f3fc,#cffafe)') : (_dark ? 'linear-gradient(135deg,#94a3b8,#cbd5e1)' : 'linear-gradient(135deg,#e2e8f0,#f1f5f9)')};border:none;border-radius:6px;padding:4px 5px;display:flex;align-items:center;box-shadow:0 2px 6px rgba(0,0,0,0.1);transition:all 0.15s;" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'"><img src="images/PASTE.png" style="width:12px;height:12px;object-fit:contain;filter:brightness(0) ${isPasteReady ? 'saturate(100%) invert(25%) sepia(80%) saturate(1000%) hue-rotate(170deg)' : (_dark ? 'invert(1)' : 'invert(0.4)')};display:block;"></button>
+              <button class="day-action delete-target" onclick="window.clearDayInSection('${s.id}', '${d}')" title="Clear ${d}" style="cursor:pointer;background:${_dark ? 'linear-gradient(135deg,#fca5a5,#fecaca)' : 'linear-gradient(135deg,#fecaca,#fee2e2)'};border:none;border-radius:6px;padding:4px 5px;display:flex;align-items:center;box-shadow:0 2px 6px rgba(252,165,165,0.4);transition:all 0.15s;" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'"><img src="images/TRASH.png" style="width:12px;height:12px;object-fit:contain;filter:brightness(0) ${_dark ? 'invert(1)' : 'saturate(100%) invert(20%) sepia(80%) saturate(2000%) hue-rotate(340deg)'};display:block;"></button>
               ` : '<span style="font-size: 0.62rem; font-weight: 700; letter-spacing: 1px;" class="sched-viewonly">VIEW ONLY</span>';
             })()}
           </div>
@@ -3343,6 +3343,49 @@ async function save() {
   }
 }
 
+function exportRAF(classes, sectionName, filename) {
+  const DAY_ABBR = { monday:'M', tuesday:'T', wednesday:'W', thursday:'Th', friday:'F', saturday:'S', sunday:'Su' };
+  const wb = XLSX.utils.book_new();
+  const wsData = [
+    ['STI COLLEGE STA. MARIA'],
+    ['ACADEMICS'],
+    [],
+    ['COURSE DESCRIPTION','UNITS','CLASS NO./SECTION','DAYS','TIME','ROOM','INSTRUCTOR']
+  ];
+  const DAY_ORDER = ['M','T','W','Th','F','S','Su'];
+  const grouped = new Map();
+  classes.forEach(c => {
+    const [s, e] = (c.timeBlock || '').split('-');
+    const time = s && e ? `${to12(s.trim())} - ${to12(e.trim())}` : (c.timeBlock || '');
+    const dayAbbr = DAY_ABBR[(c.day||'').toLowerCase()] || c.day || '';
+    const key = `${c.subject}|${sectionName}|${c.room||''}|${c.teacher||''}|${time}`;
+    if (!grouped.has(key)) grouped.set(key, { subject:c.subject, section:sectionName, room:c.room||'', instructor:c.teacher||'', days:[], times:[] });
+    const g = grouped.get(key);
+    if (!g.days.includes(dayAbbr)) g.days.push(dayAbbr);
+    if (!g.times.includes(time)) g.times.push(time);
+  });
+  grouped.forEach(g => {
+    g.days.sort((a,b) => DAY_ORDER.indexOf(a) - DAY_ORDER.indexOf(b));
+    wsData.push([g.subject, '', g.section, g.days.join('/'), g.times.join('\n'), g.room, g.instructor]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!merges'] = [{ s:{r:0,c:0}, e:{r:0,c:6} }, { s:{r:1,c:0}, e:{r:1,c:6} }];
+  ws['!cols'] = [{wch:30},{wch:7},{wch:18},{wch:7},{wch:20},{wch:8},{wch:18}];
+  const med = { style:'medium' };
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let R = range.s.r; R <= range.e.r; R++) {
+    for (let C = 0; C <= 6; C++) {
+      const ref = XLSX.utils.encode_cell({r:R,c:C});
+      if (!ws[ref]) ws[ref] = {t:'s',v:''};
+      ws[ref].s = { alignment:{vertical:'center',horizontal:C===0?'left':'center',wrapText:true}, font:{name:'Calibri',sz:9} };
+      if (R === 3) ws[ref].s.border = {top:med,bottom:med,left:med,right:med};
+    }
+  }
+  ws['!rows'] = wsData.map((_,i) => i >= 4 ? {hpt:30} : {hpt:15});
+  XLSX.utils.book_append_sheet(wb, ws, 'Schedule');
+  XLSX.writeFile(wb, filename);
+}
+
 function downloadSchedule(id, format = null, isBatch = false) {
   if (!format) {
     showDownloadFormatSelector((f) => downloadSchedule(id, f, false));
@@ -3570,37 +3613,8 @@ function downloadSchedule(id, format = null, isBatch = false) {
         link.href = canvas.toDataURL("image/png");
         link.click();
       } else if (format === 'excel') {
-        const wb = XLSX.utils.book_new();
-        const wsData = [
-          ["STI COLLEGE SANTA MARIA"],
-          ["OFFICIAL CLASS SCHEDULE"],
-          [`SECTION: ${sched.section || "N/A"}`],
-          ["ACADEMIC YEAR 2025-2026"],
-          [],
-          ["TIME BLOCK", ...localDays]
-        ];
-
-        matrixIntervals.forEach(interval => {
-          const row = [interval.label];
-          localDays.forEach(day => {
-            const classItem = (sched.classes || []).find(c => {
-              const dayMatch = normalizeDay(c.day) === normalizeDay(day);
-              if (!dayMatch) return false;
-              const block = parseBlock(c.timeBlock);
-              return block && block.start < interval.end && block.end > interval.start;
-            });
-            if (classItem && classItem.subject !== "VACANT" && classItem.subject !== "MARKED_VACANT") {
-              row.push(`${classItem.subject}\n${classItem.teacher}\nRoom ${classItem.room}`);
-            } else {
-              row.push("");
-            }
-          });
-          wsData.push(row);
-        });
-
-        const ws = XLSX.utils.aoa_to_sheet(wsData);
-        XLSX.utils.book_append_sheet(wb, ws, "Schedule");
-        XLSX.writeFile(wb, `${sched.section || 'Schedule'}_Export.xlsx`);
+        const classes = (sched.classes || []).filter(c => c.subject && c.subject !== 'VACANT' && c.subject !== 'MARKED_VACANT');
+        exportRAF(classes, sched.section || '', `${(sched.section || 'Schedule').replace(/\s+/g,'_')}_Export.xlsx`);
       }
 
       overlay.remove();
@@ -4713,8 +4727,9 @@ window.openAiSchedModal = async (schedId, sectionName) => {
         <div style="font-weight:800;font-size:.85rem;color:#1e293b;margin-bottom:4px;cursor:grab;">${name}</div>
         <div style="font-size:.72rem;color:#374151;cursor:grab;">${teacher ? `👤 ${teacher} &nbsp;` : ''}🏫 ${room || '—'} &nbsp;⏱ ${duration}h</div>
       `;
+      const payload = JSON.stringify({ subject: name, teacher, room, color, duration });
+
       card.addEventListener('dragstart', e => {
-        const payload = JSON.stringify({ subject: name, teacher, room, color, duration });
         e.dataTransfer.effectAllowed = 'copy';
         e.dataTransfer.setData('application/tray-card', payload);
         e.dataTransfer.setData('text/plain', payload);
@@ -4730,6 +4745,58 @@ window.openAiSchedModal = async (schedId, sectionName) => {
       card.addEventListener('dragend', () => {
         card.style.opacity = '1';
         document.body.classList.remove('is-dragging');
+      });
+
+      // Touch/pointer drag support for mobile/tablet
+      card.addEventListener('pointerdown', e => {
+        if (e.pointerType === 'mouse') return; // mouse uses native dragstart
+        e.preventDefault();
+        card.setPointerCapture(e.pointerId);
+        const ghost = card.cloneNode(true);
+        ghost.style.cssText = `position:fixed;width:${card.offsetWidth}px;pointer-events:none;opacity:0.85;z-index:99999;border-radius:10px;padding:10px 12px;background:${color};border:1.5px solid #00000022;font-size:.85rem;`;
+        document.body.appendChild(ghost);
+        let lastTarget = null;
+
+        const move = ev => {
+          ghost.style.left = (ev.clientX - ghost.offsetWidth / 2) + 'px';
+          ghost.style.top  = (ev.clientY - 20) + 'px';
+          ghost.style.display = 'none';
+          const el = document.elementFromPoint(ev.clientX, ev.clientY);
+          ghost.style.display = '';
+          const td = el?.closest('td[data-day]');
+          if (td !== lastTarget) {
+            lastTarget?.classList.remove('drag-over-target');
+            td?.classList.add('drag-over-target');
+            lastTarget = td;
+          }
+        };
+
+        const up = ev => {
+          ghost.remove();
+          lastTarget?.classList.remove('drag-over-target');
+          card.removeEventListener('pointermove', move);
+          card.removeEventListener('pointerup', up);
+          card.removeEventListener('pointercancel', up);
+          document.body.classList.remove('is-dragging');
+          card.style.opacity = '1';
+
+          ghost.style.display = 'none';
+          const el = document.elementFromPoint(ev.clientX, ev.clientY);
+          const td = el?.closest('td[data-day]');
+          if (!td) return;
+
+          // Reuse existing handleDrop logic via synthetic event
+          const fakeE = { clientX: ev.clientX, clientY: ev.clientY, target: td, stopPropagation: ()=>{}, preventDefault: ()=>{},
+            dataTransfer: { getData: (k) => k === 'application/tray-card' || k === 'text/plain' ? payload : '' }
+          };
+          handleDrop(fakeE);
+        };
+
+        card.addEventListener('pointermove', move);
+        card.addEventListener('pointerup', up);
+        card.addEventListener('pointercancel', up);
+        card.style.opacity = '0.4';
+        document.body.classList.add('is-dragging');
       });
       cards.appendChild(card);
     });

@@ -1,5 +1,6 @@
 import { auth, db } from "./js/config/firebase-config.js";
 import { doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { initUserProfile } from "./userprofile.js";
 import { showToast, showConfirm } from "./js/utils/ui-utils.js";
 import { toMin, toTime, to12, parseBlock } from "./js/utils/time-utils.js";
@@ -22,17 +23,36 @@ async function resolveTeacherDisplay(value) {
     return _teacherMap[value.toLowerCase()] || value;
 }
 
+function waitForAuth() {
+    return new Promise(resolve => {
+        const unsub = onAuthStateChanged(auth, user => { unsub(); resolve(user); });
+    });
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
     initUserProfile("#userProfile");
 
     const urlParams = new URLSearchParams(window.location.search);
     const sectionId = urlParams.get("id");
-    let userRole = 'student';
-    let hasEditPermission = false;
+    let userRole = localStorage.getItem('userRole') || 'student';
+    let hasEditPermission = localStorage.getItem('editPermission') === 'true';
 
     if (!sectionId) {
         document.getElementById("displaySectionName").textContent = "Section Not Found";
         return;
+    }
+
+    // Resolve auth once upfront
+    const currentUser = auth.currentUser || await waitForAuth();
+    if (currentUser) {
+        try {
+            const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                userRole = userData.role || 'student';
+                hasEditPermission = userData.editPermission === true;
+            }
+        } catch (e) { console.warn("Auth user fetch failed", e); }
     }
 
     // Fetch Section Info
@@ -63,15 +83,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             const passwordLabel = document.getElementById("passwordLabel");
 
             if (data.sectionEmail && credentialSection) {
-                const user = auth.currentUser;
-                if (user) {
-                    const userDoc = await getDoc(doc(db, "users", user.uid));
-                    if (userDoc.exists()) {
-                        const userData = userDoc.data();
-                        userRole = userData.role || 'student';
-                        hasEditPermission = userData.editPermission === true;
-
-                        if (userRole === 'admin') {
+                if (currentUser) {
+                    if (userRole === 'admin') {
                             credentialSection.style.display = "block";
                             emailLabel.innerHTML = `<strong>Email:</strong> ${data.sectionEmail}`;
                             passwordLabel.innerHTML = `<strong>Password:</strong> ${data.defaultPassword || "Not Set"}`;
@@ -100,7 +113,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 };
                             }
                         }
-                    }
                 }
             }
 
@@ -200,13 +212,14 @@ async function renderTable(classes) {
         intervals.push({ start: sorted[i], end: sorted[i+1], label: `${to12(toTime(sorted[i]))} - ${to12(toTime(sorted[i+1]))}` });
     }
 
-    intervals.forEach((interval, i) => {
+    for (let i = 0; i < intervals.length; i++) {
+        const interval = intervals[i];
         const tr = document.createElement("tr");
         tr.innerHTML = `<td>${interval.label}</td>`;
-        DAYS.forEach(day => {
+        for (const day of DAYS) {
             const c = classes.find(x => x.day === day && parseBlock(x.timeBlock)?.start === interval.start);
             const occupied = classes.some(x => { const b = parseBlock(x.timeBlock); return b && x.day === day && b.start < interval.start && b.end > interval.start; });
-            if (occupied) return;
+            if (occupied) continue;
             const td = document.createElement("td");
             if (c) {
                 const b = parseBlock(c.timeBlock);
@@ -217,15 +230,16 @@ async function renderTable(classes) {
                 }
                 if (span > 1) td.rowSpan = span;
                 td.classList.add("occupied");
-                td.innerHTML = `<div style="font-weight:bold;font-size:12px;">${c.subject}</div><div style="font-size:11px;margin-top:2px;">${c.section||""}</div><div style="font-size:11px;opacity:0.8;">${await resolveTeacherDisplay(c.teacher||"")}</div>`;
+                const teacherDisplay = await resolveTeacherDisplay(c.teacher || "");
+                td.innerHTML = `<div style="font-weight:bold;font-size:12px;">${c.subject}</div><div style="font-size:11px;margin-top:2px;">${c.section||""}</div><div style="font-size:11px;opacity:0.8;">${teacherDisplay}</div>`;
                 if (c.color) { td.style.setProperty('background-color', c.color, 'important'); td.style.setProperty('color','#000','important'); }
             } else {
                 td.classList.add("vacant-empty");
             }
             tr.appendChild(td);
-        });
+        }
         tbody.appendChild(tr);
-    });
+    }
 }
 
 // Wire download button
@@ -233,6 +247,53 @@ document.addEventListener("DOMContentLoaded", () => {
     const btn = document.getElementById("downloadBtn");
     if (btn) btn.onclick = () => downloadSchedule();
 });
+
+function exportRAF(classes, sectionName, filename) {
+    const DAY_ABBR = { monday:'M', tuesday:'T', wednesday:'W', thursday:'Th', friday:'F', saturday:'S', sunday:'Su' };
+    const wb = XLSX.utils.book_new();
+    const wsData = [
+        ['STI COLLEGE STA. MARIA'],
+        ['ACADEMICS'],
+        [],
+        ['COURSE DESCRIPTION','UNITS','CLASS NO./SECTION','DAYS','TIME','ROOM','INSTRUCTOR']
+    ];
+    const DAY_ORDER = ['M','T','W','Th','F','S','Su'];
+    const grouped = new Map();
+    classes.filter(c => c.subject && c.subject !== 'VACANT' && c.subject !== 'MARKED_VACANT')
+        .forEach(c => {
+            const [s, e] = (c.timeBlock || '').split('-');
+            const time = s && e ? `${to12(s.trim())} - ${to12(e.trim())}` : (c.timeBlock || '');
+            const dayAbbr = DAY_ABBR[(c.day||'').toLowerCase()] || c.day || '';
+            const key = `${c.subject}|${sectionName}|${c.room||''}|${c.teacher||''}|${time}`;
+            if (!grouped.has(key)) grouped.set(key, { subject:c.subject, section:sectionName, room:c.room||'', instructor:c.teacher||'', days:[], times:[] });
+            const g = grouped.get(key);
+            if (!g.days.includes(dayAbbr)) g.days.push(dayAbbr);
+            if (!g.times.includes(time)) g.times.push(time);
+        });
+    grouped.forEach(g => {
+        g.days.sort((a,b) => DAY_ORDER.indexOf(a) - DAY_ORDER.indexOf(b));
+        wsData.push([g.subject, '', g.section, g.days.join('/'), g.times.join('\n'), g.room, g.instructor]);
+    });
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!merges'] = [{ s:{r:0,c:0}, e:{r:0,c:6} }, { s:{r:1,c:0}, e:{r:1,c:6} }];
+    ws['!cols'] = [{wch:30},{wch:7},{wch:18},{wch:7},{wch:20},{wch:8},{wch:18}];
+    const med = { style:'medium' };
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let R = range.s.r; R <= range.e.r; R++) {
+        for (let C = 0; C <= 6; C++) {
+            const ref = XLSX.utils.encode_cell({r:R,c:C});
+            if (!ws[ref]) ws[ref] = {t:'s',v:''};
+            ws[ref].s = { alignment:{vertical:'center',horizontal: C===0?'left':'center',wrapText:true}, font:{name:'Calibri',sz:9} };
+            if (R === 0) { ws[ref].s.font = {name:'Calibri',sz:9,bold:false}; ws[ref].s.alignment = {horizontal:'center',vertical:'center'}; }
+            if (R === 1) { ws[ref].s.alignment = {horizontal:'center',vertical:'center'}; }
+            if (R === 3) { ws[ref].s.font = {name:'Calibri',sz:9}; ws[ref].s.border = {top:med,bottom:med,left:med,right:med}; }
+        }
+    }
+    ws['!rows'] = wsData.map((_,i) => i >= 4 ? {hpt:30} : {hpt:15});
+    XLSX.utils.book_append_sheet(wb, ws, 'Schedule');
+    XLSX.writeFile(wb, filename);
+    showToast('Records saved', 'success');
+}
 
 function downloadSchedule(format = null) {
     if (!format) { showDownloadFormatSelector((f) => downloadSchedule(f)); return; }
@@ -256,21 +317,7 @@ function downloadSchedule(format = null) {
     for(let i=0;i<sorted.length-1;i++) intervals.push({start:sorted[i],end:sorted[i+1],label:`${to12(toTime(sorted[i]))} - ${to12(toTime(sorted[i+1]))}`});
 
     if (format === 'excel') {
-        const wb = XLSX.utils.book_new();
-        const wsData = [["STI COLLEGE SANTA MARIA"],["OFFICIAL SECTION SCHEDULE"],[`SECTION: ${currentSectionName}`],["ACADEMIC YEAR 2025-2026"],[],["TIME BLOCK",...DAYS]];
-        intervals.forEach(interval => {
-            const row = [interval.label];
-            DAYS.forEach(day => {
-                const c = currentSectionClasses.find(x => { const b=parseBlock(x.timeBlock); return normalizeDay(x.day)===normalizeDay(day) && b && b.start<interval.end && b.end>interval.start; });
-                row.push(c ? `${c.subject}\n${c.teacher||""}\n${c.room||""}` : "");
-            });
-            wsData.push(row);
-        });
-        const ws = XLSX.utils.aoa_to_sheet(wsData);
-        ws['!cols'] = [{wch:25},...DAYS.map(()=>({wch:30}))];
-        XLSX.utils.book_append_sheet(wb, ws, "Section Schedule");
-        XLSX.writeFile(wb, `${currentSectionName.replace(/\s+/g,'_')}_Schedule.xlsx`);
-        showToast("Records saved", "success");
+        exportRAF(currentSectionClasses, currentSectionName, `${currentSectionName.replace(/\s+/g,'_')}_Schedule.xlsx`);
         return;
     }
 

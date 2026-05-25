@@ -409,6 +409,54 @@ function renderCardView(classes, container, cardContentFn) {
     });
     container.appendChild(cardWrap);
 }
+function exportRAF(classes, nameLabel, filename, mode = 'section') {
+    const DAY_ABBR = { monday:'M', tuesday:'T', wednesday:'W', thursday:'Th', friday:'F', saturday:'S', sunday:'Su' };
+    const wb = XLSX.utils.book_new();
+    const wsData = [
+        ['STI COLLEGE STA. MARIA'],
+        ['ACADEMICS'],
+        [],
+        ['COURSE DESCRIPTION','UNITS','CLASS NO./SECTION','DAYS','TIME','ROOM','INSTRUCTOR']
+    ];
+    classes.filter(c => c.subject && c.subject !== 'VACANT' && c.subject !== 'MARKED_VACANT')
+    const DAY_ORDER = ['M','T','W','Th','F','S','Su'];
+    const grouped = new Map();
+        classes.filter(c => c.subject && c.subject !== 'VACANT' && c.subject !== 'MARKED_VACANT')
+        .forEach(c => {
+            const [s, e] = (c.timeBlock || '').split('-');
+            const time = s && e ? `${to12(s.trim())} - ${to12(e.trim())}` : (c.timeBlock || '');
+            const dayAbbr = DAY_ABBR[(c.day||'').toLowerCase()] || c.day || '';
+            const section = mode === 'section' ? nameLabel : (c.section || '');
+            const room = mode === 'room' ? nameLabel : (c.room || '');
+            const instructor = mode === 'teacher' ? nameLabel : (c.teacher || '');
+            const key = `${c.subject}|${section}|${room}|${instructor}|${time}`;
+            if (!grouped.has(key)) grouped.set(key, { subject:c.subject, section, room, instructor, days:[], times:[] });
+            const g = grouped.get(key);
+            if (!g.days.includes(dayAbbr)) g.days.push(dayAbbr);
+            if (!g.times.includes(time)) g.times.push(time);
+        });
+    grouped.forEach(g => {
+        g.days.sort((a,b) => DAY_ORDER.indexOf(a) - DAY_ORDER.indexOf(b));
+        wsData.push([g.subject, '', g.section, g.days.join('/'), g.times.join('\n'), g.room, g.instructor]);
+    });
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!merges'] = [{ s:{r:0,c:0}, e:{r:0,c:6} }, { s:{r:1,c:0}, e:{r:1,c:6} }];
+    ws['!cols'] = [{wch:30},{wch:7},{wch:18},{wch:7},{wch:20},{wch:8},{wch:18}];
+    const med = { style:'medium' };
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let R = range.s.r; R <= range.e.r; R++) {
+        for (let C = 0; C <= 6; C++) {
+            const ref = XLSX.utils.encode_cell({r:R,c:C});
+            if (!ws[ref]) ws[ref] = {t:'s',v:''};
+            ws[ref].s = { alignment:{vertical:'center',horizontal:C===0?'left':'center',wrapText:true}, font:{name:'Calibri',sz:9} };
+            if (R === 3) ws[ref].s.border = {top:med,bottom:med,left:med,right:med};
+        }
+    }
+    ws['!rows'] = wsData.map((_,i) => i >= 4 ? {hpt:30} : {hpt:15});
+    XLSX.utils.book_append_sheet(wb, ws, 'Schedule');
+    XLSX.writeFile(wb, filename);
+}
+
 function downloadSchedule(format = null) {
     if (!format) {
         showDownloadFormatSelector((f) => downloadSchedule(f));
@@ -449,66 +497,7 @@ function downloadSchedule(format = null) {
     };
 
     if (format === 'excel') {
-        const wb = XLSX.utils.book_new();
-        const wsData = [];
-        wsData.push(["STI COLLEGE SANTA MARIA"]);
-        wsData.push(["OFFICIAL FACULTY SCHEDULE"]);
-        wsData.push([`FACULTY: ${currentTeacherName}`]);
-        wsData.push(["ACADEMIC YEAR 2025-2026"]);
-        wsData.push([]);
-
-        const localDays = exportSched.selectedDays;
-        wsData.push(["TIME BLOCK", ...localDays]);
-
-        const timePoints = new Set();
-        const START_MIN_EXPORT = 450, END_MIN_EXPORT = 1080, INTERVAL_EXPORT = 90;
-        for (let m = START_MIN_EXPORT; m <= END_MIN_EXPORT; m += INTERVAL_EXPORT) timePoints.add(m);
-        exportSched.classes.forEach(c => {
-            const block = parseBlock(c.timeBlock);
-            if (block) { timePoints.add(block.start); timePoints.add(block.end); }
-        });
-        const sortedPoints = Array.from(timePoints).sort((a, b) => a - b);
-        const matrixIntervals = [];
-        for (let i = 0; i < sortedPoints.length - 1; i++) {
-            const start = sortedPoints[i], end = sortedPoints[i + 1];
-            if (start >= END_MIN_EXPORT) break;
-            matrixIntervals.push({ start, end, label: `${to12(toTime(start))} - ${to12(toTime(end))}` });
-        }
-
-        matrixIntervals.forEach(interval => {
-            const row = [interval.label];
-            localDays.forEach(day => {
-                const classItem = exportSched.classes.find(c => {
-                    if (normalizeDay(c.day) !== normalizeDay(day)) return false;
-                    const b = parseBlock(c.timeBlock);
-                    return b.start < interval.end && b.end > interval.start;
-                });
-                row.push(classItem && classItem.subject !== "VACANT" && classItem.subject !== "MARKED_VACANT"
-                    ? `${classItem.subject}\n${classItem.section}\nRoom ${classItem.room || "TBD"}`
-                    : "");
-            });
-            wsData.push(row);
-        });
-
-        wsData.push([]);
-        wsData.push(["GENERATED VIA SCHEDSYNC ENGINE"]);
-        const ws = XLSX.utils.aoa_to_sheet(wsData);
-        const STI_BLUE = "005BAB", STI_YELLOW = "FFD200";
-        const range = XLSX.utils.decode_range(ws['!ref']);
-        for (let R = range.s.r; R <= range.e.r; ++R) {
-            for (let C = range.s.c; C <= range.e.c; ++C) {
-                const cell_ref = XLSX.utils.encode_cell({ r: R, c: C });
-                if (!ws[cell_ref]) ws[cell_ref] = { t: 's', v: '' };
-                ws[cell_ref].s = { alignment: { vertical: "center", horizontal: "center", wrapText: true }, font: { name: "Inter", sz: 10 } };
-                if (R === 0) ws[cell_ref].s.font = { sz: 14, bold: true, color: { rgb: STI_BLUE } };
-                if (R === 1) ws[cell_ref].s.font = { sz: 20, bold: true };
-                if (R === 2) ws[cell_ref].s.fill = { fgColor: { rgb: STI_YELLOW } };
-                if (R === 5) { ws[cell_ref].s.fill = { fgColor: { rgb: STI_BLUE } }; ws[cell_ref].s.font = { color: { rgb: "FFFFFF" }, bold: true }; }
-            }
-        }
-        ws['!cols'] = [{ wch: 25 }, ...localDays.map(() => ({ wch: 35 }))];
-        XLSX.utils.book_append_sheet(wb, ws, "Faculty Schedule");
-        XLSX.writeFile(wb, `${currentTeacherName.replace(/\s+/g, '_')}_Schedule.xlsx`);
+        exportRAF(exportSched.classes, currentTeacherName, `${currentTeacherName.replace(/\s+/g,'_')}_Schedule.xlsx`, 'teacher');
         showToast("Records saved", "success");
     } else {
         const overlay = document.createElement('div');
