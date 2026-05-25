@@ -4359,8 +4359,6 @@ function initDraggablePanel(panelId) {
   };
 
   const startHandler = (e) => {
-    const isMobileUI = window.innerWidth <= 768 || (window.innerWidth <= 950 && window.innerHeight < window.innerWidth);
-    if (!isMobileUI) return;
     if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.closest('button')) return;
     isDragging = true;
     handle.style.cursor = 'grabbing';
@@ -4387,9 +4385,11 @@ function initDraggablePanel(panelId) {
   handle.addEventListener('mousedown', startHandler);
   window.addEventListener('mousemove', moveHandler, { passive: false });
   window.addEventListener('mouseup', endHandler);
+  document.addEventListener('mouseup', endHandler);
   handle.addEventListener('touchstart', startHandler, { passive: false });
   window.addEventListener('touchmove', moveHandler, { passive: false });
   window.addEventListener('touchend', endHandler);
+  window.addEventListener('pointerup', endHandler);
 }
 
 if (document.readyState === 'loading') {
