@@ -1167,3 +1167,44 @@ td.drag-selecting {
 
 
 
+
+/* ---- SCHEDULE SECTION HEADER & TOOLBAR ---- */
+table .sched-section-header,
+table td.sched-section-header {
+    background: linear-gradient(90deg, #dbeafe 0%, #eff6ff 60%) !important;
+    border: 1px solid #93c5fd !important;
+}
+table .sched-section-header .sched-section-title { color: #1e3a5f !important; }
+table tr.sched-toolbar-row { background: #f0f4ff !important; }
+table td.sched-toolbar-actions,
+table td.sched-toolbar-cell {
+    background: #f0f4ff !important;
+    border-right: 1px solid #bfdbfe !important;
+    border-bottom: 1px solid #bfdbfe !important;
+    color: #64748b !important;
+}
+.sched-actions-badge {
+    background: rgba(59,130,246,0.08);
+    border: 1px solid #bfdbfe;
+}
+.sched-viewonly { color: #64748b; }
+
+.dark table .sched-section-header,
+.dark table td.sched-section-header {
+    background: linear-gradient(90deg, #1e3a5f 0%, #1e293b 60%) !important;
+    border: 1px solid #2d4a6e !important;
+}
+.dark table .sched-section-header .sched-section-title { color: #e2e8f0 !important; }
+.dark table tr.sched-toolbar-row { background: #111827 !important; }
+.dark table td.sched-toolbar-actions,
+.dark table td.sched-toolbar-cell {
+    background: #111827 !important;
+    border-right: 1px solid #1e3a5f !important;
+    border-bottom: 1px solid #1e3a5f !important;
+    color: #475569 !important;
+}
+.dark .sched-actions-badge {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid #1e3a5f;
+}
+.dark .sched-viewonly { color: #475569; }

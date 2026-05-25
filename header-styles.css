@@ -103,7 +103,7 @@ body,
     z-index: 5000 !important;
     background-color: var(--sidebar-bg) !important;
     /* THEMED SIDEBAR ⚓ */
-    border-top-right-radius: 5px !important;
+    border-top-right-radius: 0px !important;
     border-bottom-right-radius: 5px !important;
     box-shadow: 6px 0 15px rgba(0, 0, 0, 0.1) !important;
     transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -790,7 +790,7 @@ a:active {
 /* Main Sidebar definition is now global at the top - removing duplicate 🛡️⚓ */
 
 .sidebar-header {
-    background-color: #FFD200;
+    background-color: #f8f9ff !important;
     height: 150px !important;
     /* FIXED HEIGHT TO MATCH GRADIENT STOP 🏗️ */
     display: flex;
@@ -1288,29 +1288,30 @@ html.dark.professional-mode .logo-container {
 }
 
 /* ===== SIDEBAR COLOR RESTYLE ===== */
-:root { --sidebar-bg: #f8f9ff; --sidebar-text: #374151; --sidebar-icon-filter: invert(25%) sepia(10%) saturate(500%) hue-rotate(200deg) brightness(90%); }
+:root { --sidebar-bg: #002044; --sidebar-text: rgba(255,255,255,0.8); --sidebar-icon-filter: brightness(0) invert(1); }
 .dark { --sidebar-bg: #1a1a2e; --sidebar-text: #94a3b8; --sidebar-icon-filter: invert(60%) sepia(8%) saturate(300%) hue-rotate(200deg) brightness(110%); }
 
 html body .sidebar,
 html body aside.sidebar { background: #f8f9ff !important; background-image: none !important; background-color: #f8f9ff !important; border-radius: 0 !important; }
 html.dark body .sidebar,
 html.dark body aside.sidebar { background: #1a1a2e !important; background-color: #1a1a2e !important; }
-html body .sidebar .sidebar-header { background: #c4b8e0 !important; background-image: none !important; background-color: #c4b8e0 !important; border-radius: 0 !important; }
-html.dark body .sidebar .sidebar-header { background: #16213e !important; background-color: #16213e !important; border-radius: 0 !important; }
-html body .sidebar .sidebar-link { color: #374151 !important; }
-html body .sidebar .sidebar-link span { color: #374151 !important; }
-html body .sidebar .sidebar-link:hover { background: #f5f3ff !important; color: #4f46e5 !important; }
-html body .sidebar .sidebar-link:hover span { color: #4f46e5 !important; }
-html body .sidebar .sidebar-link.active { background: #ede9fe !important; color: #4f46e5 !important; box-shadow: none !important; font-weight: 800 !important; }
-html body .sidebar .sidebar-link.active span { color: #4f46e5 !important; }
-html body .sidebar .sidebar-link.active img { filter: invert(35%) sepia(60%) saturate(600%) hue-rotate(220deg) brightness(85%) !important; }
-html body .sidebar .sidebar-link:not(.active) img { filter: invert(25%) sepia(10%) saturate(500%) hue-rotate(200deg) brightness(90%) !important; }
+html body .sidebar .sidebar-header { background: #f8f9ff !important; background-image: none !important; background-color: #f8f9ff !important; border-radius: 0 !important; }
+html.dark body .sidebar .sidebar-header { background: #1a1a2e !important; background-color: #1a1a2e !important; border-radius: 0 !important; }
+html body .sidebar .sidebar-link { color: #1e3a5f !important; }
+html body .sidebar .sidebar-link span { color: #1e3a5f !important; }
+html body .sidebar .sidebar-link img { filter: brightness(0) saturate(100%) invert(18%) sepia(50%) saturate(800%) hue-rotate(195deg) brightness(90%) !important; }
+html body .sidebar .sidebar-link:hover { background: rgba(59,130,246,0.1) !important; color: #1d4ed8 !important; }
+html body .sidebar .sidebar-link:hover span { color: #1d4ed8 !important; }
+html body .sidebar .sidebar-link.active { background: #3b82f6 !important; color: #ffffff !important; box-shadow: none !important; font-weight: 800 !important; }
+html body .sidebar .sidebar-link.active span { color: #ffffff !important; }
+html body .sidebar .sidebar-link.active img { filter: brightness(0) invert(1) !important; }
+html body .sidebar .sidebar-link:not(.active) img { filter: brightness(0) saturate(100%) invert(18%) sepia(50%) saturate(800%) hue-rotate(195deg) brightness(90%) !important; }
 .mobile-bottom-nav { background: #1a1a2e !important; }
 
 /* Sidebar user block */
 html body .sidebar .sidebar-user {
     display: flex; align-items: center; gap: 10px;
-    padding: 14px 16px; border-bottom: 1px solid #e5e7eb;
+    padding: 14px 16px; border-bottom: 1px solid #dde1ea;
     overflow: hidden; flex-shrink: 0;
 }
 html body .sidebar .sidebar-user-avatar {
@@ -1322,9 +1323,9 @@ html body .sidebar .sidebar-user-avatar img { width: 100% !important; height: 10
 html body .sidebar .sidebar-user-info { opacity: 0; white-space: nowrap; transition: opacity 0.2s; pointer-events: none; }
 html body .sidebar:hover .sidebar-user-info,
 html body .sidebar.open .sidebar-user-info { opacity: 1; pointer-events: auto; }
-html body .sidebar .sidebar-user-name { font-weight: 800; font-size: .85rem; color: #0f172a; line-height: 1.3; }
+html body .sidebar .sidebar-user-name { font-weight: 800; font-size: .85rem; color: #1e3a5f; line-height: 1.3; }
 html.dark body .sidebar .sidebar-user-name { color: #f1f5f9; }
-html body .sidebar .sidebar-user-role { font-size: .72rem; font-weight: 600; color: #6366f1; text-transform: capitalize; }
+html body .sidebar .sidebar-user-role { font-size: .72rem; font-weight: 700; color: #a5b4fc; text-transform: capitalize; }
 /* ===== END SIDEBAR COLOR RESTYLE ===== */
 
 /* ── FORCE SIDEBAR SQUARE CORNERS EVERYWHERE ── */

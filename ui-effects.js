@@ -457,9 +457,15 @@ const injectGlobalTransitions = () => {
 
         .sidebar.collapsed .sidebar-link {
             justify-content: center;
-            padding: 1.25rem !important;
+            padding: 0.8rem !important;
             margin-left: 0 !important;
-            border-radius: 0 !important;
+            border-radius: 12px !important;
+        }
+
+        .sidebar.collapsed .sidebar-link.active,
+        .sidebar.collapsed .sidebar-link.active:hover {
+            border-radius: 5px !important;
+            padding: 0.8rem !important;
         }
 
         .sidebar.collapsed .sidebar-header {
@@ -520,43 +526,48 @@ const injectGlobalTransitions = () => {
 
         /* ENSURE MAANGAS SIDEBAR STYLE GLOBALLY ⚓⚓⚓ */
         .sidebar {
-            background: linear-gradient(to bottom, #FFD200 115px, var(--sidebar-bg) 115px) !important;
+            background: #f8f9ff !important;
             border-right: none !important;
         }
 
         .sidebar-header {
-            background-color: #FFD200 !important;
+            background-color: #f8f9ff !important;
         }
 
         .sidebar-link {
-            color: rgba(255, 255, 255, 0.8) !important;
+            color: #1e3a5f !important;
             border: none !important;
             box-shadow: none !important;
         }
 
         .sidebar-link img {
-            filter: brightness(0) invert(1) opacity(0.8) !important;
+            filter: brightness(0) saturate(100%) invert(18%) sepia(50%) saturate(800%) hue-rotate(195deg) brightness(90%) !important;
         }
 
         .sidebar-link:hover {
-            background-color: rgba(255, 255, 255, 0.1) !important;
-            color: #ffffff !important;
+            background-color: rgba(59, 130, 246, 0.1) !important;
+            color: #1d4ed8 !important;
         }
 
         .sidebar-link.active {
-            background-color: white !important;
-            color: var(--sidebar-bg) !important;
-            border-radius: 35px 0 0 35px !important;
-            box-shadow: 0 4px 15px rgba(255, 210, 0, 0.3) !important;
+            background-color: #3b82f6 !important;
+            color: #ffffff !important;
+            border-radius: 5px !important;
+            box-shadow: none !important;
+        }
+
+        .sidebar:hover .sidebar-link.active,
+        .sidebar.open .sidebar-link.active {
+            border-radius: 5px !important;
         }
 
         .sidebar-link.active span {
-            color: var(--sidebar-bg) !important;
+            color: #ffffff !important;
             font-weight: 700 !important;
         }
 
         .sidebar-link.active img {
-            filter: brightness(0) saturate(100%) invert(8%) sepia(35%) saturate(4681%) hue-rotate(193deg) brightness(97%) contrast(106%) !important;
+            filter: brightness(0) invert(1) !important;
             opacity: 1 !important;
         }
 

@@ -1894,23 +1894,26 @@ function renderTable() {
     // SECTION HEADER ROW
     const headerRow = `
       <tr class="section-row">
-        <td colspan="${DAYS.length + 2}" class="section-name" style="background: #ccfbf1 !important; padding: 0.45rem 1rem !important; border: 1px solid #000 !important; border-bottom: none !important;">
+        <td colspan="${DAYS.length + 2}" class="section-name sched-section-header" style="padding: 0.55rem 1rem !important; border-bottom: 2px solid #3b82f6 !important; border-left: 4px solid #3b82f6 !important;">
           <div style="display: flex; justify-content: space-between; align-items: center; position: sticky; left: 1rem; width: fit-content; max-width: calc(100vw - 300px);">
-            <span style="font-weight: 700; font-size: 1.15rem; color: #000; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">SECTION: GRADE 12 ${cleanSection(s.section)}</span>
-            <div style="display: flex; gap: 0.8rem; margin-left: 2rem;">
-              <button class="day-action" onclick="window.downloadSchedule('${s.id}')" title="Download This Section" style="background: #22c55e; color: white; border: 1.5px solid #cbd5e1; padding: 0.4rem 1.2rem; border-radius: 50px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.08); font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
-                <span style="font-size: 1rem;">📄</span> DOWNLOAD
+            <div style="display:flex;align-items:center;gap:0.6rem;">
+              <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3b82f6;box-shadow:0 0 6px #3b82f6;flex-shrink:0;"></span>
+              <span class="sched-section-title" style="font-weight: 800; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1.5px; white-space: nowrap;">SECTION: GRADE 12 ${cleanSection(s.section)}</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem; margin-left: 2rem;">
+              <button class="day-action" onclick="window.downloadSchedule('${s.id}')" title="Download This Section" style="background: linear-gradient(135deg,#16a34a,#15803d); color: #fff; border: none; padding: 0.35rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.72rem; font-weight: 700; display: flex; align-items: center; gap: 0.4rem; letter-spacing: 0.8px; box-shadow: 0 2px 8px rgba(22,163,74,0.35); transition: all 0.15s;" onmouseover="this.style.filter='brightness(1.15)'" onmouseout="this.style.filter='brightness(1)'">
+                <img src="images/DOWNLOAD (2).png" style="width:14px;height:14px;object-fit:contain;filter:brightness(0) invert(1);"> DOWNLOAD
               </button>
               ${(() => {
                 const role = (currentUserRole || localStorage.getItem('userRole') || '').toLowerCase();
                 const hasPermission = hasEditPermission;
                 const isEditor = role === 'admin' || role === 'program head' || hasPermission;
                 return isEditor ? `
-                <button class="day-action delete-target" onclick="window.clearSection('${s.id}')" title="Clear Entire Section" style="background: #ef4444; color: white; border: 1.5px solid #cbd5e1; padding: 0.4rem 1.2rem; border-radius: 50px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.08); font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
-                  <span style="font-size: 1rem;">🗑️</span> CLEAR SECTION
+                <button class="day-action delete-target" onclick="window.clearSection('${s.id}')" title="Clear Entire Section" style="background: linear-gradient(135deg,#dc2626,#b91c1c); color: #fff; border: none; padding: 0.35rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.72rem; font-weight: 700; display: flex; align-items: center; gap: 0.4rem; letter-spacing: 0.8px; box-shadow: 0 2px 8px rgba(220,38,38,0.35); transition: all 0.15s;" onmouseover="this.style.filter='brightness(1.15)'" onmouseout="this.style.filter='brightness(1)'">
+                  <img src="images/TRASH.png" style="width:13px;height:13px;object-fit:contain;filter:brightness(0) invert(1);"> CLEAR SECTION
                 </button>
-                <button class="day-action" onclick="window.openAiSchedModal('${s.id}','${s.section}')" title="AI Generate Schedule" style="background: #FFD200; color: #000; border: 1.5px solid #000; padding: 0.4rem 1.2rem; border-radius: 50px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.08); font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
-                  <span style="font-size: 1rem;">🤖</span> AI GENERATE
+                <button class="day-action" onclick="window.openAiSchedModal('${s.id}','${s.section}')" title="AI Generate Schedule" style="background: linear-gradient(135deg,#d97706,#b45309); color: #fff; border: none; padding: 0.35rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.72rem; font-weight: 700; display: flex; align-items: center; gap: 0.4rem; letter-spacing: 0.8px; box-shadow: 0 2px 8px rgba(217,119,6,0.35); transition: all 0.15s;" onmouseover="this.style.filter='brightness(1.15)'" onmouseout="this.style.filter='brightness(1)'">
+                  ✦ AI GENERATE
                 </button>
                 ` : '';
               })()}
@@ -1920,26 +1923,39 @@ function renderTable() {
       </tr>
     `;
     tbody.insertAdjacentHTML("beforeend", headerRow);
+    // Apply theme colors directly to bypass CSS specificity issues
+    const _dark = document.documentElement.classList.contains('dark');
+    const _lastHdr = tbody.querySelector('tr.section-row:last-of-type td.sched-section-header') || tbody.lastElementChild?.querySelector('td.sched-section-header');
+    if (_lastHdr) {
+      _lastHdr.style.background = _dark ? 'linear-gradient(90deg, #1e3a5f 0%, #1e293b 60%)' : 'linear-gradient(90deg, #dbeafe 0%, #eff6ff 60%)';
+      _lastHdr.style.borderColor = _dark ? '#2d4a6e' : '#93c5fd';
+      const _title = _lastHdr.querySelector('.sched-section-title');
+      if (_title) _title.style.color = _dark ? '#e2e8f0' : '#1e3a5f';
+    }
 
     // TOOLBAR ROW
     let toolbarHtml = `
-      <tr class="toolbar-row" style="background: #a5f3fc;">
-        <td colspan="2" style="position: sticky; left: 0; z-index: 90; background: #a5f3fc; text-align: center; font-size: 0.75rem; font-weight: 800; color: #000; border-right: 1px solid #000; border-bottom: 1px solid #000; vertical-align: middle; text-transform: uppercase; letter-spacing: 1px;">ACTIONS</td>
+      <tr class="toolbar-row sched-toolbar-row">
+        <td colspan="2" class="sched-toolbar-actions" style="position: sticky; left: 0; z-index: 90; text-align: center; vertical-align: middle; padding: 0.4rem; font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 2px;">
+          <div class="sched-actions-badge" style="display:inline-flex;align-items:center;gap:5px;border-radius:6px;padding:4px 10px;">
+            <span style="font-size:0.6rem;">⚙</span> ACTIONS
+          </div>
+        </td>
     `;
     DAYS.forEach(d => {
       const isPasteReady = copiedDayClasses && copiedDayClasses.length > 0;
       toolbarHtml += `
-        <td style="border-bottom: 1px solid #000; border-right: 1px solid #000; text-align: center; vertical-align: middle; padding: 0.4rem;">
-          <div class="day-actions" style="display: flex; justify-content: center; gap: 1rem;">
+        <td class="sched-toolbar-cell" style="text-align: center; vertical-align: middle; padding: 0.4rem;">
+          <div class="day-actions" style="display: flex; justify-content: center; gap: 0.35rem;">
             ${(() => {
               const role = (currentUserRole || localStorage.getItem('userRole') || '').toLowerCase();
               const hasPermission = hasEditPermission;
               const isEditor = role === 'admin' || role === 'program head' || hasPermission;
               return isEditor ? `
-              <span class="day-action" onclick="window.copyDayInSection('${s.id}', '${d}')" title="Copy ${d} in ${s.section}" style="cursor: pointer; font-size: 1.4rem; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2) rotate(5deg)'" onmouseout="this.style.transform='scale(1)'">📋</span>
-              <span class="day-action paste ${isPasteReady ? 'ready' : ''}" onclick="window.pasteDayToSection('${s.id}', '${d}')" title="Paste to ${d} in ${s.section}" style="cursor: pointer; font-size: 1.4rem; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2) rotate(-5deg)'" onmouseout="this.style.transform='scale(1)'">📥</span>
-              <span class="day-action delete-target" onclick="window.clearDayInSection('${s.id}', '${d}')" title="Clear ${d} in ${s.section}" style="cursor: pointer; font-size: 1.4rem; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2) rotate(5deg)'" onmouseout="this.style.transform='scale(1)'">🗑️</span>
-              ` : '<span style="font-size: 0.7rem; font-weight: 800; opacity: 0.5;">VIEW ONLY</span>';
+              <button class="day-action" onclick="window.copyDayInSection('${s.id}', '${d}')" title="Copy ${d}" style="cursor:pointer;background:${_dark ? 'linear-gradient(135deg,#60a5fa,#93c5fd)' : 'linear-gradient(135deg,#93c5fd,#bfdbfe)'};border:none;border-radius:6px;padding:4px 8px;display:flex;align-items:center;gap:4px;box-shadow:0 2px 6px rgba(147,197,253,0.4);transition:all 0.15s;color:${_dark ? '#fff' : '#1e40af'};font-size:0.65rem;font-weight:700;letter-spacing:0.5px;" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'"><img src="images/COPY.png" style="width:12px;height:12px;object-fit:contain;filter:${_dark ? 'brightness(0) invert(1)' : 'brightness(0) saturate(100%) invert(18%) sepia(90%) saturate(1500%) hue-rotate(210deg)'};display:block;"> COPY</button>
+              <button class="day-action paste ${isPasteReady ? 'ready' : ''}" onclick="window.pasteDayToSection('${s.id}', '${d}')" title="Paste to ${d}" style="cursor:pointer;background:${isPasteReady ? (_dark ? 'linear-gradient(135deg,#67e8f9,#a5f3fc)' : 'linear-gradient(135deg,#a5f3fc,#cffafe)') : (_dark ? 'linear-gradient(135deg,#94a3b8,#cbd5e1)' : 'linear-gradient(135deg,#e2e8f0,#f1f5f9)')};border:none;border-radius:6px;padding:4px 8px;display:flex;align-items:center;gap:4px;box-shadow:0 2px 6px rgba(0,0,0,0.1);transition:all 0.15s;color:${isPasteReady ? '#0e7490' : (_dark ? '#fff' : '#64748b')};font-size:0.65rem;font-weight:700;letter-spacing:0.5px;" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'"><img src="images/PASTE.png" style="width:12px;height:12px;object-fit:contain;filter:brightness(0) ${isPasteReady ? 'saturate(100%) invert(25%) sepia(80%) saturate(1000%) hue-rotate(170deg)' : (_dark ? 'invert(1)' : 'invert(0.4)')};display:block;"> PASTE</button>
+              <button class="day-action delete-target" onclick="window.clearDayInSection('${s.id}', '${d}')" title="Clear ${d}" style="cursor:pointer;background:${_dark ? 'linear-gradient(135deg,#fca5a5,#fecaca)' : 'linear-gradient(135deg,#fecaca,#fee2e2)'};border:none;border-radius:6px;padding:4px 8px;display:flex;align-items:center;gap:4px;box-shadow:0 2px 6px rgba(252,165,165,0.4);transition:all 0.15s;color:${_dark ? '#fff' : '#b91c1c'};font-size:0.65rem;font-weight:700;letter-spacing:0.5px;" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'"><img src="images/TRASH.png" style="width:12px;height:12px;object-fit:contain;filter:brightness(0) ${_dark ? 'invert(1)' : 'saturate(100%) invert(20%) sepia(80%) saturate(2000%) hue-rotate(340deg)'};display:block;"> CLEAR</button>
+              ` : '<span style="font-size: 0.62rem; font-weight: 700; letter-spacing: 1px;" class="sched-viewonly">VIEW ONLY</span>';
             })()}
           </div>
         </td>
@@ -1947,6 +1963,24 @@ function renderTable() {
     });
     toolbarHtml += `</tr>`;
     tbody.insertAdjacentHTML("beforeend", toolbarHtml);
+    // Apply toolbar theme colors directly
+    const _toolbarRow = tbody.lastElementChild;
+    if (_toolbarRow?.classList.contains('sched-toolbar-row')) {
+      const _tbg = _dark ? '#111827' : '#f0f4ff';
+      const _tborder = _dark ? '#1e3a5f' : '#bfdbfe';
+      _toolbarRow.style.background = _tbg;
+      _toolbarRow.querySelectorAll('td').forEach(td => {
+        td.style.background = _tbg;
+        td.style.borderRightColor = _tborder;
+        td.style.borderBottomColor = _tborder;
+      });
+      const _badge = _toolbarRow.querySelector('.sched-actions-badge');
+      if (_badge) {
+        _badge.style.background = _dark ? 'rgba(255,255,255,0.06)' : 'rgba(59,130,246,0.08)';
+        _badge.style.border = `1px solid ${_tborder}`;
+        _badge.style.color = _dark ? '#475569' : '#64748b';
+      }
+    }
 
     // RENDER ROWS (Using Matrix Intervals)
     matrixIntervals.forEach((interval, i) => {
