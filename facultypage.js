@@ -837,7 +837,6 @@ async function openBulkAssignModal() {
   }
 
   try {
-  try {
     const courseDocs = await getCachedCourses(db);
     _groupedCourses = [];
 

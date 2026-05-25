@@ -16,13 +16,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     initUniversalSearch(db);
 
     const curriculumGrid = document.getElementById('curriculumGrid');
-    const pdfUpload      = document.getElementById('pdfUpload');
-    const xlsxUpload     = document.getElementById('xlsxUpload');
+    const attachFiles     = document.getElementById('attachFiles');
     const clearAllBtn    = document.getElementById('clearAllBtn');
-    const exportAllBtn   = document.getElementById('exportAllBtn');
     const exportPerBtn   = document.getElementById('exportPerBtn');
     const migrateDataBtn = document.getElementById('migrateDataBtn');
-    const addSubjectBtn  = document.getElementById('addSubjectBtn');
+    const downloadTemplateBtn = document.getElementById('downloadTemplateBtn');
 
     let isAdmin = false;
     let allCourses = [];
@@ -53,6 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             else if (migrateDataBtn) migrateDataBtn.style.display = 'none';
             renderGrid(allCourses);
             showAdminControls();
+            initCurriculumFilter();
         } catch (err) {
             console.error(err);
             curriculumGrid.innerHTML = '<div class="no-data">Error loading curriculum data.</div>';
@@ -62,6 +61,91 @@ document.addEventListener('DOMContentLoaded', async () => {
     function showAdminControls() {
         if (!isAdmin) return;
         document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+    }
+
+    // ── FILTER / SEARCH ──────────────────────────────────────────────────────────
+    function initCurriculumFilter() {
+        const searchInput   = document.getElementById('curriculumSearch');
+        const suggestions   = document.getElementById('curriculumSuggestions');
+        const clearBtn      = document.getElementById('curriculumClearFilter');
+        if (!searchInput) return;
+
+        function buildSuggestions(q) {
+            const lq = q.toLowerCase();
+            const items = new Set();
+            allCourses.forEach(c => {
+                if (c.name.toLowerCase().includes(lq)) items.add(c.name);
+                Object.keys(c.terms || {}).forEach(t => {
+                    if (t.toLowerCase().includes(lq)) items.add(t);
+                });
+            });
+            return [...items].slice(0, 10);
+        }
+
+        function applyFilter(q) {
+            const lq = q.trim().toLowerCase();
+            clearBtn.style.display = lq ? '' : 'none';
+            if (!lq) { renderGrid(allCourses); return; }
+
+            const filtered = allCourses
+                .map(c => {
+                    // Course name matches → show all terms
+                    if (c.name.toLowerCase().includes(lq)) return c;
+                    // Term name matches → show only matching terms
+                    const matchedTerms = {};
+                    Object.entries(c.terms || {}).forEach(([t, subjs]) => {
+                        if (t.toLowerCase().includes(lq)) matchedTerms[t] = subjs;
+                        else {
+                            // Subject description matches
+                            const matchedSubjs = subjs.filter(s => {
+                                const desc = typeof s === 'object' ? s.description : s;
+                                return (desc || '').toLowerCase().includes(lq);
+                            });
+                            if (matchedSubjs.length) matchedTerms[t] = matchedSubjs;
+                        }
+                    });
+                    if (Object.keys(matchedTerms).length) return { ...c, terms: matchedTerms };
+                    return null;
+                })
+                .filter(Boolean);
+
+            renderGrid(filtered);
+        }
+
+        searchInput.addEventListener('input', () => {
+            const q = searchInput.value;
+            applyFilter(q);
+            const hits = buildSuggestions(q);
+            if (hits.length && q.trim()) {
+                suggestions.innerHTML = hits.map(h =>
+                    `<div style="padding:10px 14px;cursor:pointer;font-weight:700;font-size:.88rem;border-bottom:1px solid #e2e8f0;" 
+                         onmousedown="event.preventDefault()" 
+                         onclick="this.closest('#curriculumSuggestions').dispatchEvent(new CustomEvent('pick',{detail:'${h.replace(/'/g,"\\'")}'}))">
+                        ${h}
+                    </div>`
+                ).join('');
+                suggestions.style.display = 'block';
+            } else {
+                suggestions.style.display = 'none';
+            }
+        });
+
+        suggestions.addEventListener('pick', e => {
+            searchInput.value = e.detail;
+            suggestions.style.display = 'none';
+            applyFilter(e.detail);
+            clearBtn.style.display = '';
+        });
+
+        searchInput.addEventListener('blur', () => setTimeout(() => suggestions.style.display = 'none', 150));
+        searchInput.addEventListener('focus', () => searchInput.value && searchInput.dispatchEvent(new Event('input')));
+
+        clearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            suggestions.style.display = 'none';
+            clearBtn.style.display = 'none';
+            renderGrid(allCourses);
+        });
     }
 
     function sortTerms(termNames) {
@@ -99,89 +183,210 @@ document.addEventListener('DOMContentLoaded', async () => {
         const shs = courses.filter(isSHS).sort((a, b) => a.name.localeCompare(b.name));
         const tertiary = courses.filter(c => !isSHS(c)).sort((a, b) => a.name.localeCompare(b.name));
 
-        if (shs.length) {
-            const shsLabel = document.createElement('div');
-            shsLabel.className = 'curriculum-group-label';
-            shsLabel.textContent = 'Senior High School';
-            curriculumGrid.appendChild(shsLabel);
+        function makeTable(subjects, courseId, termName) {
+            const tableWrap = document.createElement('div');
+            tableWrap.className = 'table-wrap';
+            const table = document.createElement('table');
+            table.className = 'curriculum-table';
+            const thead = document.createElement('thead');
+            thead.innerHTML = `<tr>${COL_HEADERS.map(h => `<th>${h}</th>`).join('')}${isAdmin ? '<th></th>' : ''}</tr>`;
+            table.appendChild(thead);
+            const tbody = document.createElement('tbody');
+            subjects.forEach((subj, idx) => {
+                const obj = typeof subj === 'object' ? subj : { description: subj };
+                const tr = document.createElement('tr');
+                tr.innerHTML = COLS.map(c => `<td>${obj[c] ?? ''}</td>`).join('');
+                if (isAdmin) {
+                    const editTd = document.createElement('td');
+                    const editBtn = document.createElement('button');
+                    editBtn.className = 'edit-subj-btn';
+                    editBtn.textContent = '✏️';
+                    editBtn.onclick = () => openModal({ ...obj, courseId, termName, idx });
+                    editTd.appendChild(editBtn);
+                    tr.appendChild(editTd);
+                }
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+            tableWrap.appendChild(table);
+            return tableWrap;
         }
 
-        [...shs, ...tertiary].forEach((course, i) => {
-            if (i === shs.length && tertiary.length) {
-                const colLabel = document.createElement('div');
-                colLabel.className = 'curriculum-group-label';
-                colLabel.textContent = 'College / Tertiary';
-                curriculumGrid.appendChild(colLabel);
-            }
-            const shsCourse = isSHS(course);
+        function renderSHSCourse(course) {
             const section = document.createElement('div');
             section.className = 'course-section collapsed';
 
             const title = document.createElement('h2');
             title.className = 'course-title';
             title.textContent = course.name;
-            if (shsCourse) {
-                const badge = document.createElement('span');
-                badge.className = 'shs-badge';
-                badge.textContent = 'Senior High';
-                title.appendChild(badge);
-            }
+            const badge = document.createElement('span');
+            badge.className = 'shs-badge';
+            badge.textContent = 'Senior High';
+            title.appendChild(badge);
             title.onclick = () => section.classList.toggle('collapsed');
             section.appendChild(title);
 
-            if (course.terms && typeof course.terms === 'object') {
-                const termsWrap = document.createElement('div');
-                termsWrap.className = 'terms-list';
+            const sortedTerms = sortTerms(Object.keys(course.terms || {}));
+            // Group into Term 1 / Term 2 buckets
+            const buckets = { 'Term 1': [], 'Term 2': [] };
+            sortedTerms.forEach(t => {
+                const n = t.match(/Term\s*(\d)/i);
+                const key = n ? `Term ${n[1]}` : 'Term 1';
+                if (!buckets[key]) buckets[key] = [];
+                buckets[key].push(t);
+            });
+            const bucketKeys = Object.keys(buckets).filter(k => buckets[k].length);
 
-                sortTerms(Object.keys(course.terms)).forEach(termName => {
-                    const subjects = course.terms[termName];
-                    if (!subjects || subjects.length === 0) return;
+            const body = document.createElement('div');
+            body.className = 'terms-list';
 
-                    const termBlock = document.createElement('div');
-                    termBlock.className = 'term-block';
+            // Pill buttons
+            const pills = document.createElement('div');
+            pills.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;';
+            const contentArea = document.createElement('div');
 
-                    const termHeader = document.createElement('div');
-                    termHeader.className = 'term-header';
-                    termHeader.textContent = termName;
-                    termBlock.appendChild(termHeader);
-
-                    // Table
-                    const tableWrap = document.createElement('div');
-                    tableWrap.className = 'table-wrap';
-                    const table = document.createElement('table');
-                    table.className = 'curriculum-table';
-
-                    // thead
-                    const thead = document.createElement('thead');
-                    thead.innerHTML = `<tr>${COL_HEADERS.map(h => `<th>${h}</th>`).join('')}${isAdmin ? '<th></th>' : ''}</tr>`;
-                    table.appendChild(thead);
-
-                    // tbody
-                    const tbody = document.createElement('tbody');
-                    subjects.forEach((subj, idx) => {
-                        const obj = typeof subj === 'object' ? subj : { description: subj };
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = COLS.map(c => `<td>${obj[c] ?? ''}</td>`).join('');
-                        if (isAdmin) {
-                            const editTd = document.createElement('td');
-                            const editBtn = document.createElement('button');
-                            editBtn.className = 'edit-subj-btn';
-                            editBtn.textContent = '✏️';
-                            editBtn.onclick = () => openModal({ ...obj, courseId: course.id, termName, idx });
-                            editTd.appendChild(editBtn);
-                            tr.appendChild(editTd);
-                        }
-                        tbody.appendChild(tr);
-                    });
-                    table.appendChild(tbody);
-                    tableWrap.appendChild(table);
-                    termBlock.appendChild(tableWrap);
-                    termsWrap.appendChild(termBlock);
+            function showBucket(key) {
+                pills.querySelectorAll('button').forEach(b => {
+                    b.style.background = b.dataset.key === key ? '#005BAB' : '#f1f5f9';
+                    b.style.color = b.dataset.key === key ? '#fff' : '#000';
                 });
-                section.appendChild(termsWrap);
+                contentArea.innerHTML = '';
+                buckets[key].forEach(termName => {
+                    const subjects = course.terms[termName];
+                    if (!subjects?.length) return;
+                    const hdr = document.createElement('div');
+                    hdr.className = 'term-header';
+                    hdr.textContent = termName;
+                    contentArea.appendChild(hdr);
+                    contentArea.appendChild(makeTable(subjects, course.id, termName));
+                });
             }
-            curriculumGrid.appendChild(section);
-        });
+
+            bucketKeys.forEach((key, i) => {
+                const btn = document.createElement('button');
+                btn.dataset.key = key;
+                btn.textContent = key;
+                btn.style.cssText = 'padding:6px 18px;border:2.5px solid #000;border-radius:20px;font-weight:800;font-size:.85rem;cursor:pointer;transition:all .15s;';
+                btn.onclick = () => showBucket(key);
+                pills.appendChild(btn);
+                if (i === 0) showBucket(key);
+            });
+
+            body.appendChild(pills);
+            body.appendChild(contentArea);
+            section.appendChild(body);
+            return section;
+        }
+
+        function renderTertiaryCourse(course) {
+            const section = document.createElement('div');
+            section.className = 'course-section collapsed';
+
+            const title = document.createElement('h2');
+            title.className = 'course-title';
+            title.textContent = course.name;
+            title.onclick = () => section.classList.toggle('collapsed');
+            section.appendChild(title);
+
+            const sortedTerms = sortTerms(Object.keys(course.terms || {}));
+            // Group by year
+            const YEARS = ['First Year', 'Second Year', 'Third Year', 'Fourth Year'];
+            const yearBuckets = {};
+            sortedTerms.forEach(t => {
+                const yr = YEARS.find(y => t.toUpperCase().includes(y.toUpperCase())) || 'Other';
+                if (!yearBuckets[yr]) yearBuckets[yr] = {};
+                const m = t.match(/(\w+)\s+Term/i);
+                const termKey = m ? `${m[1]} Term` : t;
+                if (!yearBuckets[yr][termKey]) yearBuckets[yr][termKey] = [];
+                yearBuckets[yr][termKey].push(t);
+            });
+            const yearKeys = [...YEARS.filter(y => yearBuckets[y]), ...Object.keys(yearBuckets).filter(y => !YEARS.includes(y))];
+
+            const body = document.createElement('div');
+            body.className = 'terms-list';
+
+            // Year tabs
+            const yearTabs = document.createElement('div');
+            yearTabs.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;border-bottom:2.5px solid #000;padding-bottom:8px;';
+            // Term pills (secondary)
+            const termPills = document.createElement('div');
+            termPills.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;';
+            const contentArea = document.createElement('div');
+
+            let activeYear = null;
+
+            function showTerms(yearKey, termKey) {
+                termPills.innerHTML = '';
+                const terms = yearBuckets[yearKey] || {};
+                const termKeys = Object.keys(terms);
+                termKeys.forEach((tk, i) => {
+                    const btn = document.createElement('button');
+                    btn.dataset.term = tk;
+                    btn.textContent = tk;
+                    btn.style.cssText = 'padding:5px 14px;border:2px solid #000;border-radius:20px;font-weight:800;font-size:.82rem;cursor:pointer;transition:all .15s;';
+                    btn.onclick = () => {
+                        termPills.querySelectorAll('button').forEach(b => {
+                            b.style.background = b.dataset.term === tk ? '#005BAB' : '#f1f5f9';
+                            b.style.color = b.dataset.term === tk ? '#fff' : '#000';
+                        });
+                        contentArea.innerHTML = '';
+                        terms[tk].forEach(termName => {
+                            const subjects = course.terms[termName];
+                            if (!subjects?.length) return;
+                            const hdr = document.createElement('div');
+                            hdr.className = 'term-header';
+                            hdr.textContent = termName;
+                            contentArea.appendChild(hdr);
+                            contentArea.appendChild(makeTable(subjects, course.id, termName));
+                        });
+                    };
+                    termPills.appendChild(btn);
+                    if (i === 0 || tk === termKey) btn.click();
+                });
+            }
+
+            function showYear(yearKey) {
+                activeYear = yearKey;
+                yearTabs.querySelectorAll('button').forEach(b => {
+                    const active = b.dataset.year === yearKey;
+                    b.style.background = active ? '#1e293b' : 'transparent';
+                    b.style.color = active ? '#fff' : '#000';
+                    b.style.borderBottom = active ? '3px solid #005BAB' : '3px solid transparent';
+                });
+                showTerms(yearKey, null);
+            }
+
+            yearKeys.forEach((yk, i) => {
+                const btn = document.createElement('button');
+                btn.dataset.year = yk;
+                btn.textContent = yk;
+                btn.style.cssText = 'padding:7px 16px;border:none;border-bottom:3px solid transparent;font-weight:800;font-size:.88rem;cursor:pointer;background:transparent;transition:all .15s;border-radius:8px 8px 0 0;';
+                btn.onclick = () => showYear(yk);
+                yearTabs.appendChild(btn);
+                if (i === 0) setTimeout(() => showYear(yk), 0);
+            });
+
+            body.appendChild(yearTabs);
+            body.appendChild(termPills);
+            body.appendChild(contentArea);
+            section.appendChild(body);
+            return section;
+        }
+
+        if (shs.length) {
+            const lbl = document.createElement('div');
+            lbl.className = 'curriculum-group-label';
+            lbl.textContent = 'Senior High School';
+            curriculumGrid.appendChild(lbl);
+            shs.forEach(c => curriculumGrid.appendChild(renderSHSCourse(c)));
+        }
+        if (tertiary.length) {
+            const lbl = document.createElement('div');
+            lbl.className = 'curriculum-group-label';
+            lbl.textContent = 'College / Tertiary';
+            curriculumGrid.appendChild(lbl);
+            tertiary.forEach(c => curriculumGrid.appendChild(renderTertiaryCourse(c)));
+        }
     }
 
     // ── MODAL (add/edit subject) ─────────────────────────────────────────────────
@@ -224,7 +429,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         modal.style.display = 'flex';
     }
 
-    if (addSubjectBtn) addSubjectBtn.addEventListener('click', () => openModal());
     closeModalBtn.addEventListener('click', () => { modal.style.display = 'none'; });
 
     subjectForm.addEventListener('submit', async (e) => {
@@ -272,14 +476,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // ── PDF UPLOAD ───────────────────────────────────────────────────────────────
-    if (pdfUpload) {
-        pdfUpload.addEventListener('change', async (e) => {
+    // ── ATTACH FILES (PDF + Excel) ────────────────────────────────────────────────
+    if (attachFiles) {
+        attachFiles.addEventListener('change', async (e) => {
             const files = Array.from(e.target.files);
             if (!files.length) return;
-            showToast(`Processing ${files.length} PDF(s)... ⏳`, "info");
-            for (const file of files) await processPDF(file);
-            showToast("All PDFs processed! ✅", "success");
+            const pdfs  = files.filter(f => f.name.toLowerCase().endsWith('.pdf'));
+            const excels = files.filter(f => /\.(xlsx|xls)$/i.test(f.name));
+            if (pdfs.length)  showToast(`Processing ${pdfs.length} PDF(s)... ⏳`, "info");
+            if (excels.length) showToast(`Importing ${excels.length} Excel file(s)... ⏳`, "info");
+            for (const f of pdfs)   await processPDF(f);
+            for (const f of excels) await processExcel(f);
+            showToast("Done! ✅", "success");
             e.target.value = '';
             loadSubjects();
         });
@@ -480,14 +688,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         ws['!cols'] = [10,12,10,10,40,8,20,35].map(w => ({ wch: w }));
     }
 
-    if (exportAllBtn) {
-        exportAllBtn.addEventListener('click', async () => {
-            await loadXLSX();
-            const wb = buildWorkbook(false);
-            window.XLSX.writeFile(wb, 'Curriculum_Template_All.xlsx');
-        });
-    }
-
     if (exportPerBtn) {
         exportPerBtn.addEventListener('click', async () => {
             await loadXLSX();
@@ -496,30 +696,59 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // ── EXCEL IMPORT ─────────────────────────────────────────────────────────────
-    if (xlsxUpload) {
-        xlsxUpload.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            showToast("Importing Excel... ⏳", "info");
-            try {
-                const XLSX = await loadXLSX();
-                const data = await file.arrayBuffer();
-                const wb = XLSX.read(data, { type: 'array' });
+    if (downloadTemplateBtn) {
+        downloadTemplateBtn.addEventListener('click', async () => {
+            const courseName = prompt('Course name (e.g. BS Information Technology):');
+            if (!courseName?.trim()) return;
+            const type = prompt('Type: SHS or Tertiary?')?.trim().toUpperCase();
+            if (!type) return;
+            const isSHSType = type.startsWith('S');
 
-                for (const sheetName of wb.SheetNames) {
-                    const ws = wb.Sheets[sheetName];
-                    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-                    await importRows(rows, sheetName);
-                }
-                showToast("Import complete! ✅", "success");
-                e.target.value = '';
-                loadSubjects();
-            } catch (err) {
-                console.error(err);
-                showToast("Import failed", "error");
-            }
+            const XLSX = await loadXLSX();
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet([]);
+            const rows = [];
+
+            const HEADERS = COL_HEADERS;
+            const GUIDE   = ['e.g. 001259','e.g. CORE','e.g. 1010','e.g. 22','e.g. Oral Communication','e.g. 1.00','e.g. Lecture','e.g. None'];
+            const BLANK   = Array(8).fill('');
+
+            const terms = isSHSType
+                ? ['G11 Term 1','G11 Term 2','G12 Term 1','G12 Term 2']
+                : ['First Year - 1st Term','First Year - 2nd Term','Second Year - 1st Term','Second Year - 2nd Term',
+                   'Third Year - 1st Term','Third Year - 2nd Term','Fourth Year - 1st Term','Fourth Year - 2nd Term'];
+
+            rows.push([courseName.trim().toUpperCase(), ...Array(7).fill('')]);
+            terms.forEach(term => {
+                rows.push([term, ...Array(7).fill('')]);
+                rows.push(HEADERS);
+                rows.push(GUIDE);
+                for (let i = 0; i < 8; i++) rows.push([...BLANK]);
+                rows.push(['','','','','TOTAL UNITS','','','']);
+                rows.push(Array(8).fill(''));
+            });
+
+            XLSX.utils.sheet_add_aoa(ws, rows);
+            ws['!cols'] = [10,12,10,10,40,8,20,35].map(w => ({ wch: w }));
+            XLSX.utils.book_append_sheet(wb, ws, courseName.trim().toUpperCase().slice(0,31));
+            XLSX.writeFile(wb, `${courseName.trim()}_template.xlsx`);
         });
+    }
+
+    async function processExcel(file) {
+        try {
+            const XLSX = await loadXLSX();
+            const data = await file.arrayBuffer();
+            const wb = XLSX.read(data, { type: 'array' });
+            for (const sheetName of wb.SheetNames) {
+                const ws = wb.Sheets[sheetName];
+                const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+                await importRows(rows, sheetName);
+            }
+        } catch (err) {
+            console.error(err);
+            showToast(`Import failed: ${file.name}`, "error");
+        }
     }
 
     async function importRows(rows, sheetName) {

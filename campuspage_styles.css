@@ -172,102 +172,25 @@
     padding: 0;
 }
 
-.sidebar {
-    display: flex;
-    flex-direction: column;
-    width: 200px;
-    height: 100vh;
-    background-color: #002044 !important;
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 1001;
-    border: none !important;
-    border-top-right-radius: 40px !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    /* HIDE SCROLLBAR BUT KEEP SCROLLING 🛡️ */
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
-    flex-shrink: 0;
-}
 
-.sidebar::-webkit-scrollbar {
-    display: none !important;
-}
 
-.sidebar-header {
-    background-color: #FFD200;
-    padding: 2rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    left: 0 !important;
-    right: 0 !important;
-    width: auto !important;
-    min-width: 100% !important;
-    align-self: stretch !important;
-    flex-shrink: 0 !important;
-    border-top-right-radius: 0 !important;
-    cursor: pointer;
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 1000 !important;
-    margin-bottom: -1px !important;
-}
 
-.sidebar-header img {
-    width: 80px;
-    height: 80px;
-    object-fit: contain;
-}
 
-.sidebar-menu {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 0;
-    margin-top: 2rem !important; /* ADDED MARGIN HERE 🛡️ */
-}
 
-.sidebar-link {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.8rem 1rem;
-    color: rgba(255, 255, 255, 0.8);
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 0.95rem;
-    transition: all 0.3s ease;
-    margin-left: 0.75rem;
-    border-top-left-radius: 35px;
-    border-bottom-left-radius: 35px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
 
-.sidebar-link:hover {
-    color: white;
-    background-color: rgba(255, 255, 255, 0.1);
-}
 
-.sidebar-link.active {
-    background-color: white;
-    color: #002044;
-}
 
-.sidebar-link img {
-    width: 20px;
-    height: 20px;
-    filter: brightness(0) invert(1);
-}
 
-.sidebar-link.active img {
-    filter: brightness(0) saturate(100%) invert(8%) sepia(35%) saturate(4681%) hue-rotate(193deg) brightness(97%) contrast(106%) !important;
-}
+
+
+
+
+
+
+
+
+
+
 
 /* ELMS Style Mobile Refactor */
 .mobile-overlay {
@@ -294,9 +217,7 @@
         display: block !important;
     }
 
-    .sidebar {
-        display: none !important;
-    }
+    
 
     .main-content-wrapper {
         margin-left: 0 !important;
@@ -596,9 +517,7 @@
     border-color: #334155;
 }
 
-.dark .sidebar-icon.active {
-    background-color: #312e81;
-}
+.dark 
 
 .dark .room-pill {
     background-color: #1e293b !important;
@@ -688,10 +607,7 @@
 
 /* Logo handling 🐋 */
 .dark .logo-img,
-.dark .sidebar-header img {
-    filter: none !important;
-    opacity: 0.9;
-}
+.dark 
 
 /* Ensure user names and page titles are crisp */
 .dark .user-name,
@@ -1072,3 +988,5 @@
     border-color: #334155;
 }
 .dark input::placeholder, .dark textarea::placeholder { color: #64748b; }
+
+

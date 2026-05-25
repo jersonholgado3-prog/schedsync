@@ -28,16 +28,6 @@
         })();
     </script>
     <link rel="stylesheet" href="notification_styles.css" />
-  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-  <script>
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    OneSignalDeferred.push(async function(OneSignal) {
-      await OneSignal.init({
-        appId: "ef82a79a-5e7a-4a5f-83a6-e2b90b8302c9",
-        promptOptions: { slidedown: { prompts: [{ type: "push", autoPrompt: true, text: { actionMessage: "SchedSync wants to send you schedule updates.", acceptButton: "Allow", cancelButton: "No Thanks" }, delay: { pageViews: 1, timeDelay: 2 } }] } }
-      });
-    });
-  </script>
 </head>
 
 <body>
@@ -60,8 +50,8 @@
           <span>Faculty</span>
         </a>
         <a href="campuspage.html" class="sidebar-link">
-          <img src="images/CAMPUS_ONE.png" alt="Campus">
-          <span>Campus</span>
+          <img src="images/CAMPUS_ONE.png" alt="Rooms">
+          <span>Rooms</span>
         </a>
         <a href="sectionspage.html" class="sidebar-link">
           <img src="images/SECTIONS.png" alt="Sections">
@@ -232,7 +222,7 @@
       <img src="images/FACULTY.png" alt="Faculty"><span>Faculty</span>
     </a>
     <a href="campuspage.html" class="mob-nav-item" data-page="campuspage">
-      <img src="images/CAMPUS_ONE.png" alt="Campus"><span>Campus</span>
+      <img src="images/CAMPUS_ONE.png" alt="Rooms"><span>Rooms</span>
     </a>
     <a href="sectionspage.html" class="mob-nav-item" data-page="sections">
       <img src="images/SECTIONS.png" alt="Sections">

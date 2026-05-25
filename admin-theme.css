@@ -65,3 +65,13 @@ html.admin-theme.dark {
   --at-border: 1px solid #334155;
   --at-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
+
+html.admin-theme .sidebar,
+html.admin-theme .sidebar-header,
+html.admin-theme .sidebar * {
+  border-radius: 0 !important;
+}
+html.admin-theme .sidebar {
+  border-top-right-radius: 5px !important;
+  border-bottom-right-radius: 5px !important;
+}

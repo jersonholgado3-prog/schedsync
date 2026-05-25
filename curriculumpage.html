@@ -33,16 +33,6 @@
   <link rel="stylesheet" href="skeleton.css" />
   <link rel="stylesheet" href="curriculumpage_styles.css" />
   <title>SchedSync - Curriculum Management</title>
-  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-  <script>
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    OneSignalDeferred.push(async function(OneSignal) {
-      await OneSignal.init({
-        appId: "ef82a79a-5e7a-4a5f-83a6-e2b90b8302c9",
-        promptOptions: { slidedown: { prompts: [{ type: "push", autoPrompt: true, text: { actionMessage: "SchedSync wants to send you schedule updates.", acceptButton: "Allow", cancelButton: "No Thanks" }, delay: { pageViews: 1, timeDelay: 2 } }] } }
-      });
-    });
-  </script>
 </head>
 
 <body class="bg-white text-black font-bold overflow-x-hidden">
@@ -65,8 +55,8 @@
           <span>Faculty</span>
         </a>
         <a href="campuspage.html" class="sidebar-link">
-          <img src="images/CAMPUS_ONE.png" alt="Campus">
-          <span>Campus</span>
+          <img src="images/CAMPUS_ONE.png" alt="Rooms">
+          <span>Rooms</span>
         </a>
         <a href="sectionspage.html" class="sidebar-link">
           <img src="images/SECTIONS.png" alt="Sections">
@@ -130,37 +120,37 @@
 
       <main class="dashboard-container p-6">
         <div class="top-controls flex flex-wrap gap-4 mb-8">
-          <!-- Admin controls -->
-          <button id="addSubjectBtn"
+          <label for="attachFiles"
             class="bg-[#005BAB] text-white border-[3px] border-black rounded-xl px-5 py-2.5 font-bold shadow-[4px_4px_0px_black] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_black] transition-all admin-only"
-            style="display: none;">+ Add Subject</button>
-          <label for="pdfUpload"
+            style="display:none; cursor:pointer;">
+            📎 Attach Files
+            <input type="file" id="attachFiles" accept=".pdf,.xlsx,.xls" multiple style="display:none;">
+          </label>
+          <button id="downloadTemplateBtn"
             class="bg-[#10b981] text-white border-[3px] border-black rounded-xl px-5 py-2.5 font-bold shadow-[4px_4px_0px_black] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_black] transition-all admin-only"
-            style="display: none; cursor: pointer;">
-            📄 Upload PDF(s)
-            <input type="file" id="pdfUpload" accept=".pdf" multiple style="display: none;">
-          </label>
-          <label for="xlsxUpload"
-            class="bg-[#7c3aed] text-white border-[3px] border-black rounded-xl px-5 py-2.5 font-bold shadow-[4px_4px_0px_black] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_black] transition-all admin-only"
-            style="display: none; cursor: pointer;">
-            📥 Import Excel
-            <input type="file" id="xlsxUpload" accept=".xlsx,.xls" style="display: none;">
-          </label>
+            style="display:none;">
+            📋 Download Template
+          </button>
           <button id="clearAllBtn"
             class="bg-red-500 text-white border-[3px] border-black rounded-xl px-5 py-2.5 font-bold shadow-[4px_4px_0px_black] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_black] transition-all admin-only"
-            style="display: none;">🗑️ Clear All</button>
-          <!-- Export (visible to all) -->
-          <button id="exportAllBtn"
-            class="bg-[#FFD200] text-black border-[3px] border-black rounded-xl px-5 py-2.5 font-bold shadow-[4px_4px_0px_black] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_black] transition-all">
-            📤 Export All (1 Sheet)
-          </button>
+            style="display:none;">🗑️ Clear All</button>
           <button id="exportPerBtn"
             class="bg-[#f97316] text-white border-[3px] border-black rounded-xl px-5 py-2.5 font-bold shadow-[4px_4px_0px_black] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_black] transition-all">
             📤 Export Per Course
           </button>
           <button id="migrateDataBtn"
             class="bg-slate-400 text-white border-[3px] border-black rounded-xl px-5 py-2.5 font-bold shadow-[4px_4px_0px_black] transition-all admin-only"
-            style="display: none;">Migrate Static Data</button>
+            style="display:none;">Migrate Static Data</button>
+        </div>
+
+        <!-- Filter Bar -->
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1.5rem;align-items:center;">
+          <div style="position:relative;flex:1;min-width:200px;">
+            <input id="curriculumSearch" type="search" placeholder="🔍 Search course, term, or subject..." autocomplete="off"
+              style="width:100%;padding:10px 14px;border:2.5px solid #000;border-radius:12px;font-size:.9rem;font-weight:700;outline:none;box-sizing:border-box;">
+            <div id="curriculumSuggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:2px solid #000;border-radius:12px;margin-top:4px;z-index:100;max-height:260px;overflow-y:auto;box-shadow:4px 4px 0 #000;"></div>
+          </div>
+          <button id="curriculumClearFilter" style="display:none;padding:10px 16px;border:2.5px solid #000;border-radius:12px;font-weight:800;background:#f1f5f9;cursor:pointer;">✕ Clear</button>
         </div>
 
         <div class="curriculum-grid" id="curriculumGrid">
@@ -218,7 +208,7 @@
       <img src="images/FACULTY.png" alt="Faculty"><span>Faculty</span>
     </a>
     <a href="campuspage.html" class="mob-nav-item" data-page="campuspage">
-      <img src="images/CAMPUS_ONE.png" alt="Campus"><span>Campus</span>
+      <img src="images/CAMPUS_ONE.png" alt="Rooms"><span>Rooms</span>
     </a>
     <a href="sectionspage.html" class="mob-nav-item" data-page="sections">
       <img src="images/SECTIONS.png" alt="Sections">

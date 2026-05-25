@@ -440,15 +440,15 @@ const injectGlobalTransitions = () => {
         /* ──── AUTO-COLLAPSING SIDEBAR 📏 ──── */
         .sidebar {
             transition: width 0.6s cubic-bezier(0.19, 1, 0.22, 1), background-color 0.4s ease !important;
-            border-top-right-radius: 40px !important;
+            border-top-right-radius: 5px !important;
+            border-bottom-right-radius: 5px !important;
             overflow-y: auto !important; overflow-x: hidden !important; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-            background: linear-gradient(to bottom, #FFD200 115px, var(--sidebar-bg) 115px) !important;
         }
 
         .sidebar.collapsed {
             width: 80px !important;
-            border-top-right-radius: 40px !important;
-            background: linear-gradient(to bottom, #FFD200 100px, var(--sidebar-bg) 100px) !important;
+            border-top-right-radius: 5px !important;
+            border-bottom-right-radius: 5px !important;
         }
 
         .sidebar.collapsed .sidebar-link span {
@@ -465,7 +465,7 @@ const injectGlobalTransitions = () => {
         .sidebar.collapsed .sidebar-header {
             padding: 1.5rem 1rem !important;
             margin-bottom: 12px !important;
-            border-top-right-radius: 40px !important;
+            border-top-right-radius: 5px !important;
         }
 
         /* Resume Edit Link Styling ⚓ */

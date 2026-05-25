@@ -164,95 +164,28 @@
     padding: 0;
 }
 
-.sidebar {
-    display: flex;
-    flex-direction: column;
-    width: 200px;
-    height: 100vh;
-    background: linear-gradient(to bottom, #FFD200 150px, #002044 150px);
-    position: fixed;
-    top: 0;
-    z-index: 1001;
-    border: none !important;
-    border-top-right-radius: 40px !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-    flex-shrink: 0;
-}
 
-.sidebar-header {
-    background-color: #FFD200;
-    padding: 2rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-top-right-radius: 40px;
-    cursor: pointer;
-    margin-bottom: 2rem;
-}
 
-.sidebar-header img {
-    width: 80px;
-    height: 80px;
-    object-fit: contain;
-}
 
-.sidebar-menu {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 0;
-}
 
-.sidebar-link {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.8rem 1rem;
-    color: rgba(255, 255, 255, 0.8);
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 0.95rem;
-    transition: all 0.3s ease;
-    margin-left: 0.75rem;
-    border-top-left-radius: 35px;
-    border-bottom-left-radius: 35px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
 
-.sidebar-link:hover {
-    color: white;
-    background-color: rgba(255, 255, 255, 0.1);
-}
 
-.sidebar-link.active {
-    background-color: white;
-    color: #002044;
-}
 
-.sidebar-link img {
-    width: 20px;
-    height: 20px;
-    filter: brightness(0) invert(1);
-}
 
-.sidebar-link.active img {
-    filter: brightness(0) saturate(100%) invert(8%) sepia(35%) saturate(4681%) hue-rotate(193deg) brightness(97%) contrast(106%) !important;
-}
+
+
+
+
+
+
+
+
+
 
 @media (max-width: 1024px) {
-    .sidebar {
-        width: 200px;
-    }
+    
 
-    .sidebar-link span {
-        display: inline;
-    }
+    
 }
 
 /* ELMS Style Mobile Refactor */
@@ -279,23 +212,9 @@
         position: static !important;
     }
 
-    .sidebar {
-        position: fixed !important;
-        left: -280px !important;
-        top: 0 !important;
-        width: 280px !important;
-        height: 100vh !important;
-        z-index: 5000 !important;
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        border-radius: 0 40px 40px 0 !important;
-        display: flex !important;
-        background: linear-gradient(to bottom, #FFD200 150px, #002044 150px) !important;
-        pointer-events: auto !important;
-    }
+    
 
-    .sidebar-link {
-        pointer-events: auto !important;
-    }
+    
 
     .mobile-overlay {
         position: fixed !important;
@@ -309,31 +228,15 @@
         pointer-events: auto !important;
     }
 
-    .sidebar.open {
-        transform: translateX(280px);
-        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.3);
-    }
+    
 
-    .sidebar-header {
-        display: flex !important;
-        padding: 2rem !important;
-    }
+    
 
-    .sidebar-menu {
-        flex-direction: column !important;
-        padding: 0 !important;
-    }
+    
 
-    .sidebar-link {
-        margin-left: 0.75rem !important;
-        flex-direction: row !important;
-        font-size: 0.95rem !important;
-        padding: 0.8rem 1rem !important;
-    }
+    
 
-    .sidebar-link span {
-        display: inline !important;
-    }
+    
 
     .header {
         height: 70px !important;
@@ -818,23 +721,9 @@
         position: static !important;
     }
 
-    .sidebar {
-        position: fixed !important;
-        left: -280px !important;
-        top: 0 !important;
-        width: 280px !important;
-        height: 100vh !important;
-        z-index: 5000 !important;
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        border-radius: 0 40px 40px 0 !important;
-        display: flex !important;
-        background: linear-gradient(to bottom, #FFD200 150px, #002044 150px) !important;
-        pointer-events: auto !important;
-    }
+    
 
-    .sidebar-link {
-        pointer-events: auto !important;
-    }
+    
 
     .mobile-overlay {
         position: fixed !important;
@@ -848,31 +737,15 @@
         pointer-events: auto !important;
     }
 
-    .sidebar.open {
-        transform: translateX(280px);
-        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.3);
-    }
+    
 
-    .sidebar-header {
-        display: flex !important;
-        padding: 2rem !important;
-    }
+    
 
-    .sidebar-menu {
-        flex-direction: column !important;
-        padding: 0 !important;
-    }
+    
 
-    .sidebar-link {
-        margin-left: 0.75rem !important;
-        flex-direction: row !important;
-        font-size: 0.95rem !important;
-        padding: 0.8rem 1rem !important;
-    }
+    
 
-    .sidebar-link span {
-        display: inline !important;
-    }
+    
 
     .header {
         height: 70px !important;
@@ -1122,9 +995,7 @@
     border-color: #475569;
 }
 
-.dark .sidebar-icon.active {
-    background-color: #312e81;
-}
+.dark 
 
 .dark .add-faculty-button {
     background-color: #3b82f6;
@@ -1132,9 +1003,7 @@
 }
 
 .dark img,
-.dark .sidebar-icon img {
-    filter: brightness(0.9);
-}
+.dark 
 
 
 
@@ -1362,9 +1231,7 @@
         height: auto !important;
     }
 
-    .sidebar {
-        display: none !important;
-    }
+    
 
     .faculty-grid {
         grid-template-columns: repeat(2, 1fr) !important;
@@ -1588,3 +1455,5 @@
     border-color: #475569 !important;
     color: #f1f5f9 !important;
 }
+
+

@@ -42,108 +42,30 @@ body {
     margin: 0;
 }
 
-.sidebar {
-    display: flex;
-    flex-direction: column;
-    width: 200px;
-    height: 100vh;
-    background: linear-gradient(to bottom, #FFD200 150px, #002044 150px);
-    position: sticky;
-    top: 0;
-    z-index: 1001;
-    border: none !important;
-    border-top-right-radius: 40px !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    /* HIDE SCROLLBAR BUT KEEP SCROLLING 🛡️ */
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
-    flex-shrink: 0;
-}
 
-.sidebar::-webkit-scrollbar {
-    display: none !important;
-}
 
-.sidebar-header {
-    background-color: #FFD200;
-    padding: 2rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-top-right-radius: 0 !important;
-    cursor: pointer;
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 1000 !important;
-    margin-bottom: -1px !important;
-    left: 0 !important;
-    right: 0 !important;
-    width: auto !important;
-    min-width: 100% !important;
-    align-self: stretch !important;
-}
 
-.sidebar-header img {
-    width: 80px;
-    height: 80px;
-    object-fit: contain;
-}
 
-.sidebar-menu {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 0;
-}
 
-.sidebar-link {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.8rem 1rem;
-    color: rgba(255, 255, 255, 0.8);
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 0.95rem;
-    transition: all 0.3s ease;
-    margin-left: 0.75rem;
-    border-top-left-radius: 35px;
-    border-bottom-left-radius: 35px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
 
-.sidebar-link:hover {
-    color: white;
-    background-color: rgba(255, 255, 255, 0.1);
-}
 
-.sidebar-link.active {
-    background-color: white;
-    color: #002044;
-}
 
-.sidebar-link img {
-    width: 20px;
-    height: 20px;
-    filter: brightness(0) invert(1);
-}
 
-.sidebar-link.active img {
-    filter: brightness(0) saturate(100%) invert(8%) sepia(35%) saturate(4681%) hue-rotate(193deg) brightness(97%) contrast(106%) !important;
-}
+
+
+
+
+
+
+
+
+
+
 
 @media (max-width: 1024px) {
-    .sidebar {
-        width: 200px;
-    }
+    
 
-    .sidebar-link span {
-        display: inline;
-    }
+    
 }
 
 .mobile-overlay {
@@ -168,25 +90,11 @@ body {
         position: static !important;
     }
 
-    .sidebar {
-        position: fixed !important;
-        left: -280px !important;
-        top: 0 !important;
-        width: 280px !important;
-        height: 100vh !important;
-        z-index: 5000 !important;
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        border-radius: 0 40px 40px 0 !important;
-        display: flex !important;
-        background-color: #002044 !important;
-        pointer-events: auto !important;
-    }
+    
 
     /* 🖥️ PC UI LOOK — Landscape Mode ⚓ — REVERTED TO SLIM MOBILE 📱 */
     @media (orientation: landscape) {
-        .sidebar {
-            display: none !important;
-        }
+        
 
         .main-content-wrapper {
             margin-left: 0 !important;
@@ -194,9 +102,7 @@ body {
         }
     }
 
-    .sidebar-link {
-        pointer-events: auto !important;
-    }
+    
 
     .mobile-overlay {
         position: fixed !important;
@@ -210,42 +116,15 @@ body {
         pointer-events: auto !important;
     }
 
-    .sidebar.open {
-        transform: translateX(280px);
-        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.3);
-    }
+    
 
-    .sidebar-header {
-        display: flex !important;
-        padding: 2rem !important;
-        position: sticky !important;
-        top: 0 !important;
-        z-index: 1000 !important;
-        background-color: #FFD200 !important;
-        margin-bottom: -1px !important;
-        left: 0 !important;
-        right: 0 !important;
-        width: auto !important;
-        min-width: 100% !important;
-        align-self: stretch !important;
-        border-top-right-radius: 0 !important;
-    }
+    
 
-    .sidebar-menu {
-        flex-direction: column !important;
-        padding: 0 !important;
-    }
+    
 
-    .sidebar-link {
-        margin-left: 0.75rem !important;
-        flex-direction: row !important;
-        font-size: 0.95rem !important;
-        padding: 0.8rem 1rem !important;
-    }
+    
 
-    .sidebar-link span {
-        display: inline !important;
-    }
+    
 
     .header {
         height: 70px !important;
@@ -375,9 +254,7 @@ body {
         width: 100% !important;
     }
 
-    .sidebar {
-        display: none !important;
-    }
+    
 
     /* Fixed Table Container for Mobile */
     .table-scroll {
@@ -1286,5 +1163,7 @@ td.drag-selecting {
   outline-offset: -2px;
   cursor: cell !important;
 }
+
+
 
 

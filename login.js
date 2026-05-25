@@ -68,6 +68,8 @@ document.addEventListener('DOMContentLoaded', () => {
           const userData = userDoc.data();
           localStorage.setItem('userRole', userData.role || 'student');
           localStorage.setItem('userProgram', userData.program || '');
+          const name = userData.username || userData.fullName || userData.name || userData.lastName || user.displayName || user.email.split('@')[0];
+          if (name) localStorage.setItem('displayName', name);
           if (userData.section) {
             localStorage.setItem('userSection', userData.section);
           } else {

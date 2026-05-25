@@ -1,4 +1,4 @@
-const CACHE_NAME = 'schedsync-v6';
+const CACHE_NAME = 'schedsync-v9';
 
 const STATIC_EXTS = ['.js', '.css', '.png', '.jpg', '.jpeg', '.webp', '.svg', '.woff2', '.woff'];
 

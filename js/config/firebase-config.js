@@ -21,13 +21,15 @@ const firebaseConfig = {
 // Initialize Firebase once 🚀⚓
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// 🛡️ CACHING ENGINE: Initialize Firestore with Offline Persistence (IndexedDB)
-// This reduces Read quota usage by serving data from cache when it hasn't changed.
-const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentMultipleTabManager()
-  })
-});
+let db;
+try {
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+  });
+} catch (e) {
+  console.warn("Firestore persistentLocalCache failed, falling back:", e.message);
+  db = getFirestore(app);
+}
 
 const auth = getAuth(app);
 const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;

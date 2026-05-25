@@ -1,4 +1,5 @@
 import { db, auth, app } from "./js/config/firebase-config.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { getUIMode, setUIMode } from "./ui-effects.js";
 import { showToast, showConfirm } from "./js/utils/ui-utils.js";
@@ -44,24 +45,36 @@ export function initUserProfile(profileSelector = "#userProfile") {
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       // Get displayName and photoURL from Firestore first, fallback to Auth
-      let displayName = user.displayName || user.email.split("@")[0] || "User";
+      let displayName = localStorage.getItem('displayName') || user.displayName || user.email.split("@")[0] || "User";
       let photoURL = user.photoURL || "images/default_shark.jpg";
       
       // Try to get from Firestore for more accurate data
       try {
-        const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js");
-        const { db } = await import("./js/config/firebase-config.js");
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
           const userData = userDoc.data();
-          displayName = userData.displayName || userData.username || user.displayName || displayName;
+          displayName = userData.username || userData.fullName || userData.name || userData.lastName || userData.displayName || user.displayName || displayName;
           photoURL = userData.photoURL || photoURL;
+          localStorage.setItem('displayName', displayName);
         }
       } catch (e) {
         console.warn("Could not fetch user data from Firestore:", e);
       }
       
       if (userNameEl) userNameEl.textContent = displayName;
+
+      // Inject sidebar user block above nav
+      const sidebar = document.querySelector('.sidebar');
+      if (sidebar && !sidebar.querySelector('.sidebar-user')) {
+        const sbPhotoUrl = photoURL && photoURL.startsWith('http') ? photoURL : 'images/default_shark.jpg';
+        const userBlock = document.createElement('div');
+        userBlock.className = 'sidebar-user';
+        userBlock.innerHTML = `<div class="sidebar-user-avatar"><img src="${sbPhotoUrl}" onerror="this.src='images/default_shark.jpg'"></div><div class="sidebar-user-info"><div class="sidebar-user-name">${displayName}</div><div class="sidebar-user-role">${localStorage.getItem('userRole') || 'user'}</div></div>`;
+        userBlock.style.cursor = 'pointer';
+        userBlock.onclick = () => window.location.href = 'profile.html';
+        const menu = sidebar.querySelector('.sidebar-menu');
+        if (menu) menu.before(userBlock);
+      }
       if (userAvatarEl) {
         const validUrl = photoURL && (photoURL.startsWith('http') || photoURL.startsWith('data:')) ? photoURL : 'images/default_shark.jpg';
         userAvatarEl.innerHTML = `<img src="${validUrl}" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.src='images/default_shark.jpg'">`;
