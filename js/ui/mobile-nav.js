@@ -7,7 +7,7 @@ export function initMobileNav() {
 
   // Show admin-only tabs if user is admin
   const role = localStorage.getItem('userRole');
-  if (role === 'admin') {
+  if (role === 'admin' || role === 'academic_head') {
     document.querySelectorAll('.mob-nav-item.admin-only')
       .forEach(el => el.style.display = 'flex');
   }

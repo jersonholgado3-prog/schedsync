@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Welcome to SchedSync</title>
+  <title>Welcome to SchedClick</title>
   <script>
     (function () {
       // 1. Theme Lock 🌙 - Always Light for Landing/Login
@@ -30,14 +30,14 @@
   </div>
   <header>
     <img src="images/LOGO.png" alt="SchedSync Logo" class="header-logo">
-    <span class="brand-name">SchedSync</span>
+    <span class="brand-name">SchedClick</span>
   </header>
 
   <section class="hero-container">
     <div class="hero-text">
-      <h1>Welcome to SchedSync</h1>
+      <h1>Welcome to SchedClick</h1>
       <p>
-        SchedSync is a web-based scheduling management system designed to streamline class, teacher, room,
+        SchedClick is a web-based scheduling management system designed to streamline class, teacher, room,
         and event scheduling within the institution. It helps administrators create conflict-free timetables while
         allowing teachers and students to access real-time schedule updates anytime, anywhere.
       </p>
@@ -45,8 +45,8 @@
 
     <div class="login-card">
       <div class="card-header">
-        <img src="images/LOGO.png" alt="Logo" style="height: 25px;">
-        <span>SchedSync</span>
+        <img src="images/LOGO.png" alt="Logo" style="height: 40px;">
+        <span>SchedClick</span>
       </div>
       <div class="card-body">
         <h2>Login now</h2>
@@ -85,9 +85,6 @@
 
           <button type="submit" id="studentLoginBtn" class="btn btn-login">Log In</button>
         </form>
-
-
-
 
       </div>
     </div>
@@ -253,7 +250,6 @@
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         console.log("SchedSync: Active session detected for:", user.email);
-        // We stay on index.html to force manual login/verification 🔒
       } else {
         console.log("SchedSync: No active session.");
       }

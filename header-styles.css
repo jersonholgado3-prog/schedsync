@@ -306,7 +306,15 @@ body,
 }
 
 .logo-container {
-    width: fit-content !important;
+    display: none !important;
+}
+
+/* Force hide logo-container globally */
+html body .logo-container,
+html body .left-header .logo-container,
+html body .header .logo-container {
+    display: none !important;
+}
     min-width: unset !important;
     max-width: 420px !important;
     height: 65px !important;
@@ -325,8 +333,8 @@ body,
 }
 
 .dark .logo-img {
-    filter: none !important;
-    opacity: 0.9;
+    filter: brightness(0) invert(1) !important;
+    opacity: 0.95;
 }
 
 /* Center Section (Greeting/Title) */
@@ -1299,13 +1307,19 @@ html body .sidebar .sidebar-header { background: #f8f9ff !important; background-
 html.dark body .sidebar .sidebar-header { background: #1a1a2e !important; background-color: #1a1a2e !important; border-radius: 0 !important; }
 html body .sidebar .sidebar-link { color: #1e3a5f !important; }
 html body .sidebar .sidebar-link span { color: #1e3a5f !important; }
+html.dark body .sidebar .sidebar-link { color: #ffffff !important; }
+html.dark body .sidebar .sidebar-link span { color: #ffffff !important; }
 html body .sidebar .sidebar-link img { filter: brightness(0) saturate(100%) invert(18%) sepia(50%) saturate(800%) hue-rotate(195deg) brightness(90%) !important; }
+html.dark body .sidebar .sidebar-link img { filter: brightness(0) invert(1) opacity(0.85) !important; }
 html body .sidebar .sidebar-link:hover { background: rgba(59,130,246,0.1) !important; color: #1d4ed8 !important; }
 html body .sidebar .sidebar-link:hover span { color: #1d4ed8 !important; }
+html.dark body .sidebar .sidebar-link:hover { background: rgba(99,102,241,0.15) !important; color: #a5b4fc !important; }
+html.dark body .sidebar .sidebar-link:hover span { color: #a5b4fc !important; }
 html body .sidebar .sidebar-link.active { background: #3b82f6 !important; color: #ffffff !important; box-shadow: none !important; font-weight: 800 !important; }
 html body .sidebar .sidebar-link.active span { color: #ffffff !important; }
 html body .sidebar .sidebar-link.active img { filter: brightness(0) invert(1) !important; }
 html body .sidebar .sidebar-link:not(.active) img { filter: brightness(0) saturate(100%) invert(18%) sepia(50%) saturate(800%) hue-rotate(195deg) brightness(90%) !important; }
+html.dark body .sidebar .sidebar-link:not(.active) img { filter: brightness(0) invert(1) opacity(0.75) !important; }
 .mobile-bottom-nav { background: #1a1a2e !important; }
 
 /* Sidebar user block */

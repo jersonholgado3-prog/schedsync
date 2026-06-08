@@ -209,7 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // 🛡️ ROLE GUARD: Only Editors can use shortcuts ⚓
         const role = (currentUserRole || localStorage.getItem('userRole') || '').toLowerCase();
         const hasPermission = hasEditPermission;
-        const isEditor = role === 'admin' || role === 'program head' || hasPermission;
+        const isEditor = role === 'admin' || role === 'academic_head' || role === 'program head' || hasPermission;
         if (!isEditor) return;
 
         // Only run if not in an input/textarea
@@ -608,7 +608,7 @@ async function handleDrop(e) {
   // 🛡️ ROLE GUARD: Only Editors can drop/move items ⚓
   const role = (currentUserRole || localStorage.getItem('userRole') || '').toLowerCase();
   const hasPermission = hasEditPermission;
-  const isEditor = role === 'admin' || role === 'program head' || hasPermission;
+  const isEditor = role === 'admin' || role === 'academic_head' || role === 'program head' || hasPermission;
 
   if (trayData) {
     if (!isEditor) return;
@@ -1200,8 +1200,7 @@ async function load() {
       let q;
       const filterName = urlParams.get("name");
 
-      if (currentUserRole === 'admin') {
-        // Admin: See everything, but filter by name if present to avoid showing ALL sections/college
+      if (currentUserRole === 'admin' || currentUserRole === 'academic_head') {
         if (filterName) {
             q = query(collection(db, "schedules"), where("scheduleName", "==", filterName));
         } else {
@@ -1222,7 +1221,7 @@ async function load() {
         // Filter out events
         if (data.section !== "EVENTS" && data.section !== "EVENT_HOST" && d.id !== "DEFAULT_SECTION") {
           // Non-admins can only see published schedules (or their own drafts)
-          if (currentUserRole !== 'admin' && data.status === 'draft' && data.userId !== currentUser.uid) return;
+          if (currentUserRole !== 'admin' && currentUserRole !== 'academic_head' && data.status === 'draft' && data.userId !== currentUser.uid) return;
           schedules.push({ id: d.id, ...data });
         }
       });
@@ -1907,7 +1906,7 @@ function renderTable() {
               ${(() => {
                 const role = (currentUserRole || localStorage.getItem('userRole') || '').toLowerCase();
                 const hasPermission = hasEditPermission;
-                const isEditor = role === 'admin' || role === 'program head' || hasPermission;
+                const isEditor = role === 'admin' || role === 'academic_head' || role === 'program head' || hasPermission;
                 return isEditor ? `
                 <button class="day-action delete-target" onclick="window.clearSection('${s.id}')" title="Clear Entire Section" style="background: linear-gradient(135deg,#dc2626,#b91c1c); color: #fff; border: none; padding: 0.35rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.72rem; font-weight: 700; display: flex; align-items: center; gap: 0.4rem; letter-spacing: 0.8px; box-shadow: 0 2px 8px rgba(220,38,38,0.35); transition: all 0.15s;" onmouseover="this.style.filter='brightness(1.15)'" onmouseout="this.style.filter='brightness(1)'">
                   <img src="images/TRASH.png" style="width:13px;height:13px;object-fit:contain;filter:brightness(0) invert(1);"> CLEAR SECTION
@@ -1950,7 +1949,7 @@ function renderTable() {
             ${(() => {
               const role = (currentUserRole || localStorage.getItem('userRole') || '').toLowerCase();
               const hasPermission = hasEditPermission;
-              const isEditor = role === 'admin' || role === 'program head' || hasPermission;
+              const isEditor = role === 'admin' || role === 'academic_head' || role === 'program head' || hasPermission;
               return isEditor ? `
               <button class="day-action" onclick="window.copyDayInSection('${s.id}', '${d}')" title="Copy ${d}" style="cursor:pointer;background:${_dark ? 'linear-gradient(135deg,#60a5fa,#93c5fd)' : 'linear-gradient(135deg,#93c5fd,#bfdbfe)'};border:none;border-radius:6px;padding:4px 5px;display:flex;align-items:center;box-shadow:0 2px 6px rgba(147,197,253,0.4);transition:all 0.15s;" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'"><img src="images/COPY.png" style="width:12px;height:12px;object-fit:contain;filter:${_dark ? 'brightness(0) invert(1)' : 'brightness(0) saturate(100%) invert(18%) sepia(90%) saturate(1500%) hue-rotate(210deg)'};display:block;"></button>
               <button class="day-action paste ${isPasteReady ? 'ready' : ''}" onclick="window.pasteDayToSection('${s.id}', '${d}')" title="Paste to ${d}" style="cursor:pointer;background:${isPasteReady ? (_dark ? 'linear-gradient(135deg,#67e8f9,#a5f3fc)' : 'linear-gradient(135deg,#a5f3fc,#cffafe)') : (_dark ? 'linear-gradient(135deg,#94a3b8,#cbd5e1)' : 'linear-gradient(135deg,#e2e8f0,#f1f5f9)')};border:none;border-radius:6px;padding:4px 5px;display:flex;align-items:center;box-shadow:0 2px 6px rgba(0,0,0,0.1);transition:all 0.15s;" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'"><img src="images/PASTE.png" style="width:12px;height:12px;object-fit:contain;filter:brightness(0) ${isPasteReady ? 'saturate(100%) invert(25%) sepia(80%) saturate(1000%) hue-rotate(170deg)' : (_dark ? 'invert(1)' : 'invert(0.4)')};display:block;"></button>

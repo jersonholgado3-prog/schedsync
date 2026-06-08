@@ -34,7 +34,7 @@ const loadMoreBtn = document.querySelector(".load-more-btn");
 const isEditor = () => {
   const role = localStorage.getItem("userRole") || "student";
   const hasPermission = localStorage.getItem("editPermission") === "true";
-  return role === "admin" || role === "program head" || hasPermission;
+  return role === "admin" || role === "academic_head" || role === "program head" || hasPermission;
 };
 
 

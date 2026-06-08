@@ -104,6 +104,50 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // =====================================================
+  // ✅ ADMIN PASSWORD-ONLY LOGIN
+  // =====================================================
+  const adminLoginForm = document.getElementById('adminLoginForm');
+  if (adminLoginForm) {
+    const showAdminNotif = (msg, type) => {
+      const el = document.getElementById('adminNotif');
+      if (!el) return;
+      el.textContent = msg;
+      el.style.display = 'block';
+      el.style.background = type === 'error' ? '#fee2e2' : '#dcfce7';
+      el.style.color = type === 'error' ? '#dc2626' : '#16a34a';
+    };
+    adminLoginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const password = document.getElementById('adminPassword').value;
+      if (!password) { showAdminNotif('Please enter your password.', 'error'); return; }
+
+      try {
+        const snap = await getDocs(query(collection(db, 'users'),
+          where('role', 'in', ['admin', 'academic_head'])
+        ));
+        const match = snap.docs.find(d => d.data().password === password);
+        if (!match) { showAdminNotif('Incorrect password.', 'error'); return; }
+
+        const userData = match.data();
+        const userCred = await signInWithEmailAndPassword(auth, userData.email, password);
+
+        localStorage.setItem('userRole', userData.role || 'admin');
+        localStorage.setItem('userRoles', JSON.stringify(Array.isArray(userData.roles) ? userData.roles : [userData.role]));
+        localStorage.setItem('userProgram', userData.program || '');
+        const name = userData.username || userData.displayName || userCred.user.email.split('@')[0];
+        if (name) localStorage.setItem('displayName', name);
+        if (!localStorage.getItem('uiMode')) localStorage.setItem('uiMode', 'professional');
+
+        showAdminNotif('✅ Redirecting...', 'success');
+        setTimeout(() => { window.location.href = 'homepage.html'; }, 1200);
+      } catch (error) {
+        console.error(error);
+        showAdminNotif('Login failed. Please try again.', 'error');
+      }
+    });
+  }
+
+  // =====================================================
   // ✅ FORGOT PASSWORD PAGE LOGIC
   // =====================================================
   const forgotForm = document.getElementById('forgotPasswordForm');

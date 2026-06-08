@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('[Archives] userRole:', localStorage.getItem('userRole'));
     if (!user) { window.location.href = 'login.html'; return; }
     const role = localStorage.getItem('userRole');
-    if (role !== 'admin') { window.location.href = 'homepage.html'; return; }
+    if (role !== 'admin' && role !== 'academic_head') { window.location.href = 'homepage.html'; return; }
     await autoCleanupOldArchives();
     await loadArchives();
     updateStats();

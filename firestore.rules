@@ -22,6 +22,18 @@ service cloud.firestore {
       return isSignedIn() && role() in ['admin', 'teacher', 'program head'];
     }
 
+    // ── Admin Login Lookup (public, read-only, no sensitive data) ──
+    match /admin_login/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ── Config (public read, admin write) ──
+    match /config/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // ── Users ──────────────────────────────────────────────
     match /users/{userId} {
       allow read: if isSignedIn();

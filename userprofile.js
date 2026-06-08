@@ -88,7 +88,7 @@ export function initUserProfile(profileSelector = "#userProfile") {
     if (dropdownRendered) return;
     dropdownRendered = true;
     const userRole = localStorage.getItem('userRole') || 'student';
-    const adminLink = userRole === 'admin'
+    const adminLink = (userRole === 'admin' || userRole === 'academic_head')
       ? `<div class="dropdown-item dropdown-admin" onclick="window.location.href='permissions.html'">
            🛡️ Manage Permissions
          </div>`

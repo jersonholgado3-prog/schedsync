@@ -28,13 +28,18 @@ export const getCachedSections = (db) =>
     return snap.docs.map(d => ({ id: d.id, ...d.data() }));
   });
 
-/** All faculty (teachers + program heads) — single query, client-side filter */
+/** All faculty (teachers + program heads + academic heads) — single query, client-side filter */
 export const getCachedFaculty = (db) =>
   _fetch("faculty", async () => {
     const snap = await getDocs(collection(db, "users"));
+    const facultyRoles = ["teacher", "program head", "head teacher", "academic_head"];
     return snap.docs
       .map(d => ({ id: d.id, ...d.data() }))
-      .filter(u => ["teacher", "program head", "head teacher"].includes((u.role || "").toLowerCase()));
+      .filter(u => {
+        const role = (u.role || "").toLowerCase();
+        const roles = Array.isArray(u.roles) ? u.roles.map(r => r.toLowerCase()) : [];
+        return facultyRoles.includes(role) || roles.some(r => facultyRoles.includes(r));
+      });
   });
 
 /** All courses */

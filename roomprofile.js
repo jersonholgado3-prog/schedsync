@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             const userDoc = await getDoc(doc(db, "users", user.uid));
-            if (userDoc.exists() && userDoc.data().role === "admin") {
+            if (userDoc.exists() && (userDoc.data().role === "admin" || userDoc.data().role === "academic_head")) {
                 setupAdminFeatures(roomName);
             }
         }

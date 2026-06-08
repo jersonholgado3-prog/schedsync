@@ -33,6 +33,14 @@
     })();
   </script>
   <link rel="stylesheet" href="profile_styles.css" />
+  <link rel="stylesheet" href="login.css" />
+  <style>
+    #changePassModal .password-toggle .eye-on { display: block; }
+    #changePassModal .password-toggle .eye-off { display: none; }
+    #changePassModal .password-toggle.visible .eye-on { display: none; }
+    #changePassModal .password-toggle.visible .eye-off { display: block; }
+    #changePassModal .password-toggle svg { width: 20px; height: 20px; }
+  </style>
 </head>
 
 <body>
@@ -77,6 +85,7 @@
             <img src="images/AUDIT.png" alt="Audit">
             <span>Audit Logs</span>
           </a>
+          <a href="accounts.html" class="sidebar-link"><img src="images/PROFILE.png" alt="Accounts"><span>Accounts</span></a>
         </div>
       </nav>
     </aside>
@@ -186,12 +195,12 @@
       </div>
 
       <!-- CHANGE PASSWORD MODAL -->
-      <div id="changePassModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;z-index:2000;">
+      <div id="changePassModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;z-index:99999;">
         <div id="changePassBox" style="background:#fff;border:3px solid #000;border-radius:20px;box-shadow:6px 6px 0 #000;padding:2rem;width:90%;max-width:400px;display:flex;flex-direction:column;gap:14px;font-family:Poppins,sans-serif;">
           <div style="font-size:1.1rem;font-weight:800;text-transform:uppercase;">Change Password</div>
-          <input type="password" id="cpCurrent" placeholder="Current Password" style="padding:10px 12px;border:2px solid #000;border-radius:10px;font-size:0.9rem;outline:none;width:100%;box-sizing:border-box;">
-          <input type="password" id="cpNew" placeholder="New Password (min 6 chars)" style="padding:10px 12px;border:2px solid #000;border-radius:10px;font-size:0.9rem;outline:none;width:100%;box-sizing:border-box;">
-          <input type="password" id="cpConfirm" placeholder="Confirm New Password" style="padding:10px 12px;border:2px solid #000;border-radius:10px;font-size:0.9rem;outline:none;width:100%;box-sizing:border-box;">
+          <div class="password-input-wrapper"><input type="password" id="cpCurrent" placeholder="Current Password"><div class="password-toggle" id="toggleCpCurrent"><svg xmlns="http://www.w3.org/2000/svg" class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" y1="2" x2="22" y2="22"></line></svg><svg xmlns="http://www.w3.org/2000/svg" class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg></div></div>
+          <div class="password-input-wrapper"><input type="password" id="cpNew" placeholder="New Password (min 6 chars)"><div class="password-toggle" id="toggleCpNew"><svg xmlns="http://www.w3.org/2000/svg" class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" y1="2" x2="22" y2="22"></line></svg><svg xmlns="http://www.w3.org/2000/svg" class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg></div></div>
+          <div class="password-input-wrapper"><input type="password" id="cpConfirm" placeholder="Confirm New Password"><div class="password-toggle" id="toggleCpConfirm"><svg xmlns="http://www.w3.org/2000/svg" class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" y1="2" x2="22" y2="22"></line></svg><svg xmlns="http://www.w3.org/2000/svg" class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg></div></div>
           <div style="display:flex;gap:10px;margin-top:4px;">
             <button id="cpCancelBtn" style="flex:1;padding:10px;border:2px solid #000;border-radius:10px;background:#f1f5f9;font-weight:700;cursor:pointer;">Cancel</button>
             <button id="cpSaveBtn" style="flex:1;padding:10px;border:2px solid #000;border-radius:10px;background:#000;color:#fff;font-weight:700;cursor:pointer;">Change</button>
@@ -229,6 +238,7 @@
     <a href="audit_logs.html" class="mob-nav-item admin-only" data-page="audit_logs" style="display:none">
       <img src="images/AUDIT.png" alt="Audit Logs"><span>Audit</span>
     </a>
+          <a href="accounts.html" class="sidebar-link"><img src="images/PROFILE.png" alt="Accounts"><span>Accounts</span></a>
   </nav>
 <script>
   let _installPrompt = null;

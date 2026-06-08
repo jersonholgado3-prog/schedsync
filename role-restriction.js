@@ -1,6 +1,6 @@
 import { db, auth } from "./js/config/firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-import { doc, getDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { doc, getDoc, collection, addDoc, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { showToast, showConfirm } from "./js/utils/ui-utils.js";
 import "./import-progress.js";
 
@@ -13,7 +13,7 @@ let cachedProgram = localStorage.getItem('userProgram') || '';
 const observer = new MutationObserver((mutations) => {
     const role = localStorage.getItem('userRole') || 'student';
     const perm = localStorage.getItem('editPermission') === 'true';
-    if (role !== 'admin' && !perm) {
+    if (role !== 'admin' && role !== 'academic_head' && !perm) {
         sweep();
     }
 });
@@ -64,6 +64,16 @@ if (cachedRole === 'student') {
     document.head.appendChild(studentStyle);
 }
 
+// Option B: multi-role helper — returns highest-privilege role from roles[] or falls back to role string
+const ROLE_PRIORITY = ['admin', 'academic_head', 'program head', 'teacher', 'student'];
+function getEffectiveRole(userData) {
+    const roles = Array.isArray(userData.roles) && userData.roles.length ? userData.roles : [userData.role || 'student'];
+    for (const r of ROLE_PRIORITY) {
+        if (roles.includes(r)) return r;
+    }
+    return roles[0] || 'student';
+}
+
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         try {
@@ -71,16 +81,20 @@ onAuthStateChanged(auth, async (user) => {
             const userDoc = await getDoc(doc(db, "users", user.uid));
             if (userDoc.exists()) {
                 const userData = userDoc.data();
-                const role = userData.role || 'student';
+                const role = getEffectiveRole(userData);
                 const hasPermission = userData.editPermission === true;
 
                 // Update Cache ⚓
                 localStorage.setItem('userRole', role);
+                localStorage.setItem('userRoles', JSON.stringify(Array.isArray(userData.roles) ? userData.roles : [role]));
                 localStorage.setItem('editPermission', String(hasPermission));
                 const program = userData.program || '';
                 localStorage.setItem('userProgram', program);
 
                 applyRestrictions(role, hasPermission);
+
+                // Update lastSeen for online presence
+                updateDoc(doc(db, "users", user.uid), { lastSeen: serverTimestamp() }).catch(() => {});
             }
         } catch (error) {
             console.error("Error applying role restrictions:", error);
@@ -102,7 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function applyRestrictions(role, hasPermission) {
     // Only admin or users with explicit editPermission can edit
-    const isEditor = role === 'admin' || hasPermission;
+    const isEditor = role === 'admin' || role === 'academic_head' || hasPermission;
     
     if (!isEditor) {
         injectHiderStyle();
@@ -115,8 +129,21 @@ function applyRestrictions(role, hasPermission) {
     // 🛡️ Global Admin Sidebar Links Toggle ⚓
     const adminLinks = document.getElementById('adminSidebarLinks');
     if (adminLinks) {
-        adminLinks.style.display = (role === 'admin') ? 'block' : 'none';
+        adminLinks.style.display = (role === 'admin' || role === 'academic_head') ? 'block' : 'none';
     }
+
+    // Auto-highlight sidebar link matching current page
+    const currentPage = window.location.pathname.split('/').pop();
+    document.querySelectorAll('.sidebar-link').forEach(link => {
+        const href = link.getAttribute('href') || '';
+        if (href === currentPage) link.classList.add('active');
+        else link.classList.remove('active');
+    });
+
+    // Hide Accounts page link from non-admins
+    document.querySelectorAll("a[href*='accounts.html']").forEach(el => {
+        el.style.display = (role === 'admin' || role === 'academic_head') ? '' : 'none';
+    });
 
     // Hide My Schedule, Curriculum, Archives from students (sidebar + mobile nav)
     if (role === "student") {
@@ -132,13 +159,13 @@ function applyRestrictions(role, hasPermission) {
     }
 
     // Hide archives from non-admins (teachers/students)
-    if (role !== "admin") {
+    if (role !== "admin" && role !== "academic_head") {
         document.querySelectorAll("a[href*='archives']").forEach(el => el.style.display = "none");
     }
 
     // Toggle .admin-only class elements (like in mobile bottom nav)
     document.querySelectorAll('.admin-only').forEach(el => {
-        if (role === 'admin') {
+        if (role === 'admin' || role === 'academic_head') {
             if (el.classList.contains('selection-bar')) return; // controlled by facultypage.js
             if (el.id === 'bulkDeleteBar' || el.id === 'eventSelectionBar') return; // controlled by select mode
             const isFlexEl = el.classList.contains('mob-nav-item') || el.classList.contains('import-toolbar');
@@ -152,7 +179,7 @@ function applyRestrictions(role, hasPermission) {
 function sweep() {
     const role = localStorage.getItem('userRole') || 'student';
     const perm = localStorage.getItem('editPermission') === 'true';
-    if (role === 'admin' || perm) return;
+    if (role === 'admin' || role === 'academic_head' || perm) return;
 
     // 1. Hide Editor elements
     document.querySelectorAll('div[onclick*="sectionspage.html"], div[onclick*="editpage.html"]').forEach(el => {

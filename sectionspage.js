@@ -59,7 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let selectedScheduleType = "regular";
     const userRole = localStorage.getItem('userRole') || 'student';
     let hasEditPermission = localStorage.getItem('editPermission') === 'true';
-    const isEditor = userRole === 'admin' || userRole === 'program head' || hasEditPermission;
+    const isEditor = userRole === 'admin' || userRole === 'academic_head' || userRole === 'program head' || hasEditPermission;
 
     // UI Elements
     const scheduleModal = document.getElementById("scheduleModal");

@@ -4,7 +4,7 @@ import { onAuthStateChanged, updateProfile, signOut, updatePassword, reauthentic
 import { doc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { initUserProfile } from "./userprofile.js";
 import { initUniversalSearch } from "./search.js";
-import { getUIMode, setUIMode } from "./ui-effects.js";
+import { getUIMode, setUIMode, initPasswordVisibilityToggles } from "./ui-effects.js";
 import { showToast, showPrompt, showConfirm } from "./js/utils/ui-utils.js";
 
 /* ───────── TIME HELPERS ───────── */
@@ -433,9 +433,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const box = document.getElementById('changePassBox');
   if (!btn || !modal) return;
 
-  // Show button only when logged in
   onAuthStateChanged(auth, user => {
-    if (user) { btn.style.display = 'flex'; }
+    if (user) {
+      const role = localStorage.getItem('userRole') || '';
+      if (role === 'admin' || role === 'academic_head') {
+        btn.style.display = 'flex';
+      }
+    }
   });
 
   const openModal = () => {
@@ -446,6 +450,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (el) { el.style.background = dark ? '#0f172a' : '#fff'; el.style.color = dark ? '#f1f5f9' : '#000'; el.style.borderColor = dark ? '#475569' : '#000'; }
     });
     modal.style.display = 'flex';
+    initPasswordVisibilityToggles();
     document.getElementById('cpCurrent').focus();
   };
   const closeModal = () => {
@@ -473,9 +478,17 @@ document.addEventListener("DOMContentLoaded", () => {
       const cred = EmailAuthProvider.credential(user.email, currentPass);
       await reauthenticateWithCredential(user, cred);
       await updatePassword(user, newPass);
+      // Keep Firestore password field in sync for Admin Login feature
+      await updateDoc(doc(db, 'users', user.uid), { password: newPass });
+      // Sync admin_login lookup doc
+      const role = localStorage.getItem('userRole') || '';
+      if (role === 'admin' || role === 'academic_head') {
+        await import("https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js")
+          .then(({ setDoc, doc: fsDoc }) => setDoc(fsDoc(db, 'admin_login', user.uid), { email: user.email, password: newPass, role }));
+      }
       closeModal();
       showToast('Password changed! Please log in again.', 'success');
-      setTimeout(() => { signOut(auth); window.location.href = 'login.html'; }, 2000);
+      setTimeout(() => { signOut(auth); window.location.href = 'index.html'; }, 2000);
     } catch (err) {
       if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
         showToast('Current password is incorrect.', 'error');

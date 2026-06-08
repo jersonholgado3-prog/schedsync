@@ -48,12 +48,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const udoc = await getDoc(doc(db, 'users', user.uid));
     const role = udoc.data()?.role || '';
     const hasPerm = udoc.data()?.editPermission === true;
-    if (role !== 'admin' && role !== 'program head' && !hasPerm) {
+    if (role !== 'admin' && role !== 'academic_head' && role !== 'program head' && !hasPerm) {
       window.location.href = 'homepage.html'; return;
     }
     // Show admin sidebar links
     const adminLinks = document.getElementById('adminSidebarLinks');
-    if (adminLinks && role === 'admin') adminLinks.style.display = 'block';
+    if (adminLinks && (role === 'admin' || role === 'academic_head')) adminLinks.style.display = 'block';
 
     await Promise.all([loadSections(), loadRooms(), loadCourses(), loadFaculty()]);
     setupUI();

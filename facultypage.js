@@ -39,7 +39,7 @@ let selectionMode = false;
 let currentDeptFilter = 'all';
 const userRole = localStorage.getItem('userRole') || 'student';
 const hasEditPermission = localStorage.getItem('editPermission') === 'true';
-const isAdmin = userRole === 'admin';
+const isAdmin = userRole === 'admin' || userRole === 'academic_head';
 const isProgramHead = userRole === 'program head';
 const canSelect = isAdmin || isProgramHead;
 const isEditor = isAdmin;
@@ -487,10 +487,11 @@ async function loadTeachers(forceRefresh = false) {
       const teacherName = d.username || d.name || "Unnamed Teacher";
       const employmentStatus = d.employmentStatus || d.status || "N/A";
       const isSelected = selectedIds.has(d.id);
-      const isAdmin = localStorage.getItem('userRole') === 'admin';
+      const isAdmin = localStorage.getItem('userRole') === 'admin' || localStorage.getItem('userRole') === 'academic_head';
       const isProgramHead = localStorage.getItem('userRole') === 'program head';
       const canAssignSubjects = isAdmin || isProgramHead;
       const role = d.role || 'teacher';
+      const userRoles = Array.isArray(d.roles) && d.roles.length ? d.roles : [role];
       const program = d.program || '';
 
       // Program Head specialization label
@@ -500,8 +501,9 @@ async function loadTeachers(forceRefresh = false) {
         'BM': '💼 BM Program Head',
         'SHS': '🎓 Asst. Principal (SHS)'
       };
-      const roleLabel = role === 'program head' ? (programHeadTypes[program] || 'Program Head') :
-        role === 'admin' ? 'Admin' : 'Teacher';
+      const singleRoleLabel = r => r === 'program head' ? (programHeadTypes[program] || 'Program Head') :
+        r === 'admin' ? 'Admin' : r === 'academic_head' ? 'Academic Head' : 'Teacher';
+      const roleLabel = userRoles.filter(r => r !== 'teacher').map(singleRoleLabel).join(' + ') || 'Teacher';
 
       const card = document.createElement("div");
       card.className = `faculty-card ${isSelected ? 'selected' : ''}`;
@@ -525,7 +527,7 @@ async function loadTeachers(forceRefresh = false) {
         </div>
         <div class="faculty-name">${teacherName}</div>
         <div class="faculty-details">
-          ${role !== 'teacher' ? `<strong>Role:</strong> ${roleLabel}<br>` : ""}
+          ${userRoles.some(r => r !== 'teacher') ? `<strong>Role:</strong> ${roleLabel}<br>` : ""}
           ${isAdmin && d.email ? `<br><strong>Email:</strong> ${d.email}` : ""}
           ${isAdmin && d.password ? `<br><strong>Password:</strong> ${d.password}` : ""}
         </div>
@@ -738,6 +740,7 @@ const PROGRAM_KEYWORDS = {
 let _assignTeacherId = null;
 let _groupedCourses = [];
 let _isBulkAssign = false;
+let _selectedSubjects = new Set();
 
 function rankTerm(s) {
   const u = s.toUpperCase();
@@ -769,6 +772,7 @@ async function openAssignSubjectsModal(teacherId, teacherName, currentSubjects, 
   nameEl.textContent = `Teacher: ${teacherName}`;
   list.innerHTML = '<div style="text-align:center;padding:1rem;color:#64748b;">Loading subjects...</div>';
   searchInput.value = '';
+  _selectedSubjects = new Set(currentSubjects || []);
   modal.classList.remove('hidden');
 
   // Determine if a course is SHS based on its term names
@@ -968,18 +972,24 @@ function initAssignSubjectsModal() {
   modal.addEventListener('click', e => { if (e.target === modal) { modal.classList.add('hidden'); _assignTeacherId = null; _isBulkAssign = false; } });
 
   searchInput.addEventListener('input', () => {
-    // Preserve currently checked values before re-render
-    const checked = new Set(
-      Array.from(document.querySelectorAll('#subjectCheckboxList input[type=checkbox]:checked')).map(cb => cb.value)
-    );
-    renderGroupedSubjects(checked, searchInput.value);
+    // Sync currently visible checkboxes into _selectedSubjects before re-render
+    document.querySelectorAll('#subjectCheckboxList input[type=checkbox]').forEach(cb => {
+      if (cb.checked) _selectedSubjects.add(cb.value);
+      else _selectedSubjects.delete(cb.value);
+    });
+    renderGroupedSubjects(_selectedSubjects, searchInput.value);
   });
 
   saveBtn.addEventListener('click', async () => {
     if (!_isBulkAssign && !_assignTeacherId) return;
     if (_isBulkAssign && selectedIds.size === 0) return;
 
-    const selected = Array.from(document.querySelectorAll('#subjectCheckboxList input[type=checkbox]:checked')).map(cb => cb.value);
+    // Sync visible checkboxes into _selectedSubjects before saving
+    document.querySelectorAll('#subjectCheckboxList input[type=checkbox]').forEach(cb => {
+      if (cb.checked) _selectedSubjects.add(cb.value);
+      else _selectedSubjects.delete(cb.value);
+    });
+    const selected = Array.from(_selectedSubjects);
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving...';
     try {

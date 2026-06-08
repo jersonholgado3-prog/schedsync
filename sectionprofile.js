@@ -84,7 +84,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             if (data.sectionEmail && credentialSection) {
                 if (currentUser) {
-                    if (userRole === 'admin') {
+                    if (userRole === 'admin' || userRole === 'academic_head') {
                             credentialSection.style.display = "block";
                             emailLabel.innerHTML = `<strong>Email:</strong> ${data.sectionEmail}`;
                             passwordLabel.innerHTML = `<strong>Password:</strong> ${data.defaultPassword || "Not Set"}`;
@@ -156,7 +156,7 @@ async function fetchSectionSchedule(sectionName, userRole = 'student', hasEditPe
         currentSectionClasses = nonVacant;
 
         // Header
-        const isEditor = userRole === 'admin' || hasEditPermission;
+        const isEditor = userRole === 'admin' || userRole === 'academic_head' || hasEditPermission;
         const statusColor = schedStatus === "published" ? "#16a34a" : "#f59e0b";
         const statusLabel = schedStatus === "published" ? "✅ Published" : "📝 Draft";
         const editBtn = isEditor ? `<a href="editpage.html?name=${encodeURIComponent(schedName)}" style="padding:5px 14px;background:#005BAB;color:white;border:2px solid #000;border-radius:8px;font-size:0.75rem;font-weight:800;text-decoration:none;box-shadow:2px 2px 0 #000;">✏️ Edit</a>` : "";

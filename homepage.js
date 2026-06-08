@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
       initEventCalendar();
       setupAnnouncementActions(role);
 
-      if (role === 'admin') {
+      if (role === 'admin' || role === 'academic_head') {
         const adminSection = document.getElementById('adminAnalyticsSection');
         if (adminSection) {
           adminSection.style.display = 'block';
@@ -111,7 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function setupAnnouncementActions(role) {
-  const isAdmin = role === 'admin';
+  const isAdmin = role === 'admin' || role === 'academic_head';
   if (!isAdmin) return;
 
   const selectAllBtn = document.getElementById("selectAllAnnouncements");
@@ -297,7 +297,7 @@ function initAnnouncements(role) {
       window.initHeroCarousel(uniqueItems);
     }
 
-    const isAdmin = role === 'admin';
+    const isAdmin = role === 'admin' || role === 'academic_head';
 
     items.forEach(d => {
       const item = document.createElement('div');

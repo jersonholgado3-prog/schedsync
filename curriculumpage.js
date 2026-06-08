@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (userDoc.exists()) {
                 const role = userDoc.data().role || 'student';
                 if (role === 'student') { window.location.href = 'homepage.html'; return; }
-                if (role === 'admin' || role === 'program head' || userDoc.data().editPermission === true) isAdmin = true;
+                if (role === 'admin' || role === 'academic_head' || role === 'program head' || userDoc.data().editPermission === true) isAdmin = true;
             }
         }
         loadSubjects();

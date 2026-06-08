@@ -20,7 +20,7 @@ onAuthStateChanged(auth, async (user) => {
     if (userDoc.exists()) {
       const data = userDoc.data();
       const role = data.role || 'student';
-      isEditor = role === 'admin' || role === 'program head' || data.editPermission === true;
+      isEditor = role === 'admin' || role === 'academic_head' || role === 'program head' || data.editPermission === true;
       // Show select button now that we have the real value
       if (isEditor) {
         const btn = document.getElementById('selectModeBtn');

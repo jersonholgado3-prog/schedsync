@@ -134,7 +134,7 @@ async function renderAll(shouldFetch = true) {
         if (sectionTitles[2]) sectionTitles[2].style.display = 'none'; // Draft Header
         if (sectionTitles[1]) sectionTitles[1].textContent = "All Published Schedules";
 
-      } else if (currentUserRole === 'admin') {
+      } else if (currentUserRole === 'admin' || currentUserRole === 'academic_head') {
         // ADMIN: Fetch ALL schedules in the system
         const snap = await getDocs(collection(db, "schedules"));
         schedules = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -278,7 +278,7 @@ function renderSection(status, schedules, type = null) {
     if (currentUserRole !== 'student') {
       const viewSchedBtn = `<button class="view-sched-btn" style="background:#005BAB;color:white;font-size:11px;padding:4px 12px;font-weight:800;border-radius:8px;border: 1.5px solid #cbd5e1;box-shadow: 0 2px 8px rgba(0,0,0,0.08);text-transform:uppercase;cursor:pointer;" onclick="event.stopPropagation(); window.location.href='editpage.html?name=${encodeURIComponent(safeName)}'">📅 View Schedules</button>`;
 
-      if (currentUserRole === 'admin' || hasPermission) {
+      if (currentUserRole === 'admin' || currentUserRole === 'academic_head' || hasPermission) {
         const addSectionBtn = `<button class="action-button add-section" onclick="event.stopPropagation(); addSectionToGroup('${safeName}')">+ SECTION</button>`;
 
         if (status === "draft") {          const ownsAny = groupSchedules.some(s => s.userId === currentUser.uid);
@@ -301,7 +301,7 @@ function renderSection(status, schedules, type = null) {
                   ${addSectionBtn}
                   <button class="action-button unpublish" style="padding: 4px 16px; font-size: 14px;" onclick="event.stopPropagation(); unpublishGroup('${safeName}')">UNPUBLISH</button>
                   <button class="action-button edit" style="padding: 4px 16px; font-size: 14px;" onclick="event.stopPropagation(); editGroup('${safeName}')">EDIT ALL</button>
-                  ${(currentUserRole === 'admin' || hasPermission || groupSchedules.some(s => s.userId === currentUser.uid)) ? `<button class="action-button delete-group" style="padding: 4px 16px; font-size: 14px; background: #ef4444; color: white; border-color: black;" onclick="event.stopPropagation(); deleteGroup('${safeName}')">DELETE ALL</button>` : ''}
+                  ${(currentUserRole === 'admin' || currentUserRole === 'academic_head' || hasPermission || groupSchedules.some(s => s.userId === currentUser.uid)) ? `<button class="action-button delete-group" style="padding: 4px 16px; font-size: 14px; background: #ef4444; color: white; border-color: black;" onclick="event.stopPropagation(); deleteGroup('${safeName}')">DELETE ALL</button>` : ''}
               `;
         }
       } else if (currentUserRole === 'teacher' || currentUserRole === 'program head') {
@@ -351,7 +351,7 @@ function renderSection(status, schedules, type = null) {
 
       // Logic for More Menu actions
       const isOwner = s.userId === currentUser.uid;
-      const canEditDelete = (currentUserRole !== 'student' && (currentUserRole === 'admin' || isOwner || hasPermission));
+      const canEditDelete = (currentUserRole !== 'student' && (currentUserRole === 'admin' || currentUserRole === 'academic_head' || isOwner || hasPermission));
 
       const editOption = canEditDelete ? `<div class="menu-item" onclick="editSchedule('${s.id}')">💾 Edit Section</div>` : `<div class="menu-item" onclick="editSchedule('${s.id}')">👁️ View Section</div>`;
       const deleteOption = canEditDelete ? `<div class="menu-item delete" onclick="removeSchedule('${s.id}')">🗑️ Delete Section</div>` : "";

@@ -30,7 +30,7 @@ function checkAdminAccess() {
         }
 
         const role = localStorage.getItem('userRole');
-        if (role !== 'admin') {
+        if (role !== 'admin' && role !== 'academic_head') {
             showToast("Access Denied: Admins Only 🛡️", "error");
             setTimeout(() => window.location.href = 'homepage.html', 1500);
             return;

@@ -1301,7 +1301,7 @@ export const initResumeEditLink = () => {
     const isEditPage = window.location.pathname.includes('editpage.html');
     const role = localStorage.getItem('userRole');
     const editPermission = localStorage.getItem('editPermission') === 'true';
-    const canEdit = role === 'admin' || editPermission;
+    const canEdit = role === 'admin' || role === 'academic_head' || editPermission;
 
     if (activeSession && sidebarMenu && !isEditPage && canEdit) {
         // Remove existing one if any

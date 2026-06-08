@@ -108,7 +108,7 @@ function populateProfile(data) {
     }
 
     // Role display (admin only)
-    const isAdmin = localStorage.getItem('userRole') === 'admin';
+    const isAdmin = localStorage.getItem('userRole') === 'admin' || localStorage.getItem('userRole') === 'academic_head';
     const roleInfoLine = document.getElementById('roleInfoLine');
     const roleDisplay = document.getElementById('roleDisplay');
     const changeRoleBtn = document.getElementById('changeRoleBtn');
@@ -632,7 +632,7 @@ window.downloadSchedule = downloadSchedule;
 
 /* ───────── ADMIN RESET PASSWORD ───────── */
 async function setupResetPasswordBtn(data) {
-  const isAdmin = localStorage.getItem('userRole') === 'admin';
+  const isAdmin = localStorage.getItem('userRole') === 'admin' || localStorage.getItem('userRole') === 'academic_head';
   const btn = document.getElementById('resetPassBtn');
   if (!btn || !isAdmin) return;
   btn.style.display = 'inline-block';
