@@ -640,7 +640,7 @@ async function setupResetPasswordBtn(data) {
   btn.onclick = async () => {
     const name = data.username || data.name || '';
     const lastName = name.trim().split(' ').pop().toUpperCase();
-    const defaultPass = lastName + '@SCHEDSYNC';
+    const defaultPass = lastName + '@schedclick';
     const uid = data.authUid;
 
     if (!uid) { showToast('No Auth UID found for this user.', 'error'); return; }

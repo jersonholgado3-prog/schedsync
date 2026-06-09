@@ -425,7 +425,7 @@ html body .header .logo-container {
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
-    max-width: 150px !important;
+    max-width: 200px !important;
     color: var(--text-main) !important;
 }
 

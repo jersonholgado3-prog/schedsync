@@ -66,7 +66,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
           const userData = userDoc.data();
-          localStorage.setItem('userRole', userData.role || 'student');
+          const rolePriority = ['admin', 'academic_head', 'teacher', 'student'];
+          const derivedRole = userData.role || (Array.isArray(userData.roles) && rolePriority.find(r => userData.roles.includes(r))) || 'student';
+          localStorage.setItem('userRole', derivedRole);
           localStorage.setItem('userProgram', userData.program || '');
           const name = userData.username || userData.fullName || userData.name || userData.lastName || user.displayName || user.email.split('@')[0];
           if (name) localStorage.setItem('displayName', name);
@@ -76,7 +78,20 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.removeItem('userSection');
           }
         } else {
-          localStorage.setItem('userRole', 'student');
+          // Auto-seed admin doc for fallback account
+          if (user.email === 'jersonpierceeee@gmail.com') {
+            const { setDoc } = await import("https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js");
+            await setDoc(doc(db, "users", user.uid), {
+              username: 'Admin',
+              email: user.email,
+              role: 'admin',
+              authUid: user.uid,
+              createdAt: new Date().toISOString()
+            });
+            localStorage.setItem('userRole', 'admin');
+          } else {
+            localStorage.setItem('userRole', 'student');
+          }
           localStorage.setItem('userProgram', '');
           localStorage.removeItem('userSection');
         }

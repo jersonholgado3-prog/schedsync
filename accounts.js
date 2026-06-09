@@ -8,7 +8,7 @@ import { initUserProfile } from "./userprofile.js";
 
 // Admin-only guard
 const userRole = localStorage.getItem('userRole');
-if (userRole !== 'admin' && userRole !== 'academic_head') {
+if (userRole !== 'admin') {
   window.location.href = 'homepage.html';
 }
 
@@ -82,6 +82,7 @@ function renderTable(accounts) {
       <td><div style="display:flex;flex-direction:column;gap:2px;">${checkboxes}</div></td>
       <td><span class="online-dot ${online ? 'online' : 'offline'}"></span>${online ? 'Online' : 'Offline'}</td>
       <td>
+        <button class="action-btn reset" onclick="window._showPassword('${a.id}')">Show Password</button>
         <button class="action-btn reset" onclick="window._resetPassword('${a.id}')">Reset Password</button>
         <button class="action-btn delete" onclick="window._deleteAccount('${a.id}', '${(a.email || '').replace(/'/g, "\\'")}')">Delete</button>
       </td>
@@ -195,10 +196,39 @@ window._updateRoles = async (uid, checkbox) => {
   }
 };
 
+window._showPassword = async (uid) => {
+  try {
+    const { getDoc, doc: fsDoc } = await import("https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js");
+    const snap = await getDoc(fsDoc(db, 'users', uid));
+    const data = snap.data();
+    console.log('[ShowPassword] uid:', uid, 'data:', data);
+    const password = data?.password;
+    if (!password) { showToast('No saved password for this account.', 'error'); return; }
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:12px;padding:2rem;min-width:300px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+        <div style="font-size:0.85rem;color:#64748b;margin-bottom:0.5rem;">${data.email || ''}</div>
+        <div style="font-size:0.9rem;font-weight:600;margin-bottom:0.25rem;">Password:</div>
+        <div style="font-size:1.1rem;font-family:monospace;background:#f1f5f9;padding:0.75rem 1rem;border-radius:8px;letter-spacing:1px;user-select:all;">${password}</div>
+        <button onclick="this.closest('div[style]').parentElement.remove()" style="margin-top:1.25rem;padding:0.5rem 1.5rem;border:none;border-radius:8px;background:#3b82f6;color:#fff;cursor:pointer;font-size:0.9rem;">Close</button>
+      </div>`;
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    document.body.appendChild(overlay);
+  } catch (e) {
+    console.error('[ShowPassword] error:', e);
+    showToast('Failed to fetch password: ' + e.message, 'error');
+  }
+};
+
 window._resetPassword = async (uid) => {
-  const savedPassword = account?.password;
+  const { getDoc, doc: fsDoc } = await import("https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js");
+  const snap = await getDoc(fsDoc(db, 'users', uid));
+  const acc = snap.data();
+  const savedPassword = acc?.password;
   if (!savedPassword) { showToast('No saved password found for this account.', 'error'); return; }
-  if (!confirm(`Reset password for ${account.email} back to their original password?`)) return;
+  if (!confirm(`Reset password for ${acc.email} back to their saved password?`)) return;
   try {
     await resetUserPassword({ uid, password: savedPassword });
     showToast('Password reset successfully.', 'success');

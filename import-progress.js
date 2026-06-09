@@ -38,12 +38,19 @@ function getOrCreateBar() {
   });
 
   bar.querySelector('.ipb-cancel').addEventListener('click', () => {
+    if (localStorage.getItem(CANCEL_KEY) === '1') {
+      // Already cancelled — dismiss the bar
+      setState(null);
+      localStorage.removeItem(CANCEL_KEY);
+      localStorage.removeItem('importPendingItems');
+      bar.classList.remove('visible');
+      return;
+    }
     localStorage.setItem(CANCEL_KEY, '1');
     setState(null);
     bar.querySelector('.ipb-text').textContent = 'Cancelled — click ↺ to resume';
     bar.querySelector('.ipb-icon').style.animation = 'none';
     bar.querySelector('.ipb-icon').textContent = '🛑';
-    bar.querySelector('.ipb-cancel').disabled = true;
     bar.querySelector('.ipb-restart').style.display = 'inline-block';
   });
 

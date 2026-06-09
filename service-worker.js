@@ -41,7 +41,8 @@ self.addEventListener('fetch', e => {
       fetch(e.request)
         .then(res => {
           if (res && res.status === 200 && res.type === 'basic') {
-            caches.open(CACHE_NAME).then(cache => cache.put(e.request, res.clone()));
+            const resClone = res.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(e.request, resClone));
           }
           return res;
         })

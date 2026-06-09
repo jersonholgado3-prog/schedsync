@@ -62,8 +62,9 @@ document.addEventListener("DOMContentLoaded", () => {
           role = userData.role || 'student';
           hasPerm = userData.editPermission === true;
 
-          // 🛡️ Enhanced Greeting: Use fullName if available ⚓
-          if (userData.fullName) greetingName = userData.fullName;
+          // 🛡️ Enhanced Greeting: Use username/fullName if available ⚓
+          const name = userData.username || userData.fullName || userData.displayName;
+          if (name) greetingName = name.trim();
 
           localStorage.setItem('userRole', role);
           localStorage.setItem('editPermission', String(hasPerm));

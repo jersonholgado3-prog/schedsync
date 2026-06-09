@@ -1,4 +1,4 @@
-import { db, auth } from "./js/config/firebase-config.js";
+import { app, db, auth } from "./js/config/firebase-config.js";
 import {
   collection,
   onSnapshot,
@@ -13,17 +13,13 @@ import {
   setDoc
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { getCachedFaculty, invalidateCache, getCachedCourses } from "./js/config/db-cache.js";
-import { onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, deleteUser } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-functions.js";
+import { onAuthStateChanged, deleteUser } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-import { initUniversalSearch } from './search.js';
-import { initUserProfile } from "./userprofile.js";
-import { initMobileNav } from "./js/ui/mobile-nav.js";
-import { showToast, showConfirm, showLoading, hideLoading } from "./js/utils/ui-utils.js";
-import { startImportProgress, tickImportProgress, clearImportProgress, isCancelled } from "./import-progress.js";
+import { initializeApp as initializeApp10, deleteApp as deleteApp10 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { createUserWithEmailAndPassword as createUser10, signInWithEmailAndPassword as signIn10, getAuth as getAuth10, deleteUser as deleteUser10 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
-
-// Secondary App Configuration for creating users without logging out admin
 const secondaryConfig = {
   apiKey: "AIzaSyBrtJocBlfkPciYO7f8-7FwREE1tSF3VXU",
   authDomain: "schedsync-e60d0.firebaseapp.com",
@@ -32,6 +28,51 @@ const secondaryConfig = {
   messagingSenderId: "334140247575",
   appId: "1:334140247575:web:930b0c12e024e4defc5652"
 };
+
+const CREATE_USER_FN = 'https://us-central1-schedsync-e60d0.cloudfunctions.net/createUserAccount';
+
+async function callCreateUser(email, password) {
+  // Use Admin SDK Cloud Function — no client-side rate limits
+  try {
+    const { getAuth: _getAuth } = await import("https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js");
+    const token = await _getAuth().currentUser?.getIdToken();
+    const res = await fetch(CREATE_USER_FN, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(token && { 'Authorization': `Bearer ${token}` }) },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Cloud Function failed');
+    return data.uid;
+  } catch (fnErr) {
+    console.warn('[callCreateUser] Cloud Function failed, falling back:', fnErr.message);
+    // Fallback: secondary app client SDK
+    const appName = 'AuthGen-' + Math.random().toString(36).substring(7);
+    const tempApp = initializeApp10(secondaryConfig, appName);
+    const tempAuth = getAuth10(tempApp);
+    try {
+      try {
+        const cred = await createUser10(tempAuth, email, password);
+        return cred.user.uid;
+      } catch (e) {
+        if (e.code === 'auth/email-already-in-use') {
+          const cred = await signIn10(tempAuth, email, password);
+          return cred.user.uid;
+        }
+        throw e;
+      }
+    } finally {
+      await deleteApp10(tempApp).catch(() => {});
+    }
+  }
+}
+import { initUniversalSearch } from './search.js';
+import { initUserProfile } from "./userprofile.js";
+import { initMobileNav } from "./js/ui/mobile-nav.js";
+import { showToast, showConfirm, showLoading, hideLoading } from "./js/utils/ui-utils.js";
+import { startImportProgress, tickImportProgress, clearImportProgress, isCancelled } from "./import-progress.js";
+
+
 
 let allFaculty = [];
 let selectedIds = new Set();
@@ -115,6 +156,44 @@ function initDragAndDrop() {
   });
 }
 
+function appendFacultyCardLive(d) {
+  const facultyGrid = document.getElementById('facultyGrid');
+  if (!facultyGrid) return;
+  // Remove "No teachers found" placeholder if present
+  const placeholder = facultyGrid.querySelector('p');
+  if (placeholder) placeholder.remove();
+
+  const teacherName = d.username || d.name || "Unnamed Teacher";
+  const employmentStatus = d.employmentStatus || "Full-time";
+  const isAdminUser = localStorage.getItem('userRole') === 'admin' || localStorage.getItem('userRole') === 'academic_head';
+  const isPH = localStorage.getItem('userRole') === 'program head';
+  const canAssignSubjects = isAdminUser || isPH;
+
+  const card = document.createElement("div");
+  card.className = "faculty-card";
+  card.dataset.id = d.id;
+  card.dataset.title = teacherName;
+  card.dataset.description = `${(d.subjects || []).join(', ')} ${employmentStatus} Teacher`;
+  card.onclick = () => { window.location.href = "facultyprofile.html?id=" + d.id; };
+  card.innerHTML = `
+    <div class="faculty-photo">
+      <img src="${d.photoURL || 'images/default_shark.jpg'}" onerror="this.src='images/default_shark.jpg'">
+    </div>
+    <div class="faculty-name">${teacherName}</div>
+    <div class="faculty-details"></div>
+    <div class="status-badge ${employmentStatus.toLowerCase().includes('regular') ? 'status-regular' : 'status-parttime'}">${employmentStatus}</div>
+    ${canAssignSubjects ? `<button class="assign-subjects-btn" data-id="${d.id}" data-name="${teacherName.replace(/"/g,'&quot;')}" style="margin-top:8px;width:100%;padding:6px;border:2px solid #000;border-radius:8px;background:#fff;font-size:0.75rem;font-weight:700;cursor:pointer;">📚 Assign Subjects</button>` : ''}
+  `;
+  if (canAssignSubjects) {
+    card.querySelector('.assign-subjects-btn')?.addEventListener('click', e => {
+      e.stopPropagation();
+      openAssignSubjectsModal(d.id, teacherName, d.subjects || [], d.department || '');
+    });
+  }
+  facultyGrid.appendChild(card);
+  allFaculty.push(d);
+}
+
 async function importFacultyMembers(items) {
   showToast(`Processing 0/${items.length}...`, "info");
   startImportProgress(items.length, items);
@@ -138,10 +217,10 @@ async function importFacultyMembers(items) {
     }
 
     const lastName = name.trim().split(' ').pop().replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-    const seqNum = '02' + String(allFaculty.length + succeeded + 1).padStart(5, '0');
+    const seqNum = String(i + 1);
     const emailUser = `${lastName}${seqNum}`.toLowerCase();
     const email = `${emailUser}@stamaria.sti.edu`;
-    const password = `${lastName}@SCHEDSYNC`;
+    const password = `${lastName}@schedclick`;
 
     // Skip if already in Firestore
     const existing = allFaculty.find(f => (f.email || '').toLowerCase() === email.toLowerCase());
@@ -156,32 +235,17 @@ async function importFacultyMembers(items) {
       continue;
     }
 
-    let tempApp = null;
     let retries = 0;
     let processed = false;
 
     while (retries <= 3) {
       try {
-        const tempAppName = "AuthGen-" + lastName + "-" + Math.random().toString(36).substring(7);
-        tempApp = initializeApp(secondaryConfig, tempAppName);
-        const tempAuth = getAuth(tempApp);
-
         let uid = null;
         try {
-          const userCredential = await createUserWithEmailAndPassword(tempAuth, email, password);
-          uid = userCredential.user.uid;
+          uid = await callCreateUser(email, password);
         } catch (authErr) {
-          if (authErr.code === 'auth/email-already-in-use') {
-            try {
-              const userCredential = await signInWithEmailAndPassword(tempAuth, email, password);
-              uid = userCredential.user.uid;
-            } catch (signInErr) {
-              uid = existingData?.authUid || null;
-              if (!uid) { processed = true; break; }
-            }
-          } else {
-            throw authErr;
-          }
+          uid = existingData?.authUid || null;
+          if (!uid) { processed = true; break; }
         }
         if (isCancelled()) { if (tempApp) await deleteApp(tempApp).catch(()=>{}); break; }
 
@@ -203,17 +267,13 @@ async function importFacultyMembers(items) {
 
         succeeded++;
         processed = true;
-        if (tempApp) await deleteApp(tempApp);
-        loadTeachers(true);
+        appendFacultyCardLive({ ...facultyData, id: uid });
         // 300ms delay to avoid rate limits
         await new Promise(res => setTimeout(res, 300));
         if (isCancelled()) break;
         break;
       } catch (err) {
-        if (tempApp) await deleteApp(tempApp).catch(() => { });
-        tempApp = null;
-        const isQuota = err.code === 'auth/quota-exceeded' ||
-          err.message?.includes('quota') || err.message?.includes('QUOTA_EXCEEDED') ||
+        const isQuota = err.message?.includes('quota') || err.message?.includes('QUOTA_EXCEEDED') ||
           err.status === 429 || err.status === 503;
         if (isQuota) {
           showToast(`⚠️ Firebase quota exceeded. Import stopped at ${succeeded}/${items.length}. Try again tomorrow or upgrade your Firebase plan.`, "error");
@@ -235,7 +295,6 @@ async function importFacultyMembers(items) {
     }
     if (isCancelled()) break;
     tickImportProgress();
-    showToast(`Processing ${i + 1}/${items.length}...`, "info");
   }
   if (isCancelled()) { loadTeachers(true); return; }
   clearImportProgress();
@@ -334,7 +393,7 @@ function initSelectionUI() {
     await new Promise(r => setTimeout(r, 50));
     try {
       await Promise.all(selectedFaculty.map(async f => {
-        if (f.email && f.password) await deleteAuthAccount(f.email, f.password);
+        await deleteAuthAccount(f.authUid || f.id, f.email, f.password);
         await deleteDoc(doc(db, 'users', f.id));
         if (f.authUid && f.authUid !== f.id) await deleteDoc(doc(db, 'users', f.authUid));
       }));
@@ -375,7 +434,7 @@ function initSelectionUI() {
     showToast("Deleting all... ⏳", "info");
     await Promise.all(allFaculty.map(async f => {
       try {
-        if (f.email && f.password) await deleteAuthAccount(f.email, f.password);
+        await deleteAuthAccount(f.authUid || f.id);
         await deleteDoc(doc(db, "users", f.id));
         if (f.authUid && f.authUid !== f.id) await deleteDoc(doc(db, "users", f.authUid));
       } catch (err) { console.error("Delete failed for:", f.username, err); }
@@ -387,19 +446,25 @@ function initSelectionUI() {
   };
 }
 
-async function deleteAuthAccount(email, password) {
-  let secondaryApp = null;
+const _deleteUserAccount = httpsCallable(getFunctions(), 'deleteUserAccount');
+
+async function deleteAuthAccount(uid, email, password) {
+  if (!uid && !email) return;
+  // Try Cloud Function first
+  try { await _deleteUserAccount({ uid }); return; } catch (_) {}
+  // Fallback: sign in as the user with their saved password and delete self
+  if (!email || !password) return;
   try {
-    const secondaryAppName = "DeleteApp-" + Date.now() + Math.random().toString(36).substring(7);
-    secondaryApp = initializeApp(secondaryConfig, secondaryAppName);
-    const secondaryAuth = getAuth(secondaryApp);
-    const userCred = await signInWithEmailAndPassword(secondaryAuth, email, password);
-    await deleteUser(userCred.user);
-  } catch (err) {
-    console.warn(`Auth deletion failed for ${email}:`, err.message);
-  } finally {
-    if (secondaryApp) await deleteApp(secondaryApp).catch(() => { });
-  }
+    const appName = 'DelApp-' + Math.random().toString(36).substring(7);
+    const tempApp = initializeApp10(secondaryConfig, appName);
+    const tempAuth = getAuth10(tempApp);
+    try {
+      const cred = await signIn10(tempAuth, email, password);
+      await deleteUser10(cred.user);
+    } finally {
+      await deleteApp10(tempApp).catch(() => {});
+    }
+  } catch (e) { console.warn('Auth delete skipped for', email, e.message); }
 }
 
 function updateSelectionBar() {
@@ -670,22 +735,17 @@ function initAddFacultyModal() {
 
     const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ');
     const sanitized = lastName.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-    const password = `${sanitized}@SCHEDSYNC`;
+    const password = `${sanitized}@schedclick`;
 
     let tempApp = null;
     try {
-      const tempAppName = 'AddFaculty-' + Date.now();
-      tempApp = initializeApp(secondaryConfig, tempAppName);
-      const tempAuth = getAuth(tempApp);
-
       let uid;
       try {
-        const cred = await createUserWithEmailAndPassword(tempAuth, email, password);
-        uid = cred.user.uid;
+        uid = await callCreateUser(email, password);
       } catch (authErr) {
-        if (authErr.code === 'auth/email-already-in-use') {
-          const cred = await signInWithEmailAndPassword(tempAuth, email, password);
-          uid = cred.user.uid;
+        if (authErr.message?.includes('email-already-exists') || authErr.message?.includes('already-in-use')) {
+          // uid will come from Firestore lookup fallback
+          throw authErr;
         } else throw authErr;
       }
 
@@ -712,12 +772,11 @@ function initAddFacultyModal() {
     } catch (err) {
       console.error('Add faculty error:', err);
       let msg = 'Failed to add faculty.';
-      if (err.code === 'auth/email-already-in-use') msg = 'Email already in use.';
-      if (err.code === 'auth/invalid-email') msg = 'Invalid email address.';
-      if (err.code === 'auth/weak-password') msg = 'Password too weak.';
+      if (err.message?.includes('email-already-exists') || err.message?.includes('already-in-use')) msg = 'Email already in use.';
+      if (err.message?.includes('invalid-email')) msg = 'Invalid email address.';
+      if (err.message?.includes('weak-password')) msg = 'Password too weak.';
       showToast(msg, 'error');
     } finally {
-      if (tempApp) await deleteApp(tempApp).catch(() => {});
       submitBtn.disabled = false;
       submitBtn.textContent = 'Add Faculty';
     }

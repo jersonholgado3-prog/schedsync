@@ -140,9 +140,13 @@ function applyRestrictions(role, hasPermission) {
         else link.classList.remove('active');
     });
 
-    // Hide Accounts page link from non-admins
+    // Hide Accounts page link — admin only
     document.querySelectorAll("a[href*='accounts.html']").forEach(el => {
-        el.style.display = (role === 'admin' || role === 'academic_head') ? '' : 'none';
+        if (role !== 'admin') {
+            el.style.setProperty('display', 'none', 'important');
+        } else {
+            el.style.removeProperty('display');
+        }
     });
 
     // Hide My Schedule, Curriculum, Archives from students (sidebar + mobile nav)
